@@ -1,8 +1,68 @@
-import { Head, Link } from '@inertiajs/react';
-import { useState, useRef, useEffect } from 'react';
-import {
-    Bot, Send, ArrowLeft, Store, TrendingUp, HelpCircle,
-    Megaphone, BarChart3, BookOpen, Loader2, Sparkles,
+import axios from 'axios';
+
+// ... (existing imports)
+
+const sendMessage = async (messageText: string) => {
+    if (!messageText.trim() || isLoading) return;
+
+    const userMessage: Message = {
+        role: 'user',
+        content: messageText,
+        timestamp: new Date(),
+    };
+
+    setMessages((prev) => [...prev, userMessage]);
+    setInput('');
+    setIsLoading(true);
+
+    try {
+        // Use axios instead of fetch for automatic CSRF handling
+        const response = await axios.post('/admin/ai-assistant/chat', {
+            message: messageText,
+            history: messages.map((m) => ({ role: m.role, content: m.content })),
+        });
+
+        const data = response.data;
+
+        const assistantMessage: Message = {
+            role: 'assistant',
+            content: data.success ? data.message : 'Maaf, terjadi kesalahan API.',
+            timestamp: new Date(),
+        };
+
+        setMessages((prev) => [...prev, assistantMessage]);
+    } catch (error: any) {
+        console.error('AI Chat Error:', error);
+
+        let errorMessage = 'Gagal: Tidak dapat terhubung ke server.';
+
+        if (error.response) {
+            // Server responded with a status code outside 2xx
+            if (error.response.status === 419) {
+                errorMessage = 'Sesi kadaluarsa (419). Silakan refresh halaman.';
+            } else if (error.response.status === 504) {
+                errorMessage = 'Server Timeout (504). AI terlalu lama berpikir (coba persingkat pertanyaan).';
+            } else {
+                errorMessage = `Server Error: ${error.response.status} ${error.response.statusText}`;
+            }
+        } else if (error.request) {
+            // Request made but no response received
+            errorMessage = 'Tidak ada respon dari server (Network Error).';
+        }
+
+        setMessages((prev) => [
+            ...prev,
+            {
+                role: 'assistant',
+                content: `${errorMessage} (Cek Console F12)`,
+                timestamp: new Date(),
+            },
+        ]);
+    } finally {
+        setIsLoading(false);
+    }
+};
+Megaphone, BarChart3, BookOpen, Loader2, Sparkles,
     MessageCircle, User, RefreshCw
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -112,21 +172,26 @@ export default function AIAssistant({ stats, quickActions }: Props) {
                 }),
             });
 
+            if (!response.ok) {
+                throw new Error(`Server Error: ${response.status} ${response.statusText}`);
+            }
+
             const data = await response.json();
 
             const assistantMessage: Message = {
                 role: 'assistant',
-                content: data.success ? data.message : 'Maaf, terjadi kesalahan. Silakan coba lagi.',
+                content: data.success ? data.message : 'Maaf, terjadi kesalahan API.',
                 timestamp: new Date(),
             };
 
             setMessages((prev) => [...prev, assistantMessage]);
-        } catch {
+        } catch (error: any) {
+            console.error('AI Chat Error:', error);
             setMessages((prev) => [
                 ...prev,
                 {
                     role: 'assistant',
-                    content: 'Maaf, tidak dapat terhubung ke server. Periksa koneksi internet Anda.',
+                    content: `Gagal: ${error.message || 'Tidak dapat terhubung ke server.'} (Cek Console F12)`,
                     timestamp: new Date(),
                 },
             ]);
