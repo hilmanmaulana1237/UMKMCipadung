@@ -17,6 +17,13 @@ class KieAIService
         $config = ApiSetting::getConfig('video');
         $this->apiKey = $config['api_key'] ?? '';
         $this->baseUrl = $config['base_url'] ?: 'https://api.kie.ai/api/v1/jobs';
+        
+        // Safety check: Fix for issue where OpenRouter URL is incorrectly set for Video config
+        if (str_contains($this->baseUrl, 'openrouter.ai')) {
+            Log::warning('KieAIService: Detected OpenRouter URL in Video Config. Forcing reset to Kie AI default.');
+            $this->baseUrl = 'https://api.kie.ai/api/v1/jobs';
+        }
+
         // 'model' from config or default to sora-2
         $this->model = $config['model'] ?: 'sora-2-image-to-video';
 

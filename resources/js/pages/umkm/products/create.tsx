@@ -333,8 +333,8 @@ export default function CreateProduct({ categories }: Props) {
                             type="button"
                             onClick={() => setData('is_physical', true)}
                             className={`p-4 rounded-2xl border-2 text-center transition-all ${data.is_physical
-                                    ? 'border-primary bg-primary/5'
-                                    : 'border-border bg-card hover:border-primary/50'
+                                ? 'border-primary bg-primary/5'
+                                : 'border-border bg-card hover:border-primary/50'
                                 }`}
                         >
                             <span className="text-2xl mb-1 block">📦</span>
@@ -345,8 +345,8 @@ export default function CreateProduct({ categories }: Props) {
                             type="button"
                             onClick={() => setData('is_physical', false)}
                             className={`p-4 rounded-2xl border-2 text-center transition-all ${!data.is_physical
-                                    ? 'border-primary bg-primary/5'
-                                    : 'border-border bg-card hover:border-primary/50'
+                                ? 'border-primary bg-primary/5'
+                                : 'border-border bg-card hover:border-primary/50'
                                 }`}
                         >
                             <span className="text-2xl mb-1 block">💻</span>

@@ -113,4 +113,4 @@ voice over terlalu panjang)
 
 nah tapi template diatas kamu improve lagi biar nyambung dengan database user, jadi nnti kita get informasi user dan mengcombokannya dengan template diatas yang dimana hasilnya akan WOW dan umkm yagn kurang pintar juga kita bisa bikin mereka gk usah mikir prompting karena kita sudah buatkan prompting nya. 
 
-tapi saya masih bingung alurnya gmna, coba kamu improve. saya sudah beli AI Sora generate videonya, dan ini apinya dibawah 7
+tapi saya masih bingung alurnya gmna, coba kamu improve. saya sudah beli AI Sora generate videonya, tapi kamu jangan fokus dlu generate videonya. coba sekrang kamu buatkan hasil prompting nya, saya mau lihat., dan nnti user dikasih 2 pilihan, mau versi foto gambar toko umkm atau mau versi foto produk nya aja dan nnti ai bikinkan video nya tanpa harus punya tokonya.
