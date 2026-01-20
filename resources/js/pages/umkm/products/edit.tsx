@@ -23,10 +23,10 @@ interface PriceSuggestion {
 }
 
 export default function EditProduct({ product, categories }: Props) {
-    const { data, setData, post, processing, errors } = useForm({
+    const { data, setData, post, processing, errors, transform } = useForm({
         _method: 'PUT',
         name: product.name || '',
-        price: product.price?.toString() || '',
+        price: product.price ? Math.floor(Number(product.price)).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".") : '',
         stock: product.stock?.toString() || '',
         category: product.category || 'kuliner',
         description: product.description || '',
@@ -137,6 +137,10 @@ export default function EditProduct({ product, categories }: Props) {
 
     const handleSubmit = (e: FormEvent) => {
         e.preventDefault();
+        transform((data) => ({
+            ...data,
+            price: data.price.toString().replace(/\./g, ''),
+        }));
         post(`/products/${product.id}`, {
             forceFormData: true,
             onSuccess: () => {
@@ -267,7 +271,7 @@ export default function EditProduct({ product, categories }: Props) {
                     <span className="text-sm font-medium text-foreground">Kategori *</span>
                     <select
                         value={data.category}
-                        onChange={(e) => setData('category', e.target.value)}
+                        onChange={(e) => setData('category', e.target.value as any)}
                         className="mt-1 w-full px-4 py-3 bg-card border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary"
                     >
                         {categories.map((cat) => (
@@ -282,11 +286,18 @@ export default function EditProduct({ product, categories }: Props) {
                         <label className="block">
                             <span className="text-sm font-medium text-foreground">Harga (Rp) *</span>
                             <input
-                                type="number"
+                                type="text"
+                                inputMode="numeric"
                                 value={data.price}
-                                onChange={(e) => setData('price', e.target.value)}
+                                onChange={(e) => {
+                                    // Remove non-digits
+                                    const value = e.target.value.replace(/\D/g, '');
+                                    // Format with dots
+                                    const formatted = value.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+                                    setData('price', formatted);
+                                }}
                                 className="mt-1 w-full px-4 py-3 bg-card border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary"
-                                placeholder="15000"
+                                placeholder="15.000"
                                 required
                             />
                             {errors.price && <p className="mt-1 text-sm text-destructive">{errors.price}</p>}
@@ -299,7 +310,7 @@ export default function EditProduct({ product, categories }: Props) {
                                     <p className="text-xs text-amber-700">{priceSuggestion.message}</p>
                                     <button
                                         type="button"
-                                        onClick={() => setData('price', priceSuggestion.suggested.toString())}
+                                        onClick={() => setData('price', priceSuggestion.suggested.toString().replace(/\B(?=(\d{3})+(?!\d))/g, "."))}
                                         className="text-xs text-amber-600 underline mt-1"
                                     >
                                         Gunakan Rp {priceSuggestion.suggested.toLocaleString('id-ID')}
