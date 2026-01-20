@@ -1,6 +1,6 @@
 import AppLayout from '@/layouts/app-layout';
 import { Head, Link } from '@inertiajs/react';
-import { ChevronLeft, Film, ImageIcon, Layout, Store, Package, Camera, Sparkles, Wand2, Loader2, Upload, X, Play, Download, AlertCircle, Clock, CheckCircle, XCircle, Search, Check, Trash2, Share2, Copy, Eye, ExternalLink } from 'lucide-react';
+import { ChevronLeft, Film, ImageIcon, Layout, Store, Package, Camera, Sparkles, Wand2, Loader2, Upload, X, Play, Download, AlertCircle, Clock, CheckCircle, XCircle, Search, Check, Trash2, Share2, Copy, Eye, ExternalLink, ShieldCheck } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import axios from 'axios';
 
@@ -2031,8 +2031,20 @@ export default function AIContentIndex({ store, videoQuota, posterQuota, content
                                     </button>
                                 </div>
                                 <p className="text-xs text-gray-400">
-                                    💡 Masukkan nama produk, lalu klik tombol "Buat Deskripsi" agar AI membuatkan narasi video yang menarik.
+                                    💡 Masukkan nama produk, lalu klik tombol "Buat Deskripsi".
                                 </p>
+                                <div className="mt-2 p-3 bg-blue-50 border border-blue-100 rounded-xl text-xs text-blue-700 space-y-1">
+                                    <p className="font-semibold flex items-center gap-1">
+                                        <ShieldCheck className="w-3 h-3" />
+                                        Jaminan Konten Relevan
+                                    </p>
+                                    <p>
+                                        AI akan otomatis menyesuaikan visual dengan <b>Kategori Toko</b> Anda agar tidak melenceng (misal: Toko Sembako tidak akan dibuatkan video Makanan Siap Saji).
+                                    </p>
+                                    <p className="opacity-80">
+                                        *Kami juga otomatis menyelipkan produk lain dari etalase toko Anda sebagai latar belakang agar video terlihat lebih nyata & "hidup".
+                                    </p>
+                                </div>
                             </div>
 
                             <textarea

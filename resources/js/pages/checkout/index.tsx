@@ -1033,7 +1033,9 @@ export default function CheckoutIndex() {
                             <div className="text-right">
                                 {promoStatus === 'valid' && promoType === 'free_shipping' ? (
                                     <>
-                                        <span className="text-lg font-bold text-green-600">Rp 0</span>
+                                        <span className="text-lg font-bold text-green-600">
+                                            Rp {Math.max(0, courierFee - promoValue).toLocaleString('id-ID')}
+                                        </span>
                                         <p className="text-xs text-muted-foreground line-through">Rp {courierFee.toLocaleString('id-ID')}</p>
                                     </>
                                 ) : (

@@ -199,7 +199,7 @@ export default function CourierActiveTrip({ order }: Props) {
                     {order.store?.store_photo_path && (
                         <>
                             <button
-                                onClick={() => openImagePreview(`/storage/${order.store.store_photo_path}`)}
+                                onClick={() => openImagePreview(`/storage/${order.store?.store_photo_path}`)}
                                 className="w-full mb-4 py-2 bg-muted hover:bg-muted/80 text-foreground rounded-xl text-sm font-medium flex items-center justify-center gap-2 transition-colors border border-border"
                             >
                                 <ImageIcon className="w-4 h4" />
@@ -221,13 +221,14 @@ export default function CourierActiveTrip({ order }: Props) {
                                 Buka Peta
                             </button>
                         )}
-                        {order.store?.owner?.phone && (
+                        {/* Chat Store - use contact_number or fallback to owner phone */}
+                        {(order.store?.contact_number || order.store?.owner?.wa_number) && (
                             <button
-                                onClick={() => openWhatsApp(order.store!.owner!.phone!, order.store!.name)}
+                                onClick={() => openWhatsApp(order.store?.contact_number || order.store?.owner?.wa_number || '', order.store?.name || 'Toko')}
                                 className="py-3 px-5 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg shadow-green-200 transition-all hover:shadow-xl hover:scale-[1.02] active:scale-[0.98]"
                             >
                                 <MessageCircle className="w-5 h-5" />
-                                WA
+                                Chat Toko
                             </button>
                         )}
                     </div>

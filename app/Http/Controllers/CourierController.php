@@ -182,7 +182,7 @@ class CourierController extends Controller
     {
         $user = auth()->user();
 
-        $activeOrder = Order::with(['store', 'buyer', 'items.product'])
+        $activeOrder = Order::with(['store.owner', 'buyer', 'items.product'])
             ->where('courier_id', $user->id)
             ->whereIn('courier_status', ['driver_assigned', 'pickup_otw', 'delivery_otw'])
             ->first();

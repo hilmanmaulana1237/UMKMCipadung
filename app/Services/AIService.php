@@ -529,8 +529,10 @@ class AIService
     /**
      * Generate visual-rich description for AI Video.
      */
-    public function generateVisualDescription(string $storeName, string $category, string $productName): string
+    public function generateVisualDescription(string $storeName, string $category, string $productName, string $additionalProducts = ''): string
     {
+        $context = $additionalProducts ? "Selain itu, tampilkan samar-samar produk lain dari toko ini di background/rak: {$additionalProducts}." : "";
+
         $prompt = "Buatkan deskripsi visual yang SANGAT DETAIL dan SINEMATIK untuk bahan prompt video AI.
         
         Toko: {$storeName}
@@ -542,8 +544,10 @@ class AIService
         Aturan:
         1. HINDARI bahasa promosi (seperti 'Ayo beli', 'Diskon').
         2. FOKUS pada elemen VISUAL: pencahayaan (natural/warm), tekstur produk (uap mengepul, embun es, serat kain), aktivitas (tangan menyajikan, menuangkan saus), dan suasana (ramai, cozy).
-        3. Tulis dalam 1 paragraf mengalir (3-4 kalimat panjang).
-        4. Gunakan Bahasa Indonesia yang deskriptif.
+        3. Pastikan visual sesuai kategori toko. Jika toko {$category}, jangan tampilkan visual kategori lain.
+        4. {$context}
+        5. Tulis dalam 1 paragraf mengalir (3-4 kalimat panjang).
+        6. Gunakan Bahasa Indonesia yang deskriptif.
         
         Contoh yang Bagus:
         'Close up shot mangkuk bakso dengan uap panas yang masih mengepul, memperlihatkan tekstur daging yang kenyal dan kuah kaldu yang bening berminyak. Kamera bergerak perlahan (panning) memperlihatkan suasana warung yang nyaman dengan cahaya matahari sore yang hangat. Seorang penjual dengan celemek bersih sedang menuangkan sambal ke dalam mangkuk dengan gerakan tangan yang natural.'";

@@ -349,10 +349,30 @@ class AIContentController extends Controller
                 'product_name' => 'required|string',
             ]);
     
+            $productName = $request->product_name;
+
+            // Fetch random products from store to enhance context
+            $store = \App\Models\UmkmStore::where('user_id', auth()->id())->first();
+            $additionalProducts = '';
+            
+            if ($store) {
+                 $randomProducts = \App\Models\Product::where('store_id', $store->id)
+                    ->where('name', '!=', $productName) // Exclude main product
+                    ->inRandomOrder()
+                    ->take(3)
+                    ->pluck('name')
+                    ->toArray();
+                
+                if (!empty($randomProducts)) {
+                    $additionalProducts = implode(', ', $randomProducts);
+                }
+            }
+
             $description = $this->aiService->generateVisualDescription(
                 $request->store_name,
                 $request->category,
-                $request->product_name
+                $productName,
+                $additionalProducts
             );
     
             return response()->json([

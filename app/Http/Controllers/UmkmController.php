@@ -92,22 +92,22 @@ class UmkmController extends Controller
         
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
+            'description' => 'required|string',
             'address_pickup' => 'required|string',
-            'latitude' => 'nullable|string',
-            'longitude' => 'nullable|string',
-            'contact_number' => 'nullable|string|max:20',
-            'bank_name' => 'nullable|string|max:100',
-            'bank_account' => 'nullable|string|max:50',
-            'bank_holder' => 'nullable|string|max:100',
+            'latitude' => 'required|string',
+            'longitude' => 'required|string',
+            'contact_number' => 'required|string|max:20',
+            'bank_name' => 'required|string|max:100',
+            'bank_account' => 'required|string|max:50',
+            'bank_holder' => 'required|string|max:100',
             'qris_handle' => 'nullable|string|max:100',
-            'qris' => 'nullable|image|max:10240', // Increased limit
+            'qris' => 'nullable|image|max:10240',
             'banner' => 'nullable|image|max:10240',
             'store_photo' => 'nullable|image|max:10240',
             'profile_photo' => 'nullable|image|max:10240',
-            'open_time' => 'nullable|string',
-            'close_time' => 'nullable|string',
-            'operating_days' => 'nullable|array',
+            'open_time' => 'required|string',
+            'close_time' => 'required|string',
+            'operating_days' => 'required|array|min:1',
             'admin_fee' => 'nullable|numeric|min:0',
         ]);
 

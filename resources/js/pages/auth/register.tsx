@@ -182,6 +182,23 @@ export default function Register() {
                                                 <InputError message={errors.email} />
                                             </div>
 
+                                            <div className="space-y-2">
+                                                <Label htmlFor="wa_number" className="text-slate-700 font-semibold text-sm">
+                                                    Nomor WhatsApp
+                                                </Label>
+                                                <Input
+                                                    id="wa_number"
+                                                    type="tel"
+                                                    tabIndex={3}
+                                                    autoComplete="tel"
+                                                    name="wa_number"
+                                                    placeholder="08123456789"
+                                                    className="h-12 rounded-xl border-slate-200 bg-slate-50 focus:bg-white focus:border-blue-500 focus:ring-blue-500 transition-all"
+                                                />
+                                                <p className="text-xs text-slate-500">Untuk kurir menghubungi saat mengantarkan pesanan</p>
+                                                <InputError message={errors.wa_number} />
+                                            </div>
+
                                             <div className="grid grid-cols-2 gap-4">
                                                 <div className="space-y-2">
                                                     <Label htmlFor="password" className="text-slate-700 font-semibold text-sm">
@@ -191,7 +208,7 @@ export default function Register() {
                                                         id="password"
                                                         type="password"
                                                         required
-                                                        tabIndex={3}
+                                                        tabIndex={4}
                                                         autoComplete="new-password"
                                                         name="password"
                                                         placeholder="Min. 8 karakter"
@@ -208,7 +225,7 @@ export default function Register() {
                                                         id="password_confirmation"
                                                         type="password"
                                                         required
-                                                        tabIndex={4}
+                                                        tabIndex={5}
                                                         autoComplete="new-password"
                                                         name="password_confirmation"
                                                         placeholder="Ulangi sandi"
@@ -221,7 +238,7 @@ export default function Register() {
                                             <Button
                                                 type="submit"
                                                 className="w-full h-12 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl font-bold text-base shadow-lg shadow-blue-500/25 hover:shadow-xl transition-all duration-300 mt-2"
-                                                tabIndex={5}
+                                                tabIndex={6}
                                                 data-test="register-user-button"
                                             >
                                                 {processing && <Spinner />}
