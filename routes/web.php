@@ -60,52 +60,9 @@ Route::get('/', function () {
         ->take(3)
         ->get();
 
-    // Fallback dummy data for featuredStores if no active stores
+    // Fallback dummy data removed as per request
     if ($featuredStores->isEmpty()) {
-        $featuredStores = collect([
-            (object) [
-                'id' => 1,
-                'name' => 'Warung Sembako Bu Iti',
-                'category' => 'kuliner',
-                'logo_path' => null,
-                'products_count' => 15,
-                'products' => [
-                    (object) ['id' => 1, 'name' => 'Beras Premium 5kg', 'price' => 75000, 'image_path' => null],
-                    (object) ['id' => 2, 'name' => 'Minyak Goreng 2L', 'price' => 35000, 'image_path' => null],
-                    (object) ['id' => 3, 'name' => 'Gula Pasir 1kg', 'price' => 18000, 'image_path' => null],
-                ],
-                'ratings_avg_stars' => 4.5,
-                'ratings_count' => 10,
-            ],
-            (object) [
-                'id' => 2,
-                'name' => 'Cuci Rapi Laundry',
-                'category' => 'jasa',
-                'logo_path' => null,
-                'products_count' => 7,
-                'products' => [
-                    (object) ['id' => 4, 'name' => 'Cuci Kiloan', 'price' => 7000, 'image_path' => null],
-                    (object) ['id' => 5, 'name' => 'Setrika Only', 'price' => 5000, 'image_path' => null],
-                    (object) ['id' => 6, 'name' => 'Express 6 Jam', 'price' => 15000, 'image_path' => null],
-                ],
-                'ratings_avg_stars' => 4.5,
-                'ratings_count' => 10,
-            ],
-            (object) [
-                'id' => 3,
-                'name' => 'Kerajinan Bambu Asli',
-                'category' => 'kriya',
-                'logo_path' => null,
-                'products_count' => 12,
-                'products' => [
-                    (object) ['id' => 7, 'name' => 'Keranjang Bambu', 'price' => 45000, 'image_path' => null],
-                    (object) ['id' => 8, 'name' => 'Tikar Anyaman', 'price' => 85000, 'image_path' => null],
-                    (object) ['id' => 9, 'name' => 'Vas Bambu', 'price' => 35000, 'image_path' => null],
-                ],
-                'ratings_avg_stars' => 4.5,
-                'ratings_count' => 10,
-            ],
-        ]);
+        // Do nothing, show empty
     }
 
     // 1. Get Top Rated Active Stores
@@ -133,44 +90,9 @@ Route::get('/', function () {
         $topRatedStores = $topRatedStores->merge($randomStores);
     }
 
-    // 3. Fallback Dummy Data (ONLY if no active stores exist at all)
-    // This ensures the section is visible for development/demo purposes
+    // Fallback dummy data removed as per request
     if ($topRatedStores->isEmpty()) {
-        $topRatedStores = collect([
-            (object) [
-                'id' => 1,
-                'name' => 'Dapur Bu Aminah',
-                'category' => 'kuliner',
-                'logo_path' => null, // Will use default emoji
-                'store_photo_path' => null,
-                'banner_path' => null,
-                'ratings_avg_stars' => 5.0,
-                'ratings_count' => 128,
-                'slug' => 'dapur-bu-aminah'
-            ],
-            (object) [
-                'id' => 2,
-                'name' => 'Kerajinan Bambu Cipadung',
-                'category' => 'kriya',
-                'logo_path' => null, 
-                'store_photo_path' => null,
-                'banner_path' => null,
-                'ratings_avg_stars' => 4.9,
-                'ratings_count' => 85,
-                'slug' => 'kerajinan-bambu'
-            ],
-            (object) [
-                'id' => 3,
-                'name' => 'Jasa Servis Elektronik',
-                'category' => 'jasa',
-                'logo_path' => null,
-                'store_photo_path' => null,
-                'banner_path' => null,
-                'ratings_avg_stars' => 4.8,
-                'ratings_count' => 64,
-                'slug' => 'servis-elektronik'
-            ]
-        ]);
+        // Do nothing
     }
     
     return Inertia::render('welcome', [
