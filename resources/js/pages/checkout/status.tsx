@@ -343,7 +343,6 @@ export default function OrderStatus({ order, waitingTooLong, canReview, canRate,
                                 <span className="font-medium">Rp {Number(order.admin_fee).toLocaleString('id-ID')}</span>
                             </div>
                         )}
-
                         {(Number(order.total_amount) - (order.items.reduce((acc, i) => acc + (i.price * i.quantity), 0)) - Number(order.admin_fee)) > 0 && (
                             <div className="flex justify-between text-sm">
                                 <span className="text-muted-foreground">Biaya Layanan QRIS Toko</span>
@@ -355,14 +354,27 @@ export default function OrderStatus({ order, waitingTooLong, canReview, canRate,
 
                         <div className="flex justify-between text-sm">
                             <span className="text-muted-foreground">Ongkos Kirim</span>
-                            <span className="font-medium">Rp {Number(order.courier_fee).toLocaleString('id-ID')}</span>
+                            <span className="font-medium">
+                                {order.shipping_discount && order.shipping_discount > 0 ? (
+                                    <>
+                                        <span className="line-through text-muted-foreground mr-2">
+                                            Rp {Number(order.courier_fee).toLocaleString('id-ID')}
+                                        </span>
+                                        <span className="text-success">
+                                            Rp {Math.max(0, Number(order.courier_fee) - order.shipping_discount).toLocaleString('id-ID')}
+                                        </span>
+                                    </>
+                                ) : (
+                                    `Rp ${Number(order.courier_fee).toLocaleString('id-ID')}`
+                                )}
+                            </span>
                         </div>
                     </div>
 
                     <div className="flex justify-between pt-3 mt-2 border-t border-border">
                         <span className="font-semibold text-foreground">Total</span>
                         <span className="font-bold text-primary text-lg">
-                            Rp {(Number(order.total_amount) + Number(order.courier_fee)).toLocaleString('id-ID')}
+                            Rp {(Number(order.total_amount) + Math.max(0, Number(order.courier_fee) - (order.shipping_discount || 0))).toLocaleString('id-ID')}
                         </span>
                     </div>
                 </div>

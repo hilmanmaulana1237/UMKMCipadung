@@ -151,6 +151,9 @@ export interface Order {
     courier_status: CourierStatus;
     total_amount: number;
     courier_fee: number;
+    admin_fee?: number;
+    store_fee?: number;
+    shipping_discount?: number;
     payment_proof_path?: string;
     shipping_address: string;
     shipping_lat?: number;
