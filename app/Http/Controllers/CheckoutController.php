@@ -194,7 +194,7 @@ class CheckoutController extends Controller
 
             // Handle Promo Code
             $discountAmount = 0;
-            $courierFee = Order::COURIER_COMMISSION_AMOUNT;
+            $courierFee = $baseCourierFee; // Use DB setting, not hardcoded constant
             $promoId = null;
 
             if (!empty($validated['promo_code'])) {
@@ -214,17 +214,30 @@ class CheckoutController extends Controller
                         ->where('is_active', true)
                         ->first();
                     
-                    // STRICT VALIDATION: If code provided but invalid, Fail the transaction
+                    // STRICT VALIDATION: If code provided but invalid, return validation error
                     if (!$promo) {
-                        throw new \Exception('Kode promo tidak valid atau kadaluarsa.');
+                        throw new \Illuminate\Validation\ValidationException(
+                            \Illuminate\Support\Facades\Validator::make([], [])->after(function ($validator) {
+                                $validator->errors()->add('promo_code', 'Kode promo tidak valid atau kadaluarsa.');
+                            })
+                        );
                     }
 
                     if ($promo->used_count >= $promo->quota) {
-                        throw new \Exception('Kuota promo sudah habis.');
+                        throw new \Illuminate\Validation\ValidationException(
+                            \Illuminate\Support\Facades\Validator::make([], [])->after(function ($validator) {
+                                $validator->errors()->add('promo_code', 'Kuota promo sudah habis.');
+                            })
+                        );
                     }
 
                     if ($totalAmount < $promo->min_purchase) {
-                        throw new \Exception('Minimal belanja Rp ' . number_format($promo->min_purchase, 0, ',', '.') . ' belum terpenuhi.');
+                        $minPurchase = number_format($promo->min_purchase, 0, ',', '.');
+                        throw new \Illuminate\Validation\ValidationException(
+                            \Illuminate\Support\Facades\Validator::make([], [])->after(function ($validator) use ($minPurchase) {
+                                $validator->errors()->add('promo_code', "Minimal belanja Rp {$minPurchase} belum terpenuhi.");
+                            })
+                        );
                     }
                     
                     $promoId = $promo->id;
@@ -258,12 +271,54 @@ class CheckoutController extends Controller
 
             return $order;
         });
-        
-        // ... (WhatsApp logic skipped for brevity) ...
-        // We will jump to `status` method modification below
-    }
 
-    // ... (store method closes, skip to status method) ...
+        // Send WhatsApp notification to seller
+        try {
+            $order->load(['store', 'buyer', 'items.product']);
+            $storeContact = $order->store?->contact_number;
+            
+            $token = \App\Models\Setting::get('fonnte_api_token');
+            $enabled = \App\Models\Setting::get('whatsapp_notifications_enabled', 'false');
+            
+            if ($storeContact && $token && ($enabled === 'true' || $enabled === true)) {
+                $phone = preg_replace('/[^0-9]/', '', $storeContact);
+                if (str_starts_with($phone, '0')) {
+                    $phone = '62' . substr($phone, 1);
+                }
+                if (!str_starts_with($phone, '62')) {
+                    $phone = '62' . $phone;
+                }
+                
+                $itemsList = '';
+                foreach ($order->items as $item) {
+                    $itemsList .= "- {$item->product->name} x{$item->quantity} - Rp " . number_format($item->price * $item->quantity, 0, ',', '.') . "\n";
+                }
+                
+                $message = "*PESANAN BARU!*\n\n";
+                $message .= "Halo kak {$order->store->name}, ada pesanan masuk!\n\n";
+                $message .= "*Order:* #{$order->order_number}\n";
+                $message .= "*Pembeli:* {$order->buyer->name}\n";
+                $message .= "*Alamat:* {$order->shipping_address}\n";
+                $message .= "*Total:* Rp " . number_format($order->total_amount, 0, ',', '.') . "\n\n";
+                $message .= "*Detail Pesanan:*\n{$itemsList}\n";
+                $message .= "Segera cek aplikasi untuk verifikasi!\n\n";
+                $message .= "---\n_Pesan otomatis dari UMKM Cipadung_";
+                
+                \Illuminate\Support\Facades\Http::withHeaders([
+                    'Authorization' => $token,
+                ])->post('https://api.fonnte.com/send', [
+                    'target' => $phone,
+                    'message' => $message,
+                    'countryCode' => '62',
+                ]);
+            }
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('WhatsApp notification failed: ' . $e->getMessage());
+        }
+
+        return redirect()->route('orders.status', $order)
+            ->with('success', 'Pesanan berhasil dibuat! Menunggu verifikasi penjual.');
+    }
 
     /**
      * Show order status page.

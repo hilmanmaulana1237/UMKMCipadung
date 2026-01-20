@@ -239,13 +239,16 @@ export default function OrderStatus({ order, waitingTooLong, canReview, canRate,
                  `}} />
 
 
-                {/* Courier Info (if on delivery) */}
-                {order.courier && (order.status === 'on_delivery' || order.status === 'ready_to_ship') && (
+
+                {/* Courier Info (during delivery or completed) */}
+                {order.courier && (order.status === 'on_delivery' || order.status === 'ready_to_ship' || order.status === 'completed') && (
                     <div className="bg-card rounded-2xl p-4 border border-border">
-                        <h2 className="font-medium text-foreground mb-3">Info Kurir</h2>
+                        <h2 className="font-medium text-foreground mb-3">
+                            {order.status === 'completed' ? 'Diantar oleh' : 'Info Kurir'}
+                        </h2>
                         <div className="flex items-center gap-3">
-                            <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
-                                <Truck className="w-6 h-6 text-primary" />
+                            <div className={`w-12 h-12 rounded-full flex items-center justify-center ${order.status === 'completed' ? 'bg-success/10' : 'bg-primary/10'}`}>
+                                <Truck className={`w-6 h-6 ${order.status === 'completed' ? 'text-success' : 'text-primary'}`} />
                             </div>
                             <div className="flex-1">
                                 <p className="font-medium text-foreground">{order.courier.name}</p>
@@ -334,20 +337,20 @@ export default function OrderStatus({ order, waitingTooLong, canReview, canRate,
                     <div className="pt-3 mt-3 border-t border-border space-y-2">
                         <div className="flex justify-between text-sm">
                             <span className="text-muted-foreground">Subtotal Produk</span>
-                            <span className="font-medium">Rp {(order.items.reduce((acc, i) => acc + (i.price * i.quantity), 0)).toLocaleString('id-ID')}</span>
+                            <span className="font-medium">Rp {((order.items || []).reduce((acc, i) => acc + (i.price * i.quantity), 0)).toLocaleString('id-ID')}</span>
                         </div>
 
-                        {Number(order.admin_fee) > 0 && (
+                        {Number(order.admin_fee || 0) > 0 && (
                             <div className="flex justify-between text-sm">
                                 <span className="text-muted-foreground">Biaya Layanan Aplikasi</span>
                                 <span className="font-medium">Rp {Number(order.admin_fee).toLocaleString('id-ID')}</span>
                             </div>
                         )}
-                        {(Number(order.total_amount) - (order.items.reduce((acc, i) => acc + (i.price * i.quantity), 0)) - Number(order.admin_fee)) > 0 && (
+                        {(Number(order.total_amount) - ((order.items || []).reduce((acc, i) => acc + (i.price * i.quantity), 0)) - Number(order.admin_fee || 0)) > 0 && (
                             <div className="flex justify-between text-sm">
                                 <span className="text-muted-foreground">Biaya Layanan QRIS Toko</span>
                                 <span className="font-medium">
-                                    Rp {(Number(order.total_amount) - (order.items.reduce((acc, i) => acc + (i.price * i.quantity), 0)) - Number(order.admin_fee)).toLocaleString('id-ID')}
+                                    Rp {(Number(order.total_amount) - ((order.items || []).reduce((acc, i) => acc + (i.price * i.quantity), 0)) - Number(order.admin_fee || 0)).toLocaleString('id-ID')}
                                 </span>
                             </div>
                         )}
