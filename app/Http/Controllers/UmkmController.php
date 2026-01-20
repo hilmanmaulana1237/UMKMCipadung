@@ -162,17 +162,25 @@ class UmkmController extends Controller
         $store = auth()->user()->umkmStore;
         $status = $request->get('status', 'waiting_verification');
 
-        $orders = $store->orders()
-            ->with(['buyer', 'items.product'])
-            ->where('status', $status)
-            ->latest()
-            ->paginate(10);
+        if ($status === 'completed') {
+            $orders = $store->orders()
+                ->with(['buyer', 'items.product'])
+                ->whereIn('status', ['completed', 'cancelled'])
+                ->latest()
+                ->paginate(10);
+        } else {
+            $orders = $store->orders()
+                ->with(['buyer', 'items.product'])
+                ->where('status', $status)
+                ->latest()
+                ->paginate(10);
+        }
 
         $stats = [
             'waiting' => $store->orders()->where('status', 'waiting_verification')->count(),
             'processing' => $store->orders()->where('status', 'processing')->count(),
             'ready' => $store->orders()->where('status', 'ready_to_ship')->count(),
-            'completed' => $store->orders()->where('status', 'completed')->count(),
+            'completed' => $store->orders()->whereIn('status', ['completed', 'cancelled'])->count(),
         ];
 
         return Inertia::render('umkm/orders', [

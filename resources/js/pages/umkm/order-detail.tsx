@@ -2,7 +2,7 @@ import AppLayout from '@/layouts/app-layout';
 import React from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import { Order } from '@/types';
-import { ArrowLeft, Check, X, Package, User, MapPin, Truck, Clock, Phone, MessageCircle } from 'lucide-react';
+import { ArrowLeft, Check, X, Package, User, MapPin, Truck, Clock, Phone, MessageCircle, AlertCircle } from 'lucide-react';
 
 interface Props {
     order: Order;
@@ -39,6 +39,14 @@ export default function UmkmOrderDetail({ order }: Props) {
         setShowImageModal(true);
     };
 
+    const [showRejectModal, setShowRejectModal] = React.useState(false);
+
+    const rejectOrder = () => {
+        router.post(`/umkm/orders/${order.id}/reject`, {}, {
+            onFinish: () => setShowRejectModal(false),
+        });
+    };
+
     return (
         <AppLayout activeTab="orders" showBottomNav={false}>
             <Head title={`Pesanan ${order.order_number}`} />
@@ -60,6 +68,41 @@ export default function UmkmOrderDetail({ order }: Props) {
                 </div>
             )}
 
+            {/* Reject Confirmation Modal */}
+            {
+                showRejectModal && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+                        <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-xl animate-in zoom-in-95 duration-200">
+                            <div className="flex flex-col items-center text-center gap-4">
+                                <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center text-red-600">
+                                    <AlertCircle className="w-6 h-6" />
+                                </div>
+                                <div>
+                                    <h3 className="text-lg font-bold text-gray-900">Tolak Pesanan?</h3>
+                                    <p className="text-sm text-gray-500 mt-1">
+                                        Pesanan akan dibatalkan dan stok produk akan dikembalikan otomatis. Tindakan ini tidak dapat dibatalkan.
+                                    </p>
+                                </div>
+                                <div className="grid grid-cols-2 gap-3 w-full mt-2">
+                                    <button
+                                        onClick={() => setShowRejectModal(false)}
+                                        className="py-2.5 px-4 rounded-xl border border-gray-200 font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                                    >
+                                        Batal
+                                    </button>
+                                    <button
+                                        onClick={rejectOrder}
+                                        className="py-2.5 px-4 rounded-xl bg-red-600 text-white font-medium hover:bg-red-700 transition-colors"
+                                    >
+                                        Ya, Tolak
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )
+            }
+
             {/* Header */}
             <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm px-4 py-3 flex items-center gap-3 border-b border-border">
                 <Link href="/umkm/orders" className="p-2 hover:bg-muted rounded-full">
@@ -77,12 +120,14 @@ export default function UmkmOrderDetail({ order }: Props) {
                 {/* Status Badge */}
                 <div className={`rounded-2xl p-4 ${order.status === 'waiting_verification' ? 'bg-warning/10' :
                     order.status === 'processing' ? 'bg-primary/10' :
-                        order.status === 'completed' ? 'bg-success/10' : 'bg-muted'
+                        order.status === 'completed' ? 'bg-success/10' :
+                            order.status === 'cancelled' ? 'bg-red-50' : 'bg-muted'
                     }`}>
                     <div className="flex items-center gap-3">
                         <Clock className={`w-5 h-5 ${order.status === 'waiting_verification' ? 'text-warning' :
                             order.status === 'processing' ? 'text-primary' :
-                                order.status === 'completed' ? 'text-success' : 'text-muted-foreground'
+                                order.status === 'completed' ? 'text-success' :
+                                    order.status === 'cancelled' ? 'text-red-500' : 'text-muted-foreground'
                             }`} />
                         <div>
                             <p className="font-medium text-foreground">
@@ -91,11 +136,13 @@ export default function UmkmOrderDetail({ order }: Props) {
                                 {order.status === 'ready_to_ship' && 'Siap Dikirim'}
                                 {order.status === 'on_delivery' && 'Dalam Pengiriman'}
                                 {order.status === 'completed' && 'Pesanan Selesai'}
+                                {order.status === 'cancelled' && 'Pesanan Dibatalkan'}
                             </p>
                             <p className="text-xs text-muted-foreground">
                                 {order.status === 'waiting_verification' && 'Verifikasi bukti pembayaran'}
                                 {order.status === 'processing' && 'Siapkan pesanan pelanggan'}
                                 {order.status === 'ready_to_ship' && 'Menunggu kurir mengambil'}
+                                {order.status === 'cancelled' && 'Stok produk telah dikembalikan'}
                             </p>
                         </div>
                     </div>
@@ -259,8 +306,15 @@ export default function UmkmOrderDetail({ order }: Props) {
                 {order.status === 'waiting_verification' && (
                     <div className="flex gap-3">
                         <button
+                            onClick={() => setShowRejectModal(true)}
+                            className="flex-1 py-4 bg-red-50 text-red-600 rounded-2xl font-semibold flex items-center justify-center gap-2 hover:bg-red-100 transition-colors"
+                        >
+                            <X className="w-5 h-5" />
+                            Tolak
+                        </button>
+                        <button
                             onClick={verifyOrder}
-                            className="flex-1 py-4 bg-success text-white rounded-2xl font-semibold flex items-center justify-center gap-2"
+                            className="flex-[2] py-4 bg-success text-white rounded-2xl font-semibold flex items-center justify-center gap-2"
                         >
                             <Check className="w-5 h-5" />
                             Terima Pesanan
@@ -291,6 +345,6 @@ export default function UmkmOrderDetail({ order }: Props) {
 
             {/* Bottom spacing */}
             <div className="h-24"></div>
-        </AppLayout>
+        </AppLayout >
     );
 }
