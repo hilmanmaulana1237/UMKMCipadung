@@ -84,12 +84,7 @@ export default function ProductDetail({ product, relatedProducts }: Props) {
                     </Link>
                     <h1 className="font-semibold text-foreground line-clamp-1">{product.name}</h1>
                 </div>
-                <div className="flex items-center gap-3">
-                    <Link href="/marketplace" className="p-2 hover:bg-muted rounded-full">
-                        <ArrowLeft className="w-5 h-5" />
-                    </Link>
-                    <h1 className="font-semibold text-foreground line-clamp-1">{product.name}</h1>
-                </div>
+
                 {isBuyer && (
                     <Link href="/checkout" className="relative p-2 hover:bg-muted rounded-full">
                         <ShoppingCart className="w-5 h-5" />
