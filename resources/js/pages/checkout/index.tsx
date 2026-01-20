@@ -45,6 +45,7 @@ export default function CheckoutIndex() {
     const [storeStatuses, setStoreStatuses] = useState<Record<number, { is_open: boolean; open_time: string; close_time: string; admin_fee?: number }>>({});
     const [showQrisModal, setShowQrisModal] = useState(false);
     const [pendingRemoveItem, setPendingRemoveItem] = useState<{ productId: number; name: string } | null>(null);
+    const [errorModal, setErrorModal] = useState<{ show: boolean; title: string; message: string }>({ show: false, title: '', message: '' });
 
     // --- RESTORED LOGIC ---
     const checkStoreStatus = () => {
@@ -360,18 +361,33 @@ export default function CheckoutIndex() {
             },
             onError: (errors) => {
                 console.error('Checkout validation errors:', errors);
-                // Show specific error for promo code
+                // Show specific error in modal
                 if (errors.promo_code) {
-                    alert(errors.promo_code);
+                    setErrorModal({
+                        show: true,
+                        title: 'Promo Tidak Dapat Digunakan',
+                        message: typeof errors.promo_code === 'string' ? errors.promo_code : 'Kode promo tidak valid.'
+                    });
                 } else if (errors.items) {
-                    alert(errors.items);
+                    setErrorModal({
+                        show: true,
+                        title: 'Stok Tidak Mencukupi',
+                        message: typeof errors.items === 'string' ? errors.items : 'Ada masalah dengan item pesanan.'
+                    });
                 } else if (errors.store) {
-                    alert(errors.store);
+                    setErrorModal({
+                        show: true,
+                        title: 'Toko Tutup',
+                        message: typeof errors.store === 'string' ? errors.store : 'Toko sedang tidak beroperasi.'
+                    });
                 } else {
-                    // Generic error
                     const firstError = Object.values(errors)[0];
                     if (firstError) {
-                        alert(typeof firstError === 'string' ? firstError : 'Terjadi kesalahan. Silakan coba lagi.');
+                        setErrorModal({
+                            show: true,
+                            title: 'Pesanan Gagal',
+                            message: typeof firstError === 'string' ? firstError : 'Terjadi kesalahan. Silakan coba lagi.'
+                        });
                     }
                 }
             }
@@ -1236,6 +1252,48 @@ export default function CheckoutIndex() {
                                 Ya, Hapus
                             </button>
                         </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Error Modal */}
+            {errorModal.show && (
+                <div
+                    style={{
+                        position: 'fixed',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        zIndex: 999999,
+                        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        padding: '16px'
+                    }}
+                    onClick={() => setErrorModal({ show: false, title: '', message: '' })}
+                >
+                    <div
+                        className="bg-white w-full max-w-sm rounded-3xl p-6 animate-in zoom-in-95 duration-200"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="text-center">
+                            <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <AlertTriangle className="w-8 h-8 text-amber-500" />
+                            </div>
+                            <h3 className="text-lg font-bold text-foreground mb-2">{errorModal.title}</h3>
+                            <p className="text-muted-foreground text-sm mb-6">
+                                {errorModal.message}
+                            </p>
+                        </div>
+
+                        <button
+                            onClick={() => setErrorModal({ show: false, title: '', message: '' })}
+                            className="w-full py-3 bg-primary text-white rounded-xl font-medium hover:bg-primary/90 transition-colors"
+                        >
+                            Mengerti
+                        </button>
                     </div>
                 </div>
             )}
