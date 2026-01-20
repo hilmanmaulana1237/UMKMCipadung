@@ -12,6 +12,7 @@ Artisan::command('inspire', function () {
 // UMKM owners must manually open their stores each day
 Schedule::command('stores:reset-open')->dailyAt('00:00')->timezone('Asia/Jakarta');
 Schedule::command('app:backup-database')->dailyAt('00:00')->timezone('Asia/Jakarta');
+Schedule::command('sitemap:generate')->daily()->timezone('Asia/Jakarta');
 
 // Schedule: Release idle courier orders (1 hour timeout)
 // Runs every 15 minutes to check for orders that have been idle too long
