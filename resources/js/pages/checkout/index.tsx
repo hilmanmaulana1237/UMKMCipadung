@@ -360,6 +360,20 @@ export default function CheckoutIndex() {
             },
             onError: (errors) => {
                 console.error('Checkout validation errors:', errors);
+                // Show specific error for promo code
+                if (errors.promo_code) {
+                    alert(errors.promo_code);
+                } else if (errors.items) {
+                    alert(errors.items);
+                } else if (errors.store) {
+                    alert(errors.store);
+                } else {
+                    // Generic error
+                    const firstError = Object.values(errors)[0];
+                    if (firstError) {
+                        alert(typeof firstError === 'string' ? firstError : 'Terjadi kesalahan. Silakan coba lagi.');
+                    }
+                }
             }
         });
     };

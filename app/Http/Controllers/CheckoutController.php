@@ -146,8 +146,43 @@ class CheckoutController extends Controller
         $settingAdminFee = DB::table('settings')->where('key', 'admin_fee')->value('value');
         $globalAdminFee = $settingAdminFee ? (int)$settingAdminFee : 0;
 
+        // === PROMO CODE VALIDATION (BEFORE TRANSACTION) ===
+        $promo = null;
+        $affiliator = null;
+        if (!empty($validated['promo_code'])) {
+            // Check if it's an Affiliate Code first
+            $affiliator = User::where('affiliate_code', strtoupper($validated['promo_code']))->first();
+            
+            if (!$affiliator || $affiliator->id === auth()->id()) {
+                // Not an affiliate code, check if it's a promo code
+                $affiliator = null;
+                $promo = Promo::where('code', strtoupper($validated['promo_code']))
+                    ->where('is_active', true)
+                    ->first();
+                
+                if (!$promo) {
+                    return back()->withErrors(['promo_code' => 'Kode promo tidak valid atau sudah kadaluarsa.']);
+                }
+
+                if ($promo->used_count >= $promo->quota) {
+                    return back()->withErrors(['promo_code' => 'Kuota promo sudah habis.']);
+                }
+
+                // Calculate items total (without fees) for min purchase check
+                $itemsTotal = 0;
+                foreach ($orderItems as $item) {
+                    $itemsTotal += $item['price'] * $item['quantity'];
+                }
+
+                if ($itemsTotal < $promo->min_purchase) {
+                    $minPurchase = number_format($promo->min_purchase, 0, ',', '.');
+                    return back()->withErrors(['promo_code' => "Minimal belanja Rp {$minPurchase} belum terpenuhi. Total belanja Anda: Rp " . number_format($itemsTotal, 0, ',', '.') . "."]);
+                }
+            }
+        }
+
         // Create order in transaction
-        $order = DB::transaction(function () use ($validated, $store, $orderItems, $totalAmount, $proofPath, $allDigital, $baseCourierFee, $globalAdminFee) {
+        $order = DB::transaction(function () use ($validated, $store, $orderItems, $totalAmount, $proofPath, $allDigital, $baseCourierFee, $globalAdminFee, $promo, $affiliator) {
             
             // Logic: 
             // - total_amount sent from frontend is Product + Admin Fee (Transfer Amount).
@@ -192,15 +227,13 @@ class CheckoutController extends Controller
                     ->decrement('stock', $item['quantity']);
             }
 
-            // Handle Promo Code
+            // Handle Promo Code (already validated before transaction)
             $discountAmount = 0;
             $courierFee = $baseCourierFee; // Use DB setting, not hardcoded constant
             $promoId = null;
 
             if (!empty($validated['promo_code'])) {
-                // 1. Check if it's an Affiliate Code
-                $affiliator = User::where('affiliate_code', strtoupper($validated['promo_code']))->first();
-                
+                // Use pre-validated $affiliator from outer scope
                 if ($affiliator && $affiliator->id !== auth()->id()) {
                     AffiliateReward::create([
                         'affiliate_id' => $affiliator->id,
@@ -208,49 +241,14 @@ class CheckoutController extends Controller
                         'amount' => AffiliateReward::COMMISSION_AMOUNT,
                         'status' => 'potential',
                     ]);
-                } else {
-                    // 2. Check if it's a Promo Code (Standard)
-                    $promo = Promo::where('code', strtoupper($validated['promo_code']))
-                        ->where('is_active', true)
-                        ->first();
-                    
-                    // STRICT VALIDATION: If code provided but invalid, return validation error
-                    if (!$promo) {
-                        throw new \Illuminate\Validation\ValidationException(
-                            \Illuminate\Support\Facades\Validator::make([], [])->after(function ($validator) {
-                                $validator->errors()->add('promo_code', 'Kode promo tidak valid atau kadaluarsa.');
-                            })
-                        );
-                    }
-
-                    if ($promo->used_count >= $promo->quota) {
-                        throw new \Illuminate\Validation\ValidationException(
-                            \Illuminate\Support\Facades\Validator::make([], [])->after(function ($validator) {
-                                $validator->errors()->add('promo_code', 'Kuota promo sudah habis.');
-                            })
-                        );
-                    }
-
-                    if ($totalAmount < $promo->min_purchase) {
-                        $minPurchase = number_format($promo->min_purchase, 0, ',', '.');
-                        throw new \Illuminate\Validation\ValidationException(
-                            \Illuminate\Support\Facades\Validator::make([], [])->after(function ($validator) use ($minPurchase) {
-                                $validator->errors()->add('promo_code', "Minimal belanja Rp {$minPurchase} belum terpenuhi.");
-                            })
-                        );
-                    }
-                    
+                } elseif ($promo) {
+                    // Use pre-validated $promo from outer scope
                     $promoId = $promo->id;
                     
                     if ($promo->type === 'free_shipping') {
-                        // Discount courier fee (Cash Payment)
-                        // If free shipping, user pays 0 cash to courier.
-                        // We KEEP courierFee as full amount in DB so courier gets paid by platform (Verify later if needed)
                         $discount = min($courierFee, $promo->value);
-                        // $courierFee -= $discount; // FIXED: Do NOT reduce earnings in DB. Courier must be paid full.
                         $discountAmount = $discount; 
                     } elseif ($promo->type === 'discount') {
-                        // Discount order total (Transfer Payment)
                         $discountAmount = min($totalAmount, $promo->value);
                         $totalAmount -= $discountAmount;
                     }
@@ -263,8 +261,8 @@ class CheckoutController extends Controller
             // Update order with final amounts if changed by promo
             if ($promoId) {
                 $order->update([
-                    'courier_fee' => $allDigital ? 0 : $courierFee, // This is NOW full earnings (e.g. 10000)
-                    'total_amount' => $totalAmount, // This is TRANSFER amount (Product + Admin), NO Courier Fee added here
+                    'courier_fee' => $allDigital ? 0 : $courierFee,
+                    'total_amount' => $totalAmount,
                     'promo_code_used' => $validated['promo_code'],
                 ]);
             }
