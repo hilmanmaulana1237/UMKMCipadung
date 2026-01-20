@@ -89,6 +89,28 @@ export default function Profile({
                                     />
                                 </div>
 
+                                <div className="grid gap-2">
+                                    <Label htmlFor="wa_number">Nomor WhatsApp</Label>
+                                    <p className="text-xs text-muted-foreground -mt-1">
+                                        Nomor ini akan digunakan kurir untuk menghubungi Anda saat pengiriman
+                                    </p>
+
+                                    <Input
+                                        id="wa_number"
+                                        type="tel"
+                                        className="mt-1 block w-full"
+                                        defaultValue={auth.user.wa_number || ''}
+                                        name="wa_number"
+                                        autoComplete="tel"
+                                        placeholder="Contoh: 08123456789"
+                                    />
+
+                                    <InputError
+                                        className="mt-2"
+                                        message={errors.wa_number}
+                                    />
+                                </div>
+
                                 {mustVerifyEmail &&
                                     auth.user.email_verified_at === null && (
                                         <div>
