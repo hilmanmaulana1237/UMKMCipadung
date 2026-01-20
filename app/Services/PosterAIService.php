@@ -21,6 +21,12 @@ class PosterAIService
         $this->baseUrl = $config['base_url'] ?: 'https://api.kie.ai/api/v1/jobs';
         $this->model = 'google/nano-banana-edit'; // Gemini 2.5 Flash Image Edit
 
+        // Safety check: Fix for issue where OpenRouter URL is incorrectly set for Video config
+        if (str_contains($this->baseUrl, 'openrouter.ai')) {
+            Log::warning('PosterAIService: Detected OpenRouter URL in Config. Forcing reset to Kie AI default.');
+            $this->baseUrl = 'https://api.kie.ai/api/v1/jobs';
+        }
+
         if (empty($this->apiKey)) {
             Log::warning('PosterAIService: API Key is missing or not configured.');
         }
