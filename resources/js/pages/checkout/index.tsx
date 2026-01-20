@@ -218,29 +218,63 @@ export default function CheckoutIndex() {
     };
 
     const openLocationModal = () => {
+        // 1. Check for Secure Context (Required for Geolocation in modern browsers)
+        if (!window.isSecureContext && window.location.hostname !== 'localhost') {
+            alert('Fitur lokasi membutuhkan koneksi aman (HTTPS). Silakan akses website menggunakan standar HTTPS.');
+            return;
+        }
+
+        if (!navigator.geolocation) {
+            alert('Browser Anda tidak mendukung fitur lokasi.');
+            return;
+        }
+
         setLocationLoading(true);
         setLocationError(null);
         setShowLocationModal(true);
 
-        navigator.geolocation.getCurrentPosition(
-            (position) => {
-                const { latitude, longitude } = position.coords;
-                setTempLocation({ lat: latitude, lng: longitude });
+        const options = {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 0
+        };
 
-                // Check if within Cipadung service area
-                const distance = calculateDistance(
-                    latitude, longitude,
-                    CIPADUNG_CENTER.lat, CIPADUNG_CENTER.lng
-                );
-                setIsInServiceArea(distance <= SERVICE_RADIUS_KM);
-                setLocationLoading(false);
-            },
-            (error) => {
-                setLocationError('Gagal mendapatkan lokasi. Pastikan GPS aktif.');
-                setLocationLoading(false);
-            },
-            { enableHighAccuracy: true }
-        );
+        const success = (position: GeolocationPosition) => {
+            const { latitude, longitude } = position.coords;
+            setTempLocation({ lat: latitude, lng: longitude });
+
+            // Check if within Cipadung service area
+            const distance = calculateDistance(
+                latitude, longitude,
+                CIPADUNG_CENTER.lat, CIPADUNG_CENTER.lng
+            );
+            setIsInServiceArea(distance <= SERVICE_RADIUS_KM);
+            setLocationLoading(false);
+        };
+
+        const error = (err: GeolocationPositionError) => {
+            console.warn(`ERROR(${err.code}): ${err.message}`);
+            let msg = 'Gagal mendapatkan lokasi.';
+
+            switch (err.code) {
+                case err.PERMISSION_DENIED:
+                    msg = 'Akses lokasi ditolak. Mohon izinkan akses lokasi di pengaturan browser Anda (ikon gembok di url bar).';
+                    break;
+                case err.POSITION_UNAVAILABLE:
+                    msg = 'Informasi lokasi tidak tersedia. Pastikan GPS aktif.';
+                    break;
+                case err.TIMEOUT:
+                    msg = 'Waktu permintaan lokasi habis. Silakan coba lagi.';
+                    break;
+                default:
+                    msg = 'Terjadi kesalahan tidak diketahui saat mengambil lokasi.';
+            }
+
+            setLocationError(msg);
+            setLocationLoading(false);
+        };
+
+        navigator.geolocation.getCurrentPosition(success, error, options);
     };
 
     // Swipe to close state
