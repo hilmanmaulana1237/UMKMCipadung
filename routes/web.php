@@ -49,12 +49,12 @@ Route::middleware(['auth'])->group(function () {
 
 Route::get('/', function () {
     $featuredStores = \App\Models\UmkmStore::query()
-        ->where('is_active', true)
+
         ->withAvg('ratings', 'stars')
         ->withCount('ratings')
         ->withCount('products')
         ->with(['products' => function($q) {
-            $q->where('is_active', true)->take(4);
+            $q->take(4);
         }])
         ->inRandomOrder()
         ->take(3)
@@ -67,7 +67,7 @@ Route::get('/', function () {
 
     // 1. Get Top Rated Active Stores
     $topRatedStores = \App\Models\UmkmStore::query()
-        ->where('is_active', true)
+
         ->withAvg('ratings', 'stars')
         ->withCount('ratings')
         ->orderByDesc('ratings_avg_stars')
@@ -79,7 +79,7 @@ Route::get('/', function () {
     if ($topRatedStores->count() < 3) {
         $existingIds = $topRatedStores->pluck('id');
         $randomStores = \App\Models\UmkmStore::query()
-            ->where('is_active', true)
+
             ->whereNotIn('id', $existingIds)
             ->withAvg('ratings', 'stars')
             ->withCount('ratings')
