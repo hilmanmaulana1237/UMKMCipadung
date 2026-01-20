@@ -10,6 +10,8 @@ interface FeaturedStore {
     category: string;
     logo_path?: string;
     products_count: number;
+    ratings_avg_stars?: number;
+    ratings_count?: number;
     products?: Array<{
         id: number;
         name: string;
@@ -328,8 +330,10 @@ export default function Welcome({
                                             <div className="flex items-center gap-2 mt-3 text-sm text-slate-600">
                                                 <div className="flex items-center gap-1">
                                                     <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
-                                                    <span className="font-semibold text-slate-900">4.5</span>
-                                                    <span className="text-slate-400">(10)</span>
+                                                    <span className="font-semibold text-slate-900">
+                                                        {store.ratings_avg_stars ? Number(store.ratings_avg_stars).toFixed(1) : '0.0'}
+                                                    </span>
+                                                    <span className="text-slate-400">({store.ratings_count || 0})</span>
                                                 </div>
                                                 <span className="text-slate-300">|</span>
                                                 <span className="capitalize">{store.category}</span>

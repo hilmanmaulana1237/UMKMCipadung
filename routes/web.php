@@ -50,12 +50,14 @@ Route::middleware(['auth'])->group(function () {
 Route::get('/', function () {
     $featuredStores = \App\Models\UmkmStore::query()
         ->where('is_active', true)
+        ->withAvg('ratings', 'stars')
+        ->withCount('ratings')
         ->withCount('products')
         ->with(['products' => function($q) {
             $q->where('is_active', true)->take(4);
         }])
         ->inRandomOrder()
-        ->take(6)
+        ->take(3)
         ->get();
 
     // Fallback dummy data for featuredStores if no active stores
