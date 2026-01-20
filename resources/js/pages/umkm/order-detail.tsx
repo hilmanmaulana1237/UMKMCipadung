@@ -204,32 +204,32 @@ export default function UmkmOrderDetail({ order }: Props) {
                                 <p className="text-sm text-muted-foreground">x{item.quantity}</p>
                             </div>
                             <p className="font-medium text-foreground">
-                                Rp {(item.price * item.quantity).toLocaleString('id-ID')}
+                                Rp {(Number(item.price) * item.quantity).toLocaleString('id-ID')}
                             </p>
                         </div>
                     ))}
                     <div className="space-y-2 pt-3 mt-3 border-t border-border">
                         <div className="flex justify-between text-sm text-muted-foreground">
                             <span>Subtotal Produk</span>
-                            <span>Rp {order.items?.reduce((acc, item) => acc + (item.price * item.quantity), 0).toLocaleString('id-ID')}</span>
+                            <span>Rp {(order.items || []).reduce((acc, item) => acc + (Number(item.price) * item.quantity), 0).toLocaleString('id-ID')}</span>
                         </div>
 
-                        {(order.admin_fee > 0) && (
+                        {(Number(order.admin_fee || 0) > 0) && (
                             <div className="flex justify-between text-sm text-muted-foreground">
                                 <span>Biaya Layanan (App)</span>
-                                <span>Rp {Number(order.admin_fee).toLocaleString('id-ID')}</span>
+                                <span>Rp {Number(order.admin_fee || 0).toLocaleString('id-ID')}</span>
                             </div>
                         )}
 
                         {/* Calculate Store Admin Fee (Total - Subtotal - AppAdminFee) */}
-                        {(order.total_amount - order.items?.reduce((acc, item) => acc + (item.price * item.quantity), 0) - (order.admin_fee || 0)) > 0 && (
+                        {(Number(order.total_amount) - (order.items || []).reduce((acc, item) => acc + (Number(item.price) * item.quantity), 0) - (Number(order.admin_fee) || 0)) > 0 && (
                             <div className="flex justify-between text-sm text-muted-foreground">
                                 <span>Biaya Admin Toko</span>
                                 <span>
                                     Rp {(
-                                        order.total_amount -
-                                        order.items?.reduce((acc, item) => acc + (item.price * item.quantity), 0) -
-                                        (order.admin_fee || 0)
+                                        Number(order.total_amount) -
+                                        (order.items || []).reduce((acc, item) => acc + (Number(item.price) * item.quantity), 0) -
+                                        (Number(order.admin_fee) || 0)
                                     ).toLocaleString('id-ID')}
                                 </span>
                             </div>
@@ -238,7 +238,7 @@ export default function UmkmOrderDetail({ order }: Props) {
                         <div className="flex justify-between items-center font-bold text-lg pt-2 border-t border-border/50">
                             <span className="text-foreground">Total Transfer</span>
                             <span className="text-primary">
-                                Rp {order.total_amount.toLocaleString('id-ID')}
+                                Rp {Number(order.total_amount).toLocaleString('id-ID')}
                             </span>
                         </div>
                     </div>

@@ -179,7 +179,7 @@ export default function UmkmDashboard({ store, stats, reviewStats, recentOrders 
                         <div>
                             <p className="text-white/70 text-xs">Total Pendapatan</p>
                             <p className="text-2xl font-bold text-white mt-0.5">
-                                Rp {stats.totalRevenue.toLocaleString('id-ID')}
+                                Rp {Number(stats.totalRevenue).toLocaleString('id-ID')}
                             </p>
                         </div>
                         {totalPendingOrders > 0 && (

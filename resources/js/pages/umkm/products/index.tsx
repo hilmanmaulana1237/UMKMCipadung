@@ -162,7 +162,7 @@ export default function UmkmProductsIndex({ products, stats, filters }: { produc
                                                 {product.name}
                                             </h3>
                                             <p className="text-primary font-bold text-sm">
-                                                Rp {product.price.toLocaleString('id-ID')}
+                                                Rp {Number(product.price).toLocaleString('id-ID')}
                                             </p>
                                         </div>
                                         <button
