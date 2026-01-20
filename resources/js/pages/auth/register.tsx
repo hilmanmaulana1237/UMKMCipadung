@@ -132,7 +132,7 @@ export default function Register() {
                                 <div>
                                     <p className="text-sm text-blue-900 font-semibold">Khusus Pembeli</p>
                                     <p className="text-xs text-blue-700 mt-0.5">
-                                        Untuk UMKM & Affiliator, hubungi admin desa.
+                                        Untuk UMKM & Affiliator, hubungi admin kelurahan.
                                     </p>
                                 </div>
                             </div>

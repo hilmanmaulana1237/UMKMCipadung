@@ -74,6 +74,8 @@ Route::get('/', function () {
                     (object) ['id' => 2, 'name' => 'Minyak Goreng 2L', 'price' => 35000, 'image_path' => null],
                     (object) ['id' => 3, 'name' => 'Gula Pasir 1kg', 'price' => 18000, 'image_path' => null],
                 ],
+                'ratings_avg_stars' => 4.5,
+                'ratings_count' => 10,
             ],
             (object) [
                 'id' => 2,
@@ -86,6 +88,8 @@ Route::get('/', function () {
                     (object) ['id' => 5, 'name' => 'Setrika Only', 'price' => 5000, 'image_path' => null],
                     (object) ['id' => 6, 'name' => 'Express 6 Jam', 'price' => 15000, 'image_path' => null],
                 ],
+                'ratings_avg_stars' => 4.5,
+                'ratings_count' => 10,
             ],
             (object) [
                 'id' => 3,
@@ -98,6 +102,8 @@ Route::get('/', function () {
                     (object) ['id' => 8, 'name' => 'Tikar Anyaman', 'price' => 85000, 'image_path' => null],
                     (object) ['id' => 9, 'name' => 'Vas Bambu', 'price' => 35000, 'image_path' => null],
                 ],
+                'ratings_avg_stars' => 4.5,
+                'ratings_count' => 10,
             ],
         ]);
     }
