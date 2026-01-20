@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KRIPIKU | Cita Rasa Nusantara</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bitter:wght@500;700&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+
+    <style>
+        /* --- 1. CONFIGURATION --- */
+        :root {
+            /* Palette: Warm & Appetizing */
+            --bg: #FAFAF9; /* Warm White (seperti warna tepung/krem) */
+            --white: #ffffff;
+            --text-main: #2D2420; /* Dark Brown (lebih lembut dari hitam) */
+            --text-sec: #7A6C65;
+            --accent: #D84315; /* Burnt Orange (Warna Sambal/Bumbu) */
+            
+            --border: #E8E6E1;
+            
+            --font-head: 'Bitter', serif;
+            --font-body: 'DM Sans', sans-serif;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text-main);
+            font-family: var(--font-body);
+            line-height: 1.6;
+        }
+
+        a { text-decoration: none; color: inherit; transition: 0.3s; }
+        img { display: block; width: 100%; height: 100%; object-fit: cover; }
+
+        /* --- 2. LAYOUT UTILITIES --- */
+        .container {
+            max-width: 1100px; /* Sedikit lebih kecil agar lebih padat */
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        .text-center { text-align: center; }
+        
+        .btn {
+            display: inline-block;
+            background-color: var(--accent);
+            color: white;
+            padding: 12px 30px;
+            border-radius: 50px; /* Tombol bulat agar terlihat 'friendly' */
+            font-weight: 500;
+            box-shadow: 0 4px 15px rgba(216, 67, 21, 0.2);
+        }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(216, 67, 21, 0.3); }
+
+        .btn-outline {
+            background: transparent;
+            border: 2px solid var(--text-main);
+            color: var(--text-main);
+            padding: 10px 28px;
+            border-radius: 50px;
+            font-weight: 700;
+        }
+        .btn-outline:hover { background: var(--text-main); color: white; }
+
+        /* --- 3. NAVBAR --- */
+        nav {
+            background: var(--white);
+            border-bottom: 1px solid var(--border);
+            padding: 20px 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .nav-inner {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-family: var(--font-head);
+            font-weight: 700;
+            font-size: 1.5rem;
+            color: var(--accent);
+        }
+
+        .nav-menu { display: flex; gap: 30px; }
+        .nav-menu a { font-weight: 500; color: var(--text-sec); }
+        .nav-menu a:hover { color: var(--accent); }
+
+        /* --- 4. HERO SECTION --- */
+        .hero {
+            padding: 80px 0;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            align-items: center;
+            gap: 50px;
+        }
+
+        .hero h1 {
+            font-family: var(--font-head);
+            font-size: 3rem;
+            line-height: 1.2;
+            margin-bottom: 20px;
+        }
+
+        .hero p {
+            font-size: 1.1rem;
+            color: var(--text-sec);
+            margin-bottom: 30px;
+            max-width: 450px;
+        }
+
+        .badges {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        .badge {
+            background: #FFF3E0;
+            color: var(--accent);
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            font-weight: 700;
+        }
+
+        .hero-img {
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 20px 20px 0px rgba(216, 67, 21, 0.1); /* Shadow kotak unik */
+            aspect-ratio: 4/3;
+        }
+
+        /* --- 5. VALUE PROPOSITION (Icon) --- */
+        .values {
+            padding: 40px 0;
+            background: var(--white);
+            border-top: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .value-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            text-align: center;
+            gap: 30px;
+        }
+
+        .value-item h4 { font-family: var(--font-head); font-size: 1.2rem; margin-bottom: 5px; }
+        .value-item p { font-size: 0.9rem; color: var(--text-sec); }
+
+        /* --- 6. PRODUCT GRID (Kunci Kerapihan) --- */
+        .products { padding: 80px 0; }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+        .section-header h2 { font-family: var(--font-head); font-size: 2.2rem; }
+        .section-header p { color: var(--text-sec); margin-top: 10px; }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr); /* 3 Kolom */
+            gap: 30px;
+        }
+
+        .product-card {
+            background: var(--white);
+            border-radius: 16px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+            transition: 0.3s;
+            cursor: pointer;
+        }
+
+        .product-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            border-color: var(--accent);
+        }
+
+        /* FOTO KOTAK (SQUARE) - Cocok untuk Kemasan */
+        .img-box {
+            width: 100%;
+            aspect-ratio: 1/1; /* Rasio Kotak Sempurna */
+            background: #f4f4f4;
+            position: relative;
+        }
+        
+        .p-info { padding: 20px; text-align: center; }
+        .p-name { font-weight: 700; font-size: 1.1rem; display: block; margin-bottom: 5px; }
+        .p-flavor { color: var(--text-sec); font-size: 0.9rem; margin-bottom: 15px; display: block;}
+        .p-price { 
+            color: var(--accent); 
+            font-weight: 700; 
+            font-size: 1.1rem; 
+            background: #FFF3E0;
+            padding: 5px 15px;
+            border-radius: 20px;
+            display: inline-block;
+        }
+
+        /* --- 7. FOOTER --- */
+        footer {
+            background: var(--white);
+            padding: 60px 0 30px;
+            border-top: 1px solid var(--border);
+            text-align: center;
+        }
+        .footer-logo { font-family: var(--font-head); font-weight: 700; font-size: 1.5rem; color: var(--text-main); }
+
+        /* --- RESPONSIVE --- */
+        @media (max-width: 768px) {
+            .nav-menu { display: none; }
+            .hero { grid-template-columns: 1fr; text-align: center; gap: 30px; }
+            .hero-img { order: -1; margin-bottom: 20px; } /* Foto di atas saat HP */
+            .badges { justify-content: center; }
+            .value-grid { grid-template-columns: 1fr; gap: 20px; }
+            .grid { grid-template-columns: repeat(2, 1fr); gap: 15px; } /* 2 Kolom di HP */
+            .p-info { padding: 15px 10px; }
+            .p-name { font-size: 0.9rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <nav>
+        <div class="container nav-inner">
+            <div class="logo">KRIPIKU.</div>
+            <div class="nav-menu">
+                <a href="#">Beranda</a>
+                <a href="#produk">Katalog</a>
+                <a href="#">Tentang</a>
+                <a href="#">Testimoni</a>
+            </div>
+            <a href="https://wa.me/" class="btn">Pesan via WA</a>
+        </div>
+    </nav>
+
+    <section class="container hero">
+        <div class="hero-text">
+            <div class="badges">
+                <span class="badge">🔥 Best Seller</span>
+                <span class="badge">✅ 100% Halal</span>
+            </div>
+            <h1>Renyahnya Asli, <br><span style="color: var(--accent);">Bikin Gak Berhenti.</span></h1>
+            <p>Keripik singkong dan pisang artisanal dengan bumbu rempah rahasia warisan nenek. Tanpa pengawet, 100% bahan lokal petani.</p>
+            <div style="display: flex; gap: 15px; flex-wrap: wrap; justify-content: inherit;">
+                <a href="#produk" class="btn">Lihat Varian</a>
+                <a href="#" class="btn-outline">Cerita Kami</a>
+            </div>
+        </div>
+        <div class="hero-img">
+            <img src="https://images.unsplash.com/photo-1566478989037-eec170784d0b?ixlib=rb-1.2.1&auto=format&fit=crop&w=1000&q=80" alt="Keripik Enak">
+        </div>
+    </section>
+
+    <section class="values">
+        <div class="container value-grid">
+            <div class="value-item">
+                <h4>🌱 Bahan Lokal</h4>
+                <p>Langsung dari petani singkong Subang.</p>
+            </div>
+            <div class="value-item">
+                <h4>🌶️ Rempah Asli</h4>
+                <p>Bukan bumbu tabur instan, asli ulek.</p>
+            </div>
+            <div class="value-item">
+                <h4>❤️ Fresh Daily</h4>
+                <p>Digoreng setiap pagi, kirim hari ini.</p>
+            </div>
+        </div>
+    </section>
+
+    <section id="produk" class="products container">
+        <div class="section-header">
+            <h2>Pilihan Favorit</h2>
+            <p>Stok selalu baru setiap hari. Klik untuk pesan.</p>
+        </div>
+
+        <div class="grid">
+            
+            <div class="product-card">
+                <div class="img-box">
+                    <img src="https://images.unsplash.com/photo-1623653387945-2fd25214f8fc?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&q=80" alt="Keripik Pedas">
+                </div>
+                <div class="p-info">
+                    <span class="p-name">Keripik Singkong</span>
+                    <span class="p-flavor">Varian: Pedas Daun Jeruk</span>
+                    <span class="p-price">Rp 15.000</span>
+                </div>
+            </div>
+
+            <div class="product-card">
+                <div class="img-box">
+                    <img src="https://images.unsplash.com/photo-1604543788176-193496a79d03?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&q=80" alt="Keripik Asin">
+                </div>
+                <div class="p-info">
+                    <span class="p-name">Keripik Pisang</span>
+                    <span class="p-flavor">Varian: Coklat Lumer</span>
+                    <span class="p-price">Rp 18.000</span>
+                </div>
+            </div>
+
+            <div class="product-card">
+                <div class="img-box">
+                    <img src="https://images.unsplash.com/photo-1599487488170-d11ec9c172f0?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&q=80" alt="Basreng">
+                </div>
+                <div class="p-info">
+                    <span class="p-name">Basreng Stik</span>
+                    <span class="p-flavor">Varian: Original Bawang</span>
+                    <span class="p-price">Rp 20.000</span>
+                </div>
+            </div>
+
+            <div class="product-card">
+                <div class="img-box">
+                    <img src="https://images.unsplash.com/photo-1527661591475-527312dd65f5?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&q=80" alt="Tempe Sagu">
+                </div>
+                <div class="p-info">
+                    <span class="p-name">Keripik Tempe</span>
+                    <span class="p-flavor">Varian: Gurih Ketumbar</span>
+                    <span class="p-price">Rp 16.000</span>
+                </div>
+            </div>
+
+            <div class="product-card">
+                <div class="img-box">
+                    <img src="https://images.unsplash.com/photo-1621510456681-2330135e5871?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&q=80" alt="Makaroni">
+                </div>
+                <div class="p-info">
+                    <span class="p-name">Makaroni Bantet</span>
+                    <span class="p-flavor">Varian: Super Pedas</span>
+                    <span class="p-price">Rp 12.000</span>
+                </div>
+            </div>
+
+            <div class="product-card">
+                <div class="img-box">
+                    <img src="https://images.unsplash.com/photo-1540329068067-17eb910a3003?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&q=80" alt="Paket Bundling">
+                </div>
+                <div class="p-info">
+                    <span class="p-name">Paket Numpuk</span>
+                    <span class="p-flavor">3 Pcs (Mix Varian)</span>
+                    <span class="p-price">Rp 45.000</span>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <footer>
+        <div class="container">
+            <h3 class="footer-logo">KRIPIKU.</h3>
+            <p style="color: var(--text-sec); font-size: 0.9rem; margin: 15px 0;">
+                Oleh-oleh Khas Bandung.<br>
+                Jalan Mawar No. 12, Bandung, Jawa Barat.
+            </p>
+            <div style="margin-bottom: 20px;">
+                <a href="#" style="margin: 0 10px; font-weight: 700;">Instagram</a>
+                <a href="#" style="margin: 0 10px; font-weight: 700;">WhatsApp</a>
+                <a href="#" style="margin: 0 10px; font-weight: 700;">Shopee</a>
+            </div>
+            <p style="font-size: 0.8rem; color: #aaa;">&copy; 2024 Kripiku UMKM.</p>
+        </div>
+    </footer>
+
+</body>
+</html>

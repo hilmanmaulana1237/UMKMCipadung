@@ -154,11 +154,11 @@ class LandingPageController extends Controller
         ];
         
         $templateFile = $templateMap[$landingPage->template] ?? 'dynamic-tema1-luxury-dark.html';
-        $templatePath = storage_path('app/public/tema-landingpage/' . $templateFile);
+        $templatePath = resource_path('views/landing-page-templates/' . $templateFile);
         
         if (!file_exists($templatePath)) {
             // Fallback to tema1 if specific template not found
-            $templatePath = storage_path('app/public/tema-landingpage/dynamic-tema1-luxury-dark.html');
+            $templatePath = resource_path('views/landing-page-templates/dynamic-tema1-luxury-dark.html');
             if (!file_exists($templatePath)) {
                 abort(404, 'Template tidak ditemukan.');
             }
@@ -224,7 +224,7 @@ class LandingPageController extends Controller
             ->select('id', 'name', 'price', 'image_path', 'description')
             ->get();
 
-        $templatePath = storage_path('app/public/tema-landingpage/' . $landingPage->template . '.html');
+        $templatePath = resource_path('views/landing-page-templates/' . $landingPage->template . '.html');
         
         if (!file_exists($templatePath)) {
             abort(404, 'Template tidak ditemukan.');

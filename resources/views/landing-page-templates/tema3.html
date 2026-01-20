@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Brand Catalog | Timeless Collection</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&family=Tenor+Sans&display=swap" rel="stylesheet">
+
+    <style>
+        /* --- 1. RESET & VARIABLES --- */
+        :root {
+            --bg: #ffffff;
+            --text-main: #111111;
+            --text-sec: #666666;
+            --line: #f0f0f0;
+            --btn-bg: #111111;
+            --btn-text: #ffffff;
+            
+            --font-head: 'Tenor Sans', sans-serif; /* Font Judul Elegan */
+            --font-body: 'Inter', sans-serif;      /* Font Isi Bersih */
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text-main);
+            font-family: var(--font-body);
+            font-weight: 300;
+            line-height: 1.6;
+            overflow-x: hidden; /* Mencegah scroll samping */
+        }
+
+        a { text-decoration: none; color: inherit; transition: opacity 0.3s; }
+        a:hover { opacity: 0.6; }
+        img { display: block; width: 100%; height: 100%; object-fit: cover; }
+
+        /* --- 2. UTILITY & LAYOUT --- */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        .text-center { text-align: center; }
+        .uppercase { text-transform: uppercase; letter-spacing: 2px; font-size: 0.75rem; }
+        
+        /* Tombol yang Rapih & Minimalis */
+        .btn {
+            display: inline-block;
+            background: var(--btn-bg);
+            color: var(--btn-text);
+            padding: 14px 32px;
+            font-size: 0.85rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            border: 1px solid var(--btn-bg);
+            transition: all 0.3s ease;
+        }
+        .btn:hover {
+            background: transparent;
+            color: var(--btn-bg);
+        }
+
+        /* --- 3. NAVBAR (Simpel & Bersih) --- */
+        nav {
+            padding: 24px 0;
+            border-bottom: 1px solid var(--line);
+        }
+
+        .nav-inner {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-family: var(--font-head);
+            font-size: 1.5rem;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+        }
+
+        .nav-links { display: flex; gap: 32px; }
+        .nav-links a { font-size: 0.85rem; color: var(--text-sec); letter-spacing: 0.5px; }
+        .nav-links a.active { color: var(--text-main); font-weight: 500; }
+
+        /* --- 4. HERO SECTION (1 Foto Utama) --- */
+        .hero {
+            display: grid;
+            grid-template-columns: 1fr 1fr; /* Kiri Teks, Kanan Gambar */
+            min-height: 85vh; /* Tinggi hampir layar penuh */
+            align-items: center;
+        }
+
+        .hero-text {
+            padding: 40px 60px 40px 0; /* Memberi ruang di kanan teks */
+        }
+
+        .hero h1 {
+            font-family: var(--font-head);
+            font-size: 3.5rem;
+            line-height: 1.2;
+            margin-bottom: 24px;
+        }
+
+        .hero p {
+            color: var(--text-sec);
+            margin-bottom: 32px;
+            max-width: 400px;
+        }
+
+        .hero-image-container {
+            height: 100%;
+            width: 100%;
+            overflow: hidden;
+            /* Placeholder background abu-abu agar tetap rapi sebelum gambar loading */
+            background-color: #f4f4f4; 
+        }
+
+        .hero-image-container img {
+            transition: transform 1.5s cubic-bezier(0.2, 1, 0.3, 1);
+        }
+        /* Efek Zoom halus saat hover area hero */
+        .hero:hover .hero-image-container img { transform: scale(1.03); }
+
+        /* --- 5. TEXT SECTION (Philosophy) --- */
+        .philosophy {
+            padding: 100px 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .philosophy h2 {
+            font-family: var(--font-head);
+            font-size: 2rem;
+            margin-bottom: 24px;
+            line-height: 1.4;
+        }
+
+        .separator {
+            width: 60px;
+            height: 1px;
+            background: var(--text-main);
+            margin: 0 auto 24px auto;
+        }
+
+        /* --- 6. CATALOG GRID (UX Rapi untuk Semua Foto) --- */
+        .catalog { padding-bottom: 120px; }
+
+        .catalog-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin-bottom: 40px;
+        }
+
+        .catalog-header h3 { font-family: var(--font-head); font-size: 1.5rem; }
+
+        /* GRID SYSTEM */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr); /* 3 Kolom */
+            gap: 40px 24px; /* Jarak atas-bawah 40px, kiri-kanan 24px */
+        }
+
+        .product-item {
+            group: cursor; /* Untuk hover state */
+            cursor: pointer;
+        }
+
+        /* WRAPPER GAMBAR - KUNCI AGAR RAPI */
+        .img-wrap {
+            width: 100%;
+            /* Aspect Ratio 4:5 (Standard Fashion/Portrait).
+               Ini memaksa SEMUA foto jadi seragam ukurannya 
+               meskipun user upload foto landscape/kotak. */
+            aspect-ratio: 4/5; 
+            background: #f9f9f9;
+            overflow: hidden;
+            margin-bottom: 16px;
+            position: relative;
+        }
+
+        .img-wrap img {
+            transition: transform 0.6s ease;
+        }
+
+        .product-item:hover .img-wrap img {
+            transform: scale(1.05); /* Zoom in dikit biar interaktif */
+        }
+
+        /* Detail Produk */
+        .p-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .p-title {
+            font-size: 0.95rem;
+            font-weight: 500;
+            color: var(--text-main);
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .p-cat {
+            font-size: 0.75rem;
+            color: var(--text-sec);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .p-price {
+            font-size: 0.9rem;
+            color: var(--text-main);
+        }
+
+        /* --- 7. FOOTER --- */
+        footer {
+            border-top: 1px solid var(--line);
+            padding: 60px 0;
+            text-align: center;
+        }
+        
+        .footer-socials { margin-bottom: 24px; }
+        .footer-socials a { margin: 0 12px; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px;}
+        .copyright { font-size: 0.75rem; color: #999; }
+
+        /* --- RESPONSIVE MOBILE --- */
+        @media (max-width: 768px) {
+            .nav-links { display: none; } /* Hide menu on mobile for simplicity */
+            
+            .hero {
+                grid-template-columns: 1fr; /* Stack ke bawah */
+                min-height: auto;
+            }
+            .hero-image-container {
+                order: -1; /* Gambar di atas */
+                height: 400px; /* Tinggi fix di HP */
+            }
+            .hero-text { padding: 40px 0; text-align: center; }
+            .hero h1 { font-size: 2.5rem; }
+            .hero p { margin: 0 auto 32px; }
+
+            .grid {
+                grid-template-columns: repeat(2, 1fr); /* 2 Kolom di HP */
+                gap: 24px 16px;
+            }
+
+            .catalog-header { flex-direction: column; align-items: flex-start; gap: 10px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        
+        <nav>
+            <div class="nav-inner">
+                <a href="#" class="logo">MONOGRAM.</a>
+                
+                <div class="nav-links">
+                    <a href="#" class="active">Koleksi</a>
+                    <a href="#">Tentang</a>
+                    <a href="#">Jurnal</a>
+                </div>
+
+                <a href="https://wa.me/628123456789" class="uppercase" style="font-weight: 500;">
+                    Hubungi Kami
+                </a>
+            </div>
+        </nav>
+
+        <header class="hero">
+            <div class="hero-text">
+                <span class="uppercase" style="color: var(--text-sec); display:block; margin-bottom:16px;">New Arrival 2026</span>
+                <h1>Elegance in <br>Every Stitch.</h1>
+                <p>Koleksi kurasi pakaian dan wewangian untuk gaya hidup modern yang mengutamakan kualitas daripada kuantitas.</p>
+                <a href="#katalog" class="btn">Lihat Katalog</a>
+            </div>
+            <div class="hero-image-container">
+                <img src="https://images.unsplash.com/photo-1490481651871-ab68de25d43d?ixlib=rb-1.2.1&auto=format&fit=crop&w=1000&q=80" alt="Hero Image">
+            </div>
+        </header>
+
+        <section class="philosophy">
+            <div class="separator"></div>
+            <h2 class="text-center">"Kami percaya bahwa gaya sejati tidak berteriak. Ia berbisik melalui potongan yang tepat dan aroma yang memikat."</h2>
+            <a href="#" class="uppercase" style="border-bottom: 1px solid black; padding-bottom: 4px;">Cerita Kami</a>
+        </section>
+
+        <section id="katalog" class="catalog">
+            <div class="catalog-header">
+                <h3>Latest Selection</h3>
+                <div style="font-size: 0.85rem; color: var(--text-sec);">
+                    <a href="#" style="color: var(--text-main); margin-right: 16px;">All</a>
+                    <a href="#" style="margin-right: 16px;">Apparel</a>
+                    <a href="#">Perfume</a>
+                </div>
+            </div>
+
+            <div class="grid">
+                <div class="product-item">
+                    <div class="img-wrap">
+                        <img src="https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80" alt="Produk 1">
+                    </div>
+                    <div class="p-meta">
+                        <div>
+                            <span class="p-title">Oversized Linen Shirt</span>
+                            <span class="p-cat">Apparel</span>
+                        </div>
+                        <span class="p-price">350K</span>
+                    </div>
+                </div>
+
+                <div class="product-item">
+                    <div class="img-wrap">
+                        <img src="https://images.unsplash.com/photo-1594035910387-fea477942698?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80" alt="Produk 2">
+                    </div>
+                    <div class="p-meta">
+                        <div>
+                            <span class="p-title">Midnight Bloom 50ml</span>
+                            <span class="p-cat">Fragrance</span>
+                        </div>
+                        <span class="p-price">499K</span>
+                    </div>
+                </div>
+
+                <div class="product-item">
+                    <div class="img-wrap">
+                        <img src="https://images.unsplash.com/photo-1589465885857-44edb59ef526?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80" alt="Produk 3">
+                    </div>
+                    <div class="p-meta">
+                        <div>
+                            <span class="p-title">Silk Dress Cream</span>
+                            <span class="p-cat">Apparel</span>
+                        </div>
+                        <span class="p-price">650K</span>
+                    </div>
+                </div>
+
+                <div class="product-item">
+                    <div class="img-wrap">
+                        <img src="https://images.unsplash.com/photo-1591561954557-26941169b49e?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80" alt="Produk 4">
+                    </div>
+                    <div class="p-meta">
+                        <div>
+                            <span class="p-title">Leather Pouch</span>
+                            <span class="p-cat">Accessories</span>
+                        </div>
+                        <span class="p-price">250K</span>
+                    </div>
+                </div>
+
+                <div class="product-item">
+                    <div class="img-wrap">
+                        <img src="https://images.unsplash.com/photo-1605763240004-7e93b172d754?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80" alt="Produk 5">
+                    </div>
+                    <div class="p-meta">
+                        <div>
+                            <span class="p-title">Canvas Tote</span>
+                            <span class="p-cat">Bags</span>
+                        </div>
+                        <span class="p-price">120K</span>
+                    </div>
+                </div>
+
+                <div class="product-item">
+                    <div class="img-wrap">
+                        <img src="https://images.unsplash.com/photo-1541592106381-b31e9677c0e5?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80" alt="Produk 6">
+                    </div>
+                    <div class="p-meta">
+                        <div>
+                            <span class="p-title">Basic White Tee</span>
+                            <span class="p-cat">Apparel</span>
+                        </div>
+                        <span class="p-price">150K</span>
+                    </div>
+                </div>
+
+            </div>
+            
+            <div class="text-center" style="margin-top: 60px;">
+                <a href="#" class="btn" style="padding: 12px 40px;">View All Products</a>
+            </div>
+        </section>
+
+    </div> <footer>
+        <div class="container">
+            <div class="footer-socials">
+                <a href="#">Instagram</a>
+                <a href="#">WhatsApp</a>
+                <a href="#">Email</a>
+            </div>
+            <p class="copyright">&copy; 2026 Monogram Studio. All Rights Reserved.</p>
+        </div>
+    </footer>
+
+</body>
+</html>

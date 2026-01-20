@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cimol Royale | The Taste of Luxury</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Poppins:wght@300;400;600&display=swap"
+        rel="stylesheet">
+
+    <style>
+        /* --- RESET & VARIABLES --- */
+        :root {
+            --primary-gold: #D4AF37;
+            --primary-dark: #0f0f0f;
+            --secondary-dark: #1a1a1a;
+            --text-light: #f4f4f4;
+            --text-gray: #a0a0a0;
+            --accent-red: #8B0000;
+            --glass: rgba(255, 255, 255, 0.05);
+            --border-glass: rgba(255, 255, 255, 0.1);
+            --shadow-glow: 0 0 20px rgba(212, 175, 55, 0.2);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            scroll-behavior: smooth;
+        }
+
+        body {
+            background-color: var(--primary-dark);
+            color: var(--text-light);
+            font-family: 'Poppins', sans-serif;
+            overflow-x: hidden;
+            line-height: 1.6;
+        }
+
+        h1,
+        h2,
+        h3,
+        h4 {
+            font-family: 'Playfair Display', serif;
+            color: var(--primary-gold);
+        }
+
+        a {
+            text-decoration: none;
+            color: inherit;
+            transition: 0.3s;
+        }
+
+        ul {
+            list-style: none;
+        }
+
+        img {
+            max-width: 100%;
+            display: block;
+        }
+
+        /* --- UTILITIES & ANIMATIONS --- */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 12px 35px;
+            background: linear-gradient(45deg, var(--primary-gold), #F2C94C);
+            color: var(--primary-dark);
+            font-weight: 600;
+            border-radius: 50px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3);
+            position: relative;
+            overflow: hidden;
+            z-index: 1;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 0%;
+            height: 100%;
+            background: #fff;
+            opacity: 0.2;
+            transition: 0.3s ease;
+            z-index: -1;
+        }
+
+        .btn:hover::before {
+            width: 100%;
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(212, 175, 55, 0.5);
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--primary-gold);
+            color: var(--primary-gold);
+            box-shadow: none;
+        }
+
+        .btn-outline:hover {
+            background: var(--primary-gold);
+            color: var(--primary-dark);
+        }
+
+        /* Fade Up Animation Class */
+        .reveal {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.8s ease-out;
+        }
+
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* --- HEADER --- */
+        header {
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1000;
+            padding: 20px 0;
+            transition: 0.4s;
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid transparent;
+        }
+
+        header.scrolled {
+            background: rgba(15, 15, 15, 0.9);
+            padding: 15px 0;
+            border-bottom: 1px solid var(--border-glass);
+        }
+
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.8rem;
+            font-weight: 700;
+            letter-spacing: 2px;
+            color: var(--text-light);
+        }
+
+        .logo span {
+            color: var(--primary-gold);
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 40px;
+        }
+
+        .nav-links a {
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-gray);
+        }
+
+        .nav-links a:hover {
+            color: var(--primary-gold);
+        }
+
+        /* --- HERO SECTION --- */
+        .hero {
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            position: relative;
+            background: radial-gradient(circle at 70% 50%, #2a2a2a, var(--primary-dark));
+            overflow: hidden;
+        }
+
+        /* Abstract Background Elements */
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: -10%;
+            right: -10%;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(212, 175, 55, 0.1) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .hero-content {
+            flex: 1;
+            z-index: 2;
+        }
+
+        .hero h1 {
+            font-size: 5rem;
+            line-height: 1.1;
+            margin-bottom: 20px;
+            background: linear-gradient(to right, #fff, #999);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero h1 span {
+            display: block;
+            font-style: italic;
+            color: var(--primary-gold);
+            -webkit-text-fill-color: var(--primary-gold);
+        }
+
+        .hero p {
+            font-size: 1.2rem;
+            color: var(--text-gray);
+            margin-bottom: 40px;
+            max-width: 500px;
+        }
+
+        .hero-image {
+            flex: 1;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            z-index: 2;
+        }
+
+        /* CSS Only Floating "Cimol" representation using a div placeholder 
+           (In real project, replace with transparent PNG of Cimol) */
+        .food-plate {
+            width: 450px;
+            height: 450px;
+            background: url('https://images.unsplash.com/photo-1599487488170-d11ec9c172f0?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80') center/cover;
+            border-radius: 50%;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(0, 0, 0, 0.5);
+            position: relative;
+            animation: float 6s ease-in-out infinite;
+            border: 2px solid var(--border-glass);
+        }
+
+        @keyframes float {
+            0% {
+                transform: translateY(0px) rotate(0deg);
+            }
+
+            50% {
+                transform: translateY(-20px) rotate(2deg);
+            }
+
+            100% {
+                transform: translateY(0px) rotate(0deg);
+            }
+        }
+
+        /* --- FEATURES / INGREDIENTS --- */
+        .features {
+            padding: 100px 0;
+            background: var(--secondary-dark);
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 80px;
+        }
+
+        .section-header h2 {
+            font-size: 3rem;
+            margin-bottom: 10px;
+        }
+
+        .section-header p {
+            color: var(--primary-gold);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-size: 0.9rem;
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 40px;
+        }
+
+        .card {
+            background: var(--glass);
+            padding: 40px;
+            border: 1px solid var(--border-glass);
+            border-radius: 20px;
+            text-align: center;
+            transition: 0.4s;
+        }
+
+        .card:hover {
+            transform: translateY(-10px);
+            border-color: var(--primary-gold);
+            box-shadow: var(--shadow-glow);
+        }
+
+        .card-icon {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            color: var(--primary-gold);
+        }
+
+        .card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+            color: #fff;
+        }
+
+        .card p {
+            color: var(--text-gray);
+            font-size: 0.95rem;
+        }
+
+        /* --- PRODUCT SHOWCASE --- */
+        .products {
+            padding: 100px 0;
+        }
+
+        .product-card {
+            display: flex;
+            align-items: center;
+            background: linear-gradient(145deg, #1e1e1e, #141414);
+            border-radius: 30px;
+            overflow: hidden;
+            margin-bottom: 60px;
+            border: 1px solid var(--border-glass);
+        }
+
+        .product-card:nth-child(even) {
+            flex-direction: row-reverse;
+        }
+
+        .p-img {
+            flex: 1;
+            height: 400px;
+            overflow: hidden;
+        }
+
+        .p-img img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: 0.5s;
+        }
+
+        .product-card:hover .p-img img {
+            transform: scale(1.1);
+        }
+
+        .p-info {
+            flex: 1;
+            padding: 60px;
+        }
+
+        .p-info h3 {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+        }
+
+        .p-price {
+            font-size: 2rem;
+            color: var(--primary-gold);
+            font-weight: 300;
+            margin-bottom: 20px;
+            display: block;
+        }
+
+        .p-desc {
+            color: var(--text-gray);
+            margin-bottom: 30px;
+        }
+
+        /* --- TESTIMONIALS --- */
+        .testimonials {
+            padding: 100px 0;
+            background: var(--secondary-dark);
+            text-align: center;
+        }
+
+        .testi-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 30px;
+            margin-top: 50px;
+        }
+
+        .testi-card {
+            background: var(--primary-dark);
+            padding: 40px;
+            border-left: 3px solid var(--primary-gold);
+            text-align: left;
+        }
+
+        .testi-text {
+            font-style: italic;
+            font-size: 1.1rem;
+            margin-bottom: 20px;
+            color: #ddd;
+        }
+
+        .testi-author {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .avatar {
+            width: 50px;
+            height: 50px;
+            background: #333;
+            border-radius: 50%;
+        }
+
+        /* --- CTA --- */
+        .cta-section {
+            padding: 120px 0;
+            text-align: center;
+            background: linear-gradient(rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.8)), url('https://images.unsplash.com/photo-1555939594-58d7cb561ad1?ixlib=rb-1.2.1&auto=format&fit=crop&w=1500&q=80') center/cover;
+            background-attachment: fixed;
+        }
+
+        .cta-section h2 {
+            font-size: 4rem;
+            color: #fff;
+            margin-bottom: 30px;
+        }
+
+        /* --- FOOTER --- */
+        footer {
+            padding: 50px 0;
+            border-top: 1px solid var(--border-glass);
+            text-align: center;
+            color: var(--text-gray);
+            font-size: 0.9rem;
+        }
+
+        /* --- MOBILE RESPONSIVE --- */
+        @media (max-width: 768px) {
+            .hero {
+                flex-direction: column;
+                text-align: center;
+                padding-top: 100px;
+                height: auto;
+                padding-bottom: 50px;
+            }
+
+            .hero h1 {
+                font-size: 3rem;
+            }
+
+            .hero-image {
+                margin-top: 50px;
+            }
+
+            .food-plate {
+                width: 300px;
+                height: 300px;
+            }
+
+            .nav-links {
+                display: none;
+            }
+
+            /* Simplified for demo */
+            .product-card,
+            .product-card:nth-child(even) {
+                flex-direction: column;
+            }
+
+            .p-img {
+                height: 250px;
+            }
+
+            .p-info {
+                padding: 30px;
+            }
+
+            .testi-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <header id="navbar">
+        <div class="container">
+            <nav>
+                <div class="logo">CIMOL<span>ROYALE</span>.</div>
+                <ul class="nav-links">
+                    <li><a href="#home">Home</a></li>
+                    <li><a href="#features">The Craft</a></li>
+                    <li><a href="#menu">Collection</a></li>
+                    <li><a href="#reviews">Reviews</a></li>
+                </ul>
+                <a href="#order" class="btn">Pesan Sekarang</a>
+            </nav>
+        </div>
+    </header>
+
+    <section id="home" class="hero">
+        <div class="container">
+            <div style="display: flex; flex-wrap: wrap; align-items: center;">
+                <div class="hero-content reveal">
+                    <h1>Taste the <br><span>Golden Crunch</span></h1>
+                    <p>Bukan sekadar aci digoreng. Ini adalah perpaduan tepung tapioka premium pilihan, rempah rahasia
+                        nusantara, dan sentuhan artisanal.</p>
+                    <div class="cta-group">
+                        <a href="#menu" class="btn">Explore Menu</a>
+                        <a href="#about" class="btn btn-outline" style="margin-left: 15px;">Our Story</a>
+                    </div>
+                </div>
+                <div class="hero-image reveal">
+                    <div class="food-plate"></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="features" class="features">
+        <div class="container">
+            <div class="section-header reveal">
+                <p>Why We Are Different</p>
+                <h2>Exquisite Quality</h2>
+            </div>
+            <div class="grid-3">
+                <div class="card reveal">
+                    <div class="card-icon">💎</div>
+                    <h3>Premium Ingredients</h3>
+                    <p>Menggunakan tepung tapioka organik Grade-A dan minyak kelapa murni untuk tekstur yang sempurna.
+                    </p>
+                </div>
+                <div class="card reveal">
+                    <div class="card-icon">🔥</div>
+                    <h3>Perfect Heat</h3>
+                    <p>Digoreng dengan teknik 'Slow Fry' pada suhu presisi 160°C untuk memastikan tidak meledak dan
+                        matang merata.</p>
+                </div>
+                <div class="card reveal">
+                    <div class="card-icon">🌿</div>
+                    <h3>Secret Spices</h3>
+                    <p>Racikan bumbu truffle dan himalayan salt, bukan sekadar micin biasa. Rasa yang 'elegan'.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="menu" class="products">
+        <div class="container">
+            <div class="section-header reveal">
+                <p>The Collection</p>
+                <h2>Signature Flavors</h2>
+            </div>
+
+            <div class="product-card reveal">
+                <div class="p-img">
+                    <img src="https://images.unsplash.com/photo-1585238342024-78d387f4a707?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80"
+                        alt="Cimol Truffle">
+                </div>
+                <div class="p-info">
+                    <h3>Black Truffle Cheese</h3>
+                    <span class="p-price">IDR 35.000</span>
+                    <p class="p-desc">Varian Signature kami. Isian keju mozzarella mulur dibalut adonan charcoal,
+                        ditaburi bubuk Black Truffle asli Italia.</p>
+                    <a href="#" class="btn btn-outline">Order This</a>
+                </div>
+            </div>
+
+            <div class="product-card reveal">
+                <div class="p-img">
+                    <img src="https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80"
+                        alt="Cimol Spicy">
+                </div>
+                <div class="p-info">
+                    <h3>Spicy Mala Dragon</h3>
+                    <span class="p-price">IDR 30.000</span>
+                    <p class="p-desc">Untuk pecinta pedas berkelas. Bumbu Mala Sichuan yang memberikan sensasi pedas
+                        kebas, dipadukan dengan daun jeruk aromatik.</p>
+                    <a href="#" class="btn btn-outline">Order This</a>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <section id="reviews" class="testimonials">
+        <div class="container">
+            <div class="section-header reveal">
+                <p>What They Say</p>
+                <h2>Client Testimonials</h2>
+            </div>
+            <div class="testi-grid">
+                <div class="testi-card reveal">
+                    <p class="testi-text">"Saya tidak pernah berpikir Cimol bisa rasanya semewah ini. Packagingnya
+                        eksklusif, rasanya balance, tidak berminyak. Worth every penny!"</p>
+                    <div class="testi-author">
+                        <div class="avatar" style="background: #555;"></div>
+                        <div>
+                            <h4>Andi Wijaya</h4>
+                            <small>Food Blogger</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="testi-card reveal">
+                    <p class="testi-text">"Tekstur kenyalnya pas, luarnya crispy banget. Rasa Truffle-nya beneran
+                        terasa, bukan cuma essence. Pasti repeat order."</p>
+                    <div class="testi-author">
+                        <div class="avatar" style="background: #777;"></div>
+                        <div>
+                            <h4>Siska Kohl</h4>
+                            <small>Content Creator</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="cta-section">
+        <div class="container reveal">
+            <h2>Ready to Elevate Your Snack Time?</h2>
+            <p style="color: #ddd; margin-bottom: 30px;">Limited daily batches. Secure yours now.</p>
+            <a href="#" class="btn">Order via WhatsApp</a>
+        </div>
+    </section>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2024 Cimol Royale. Crafted for Perfection.</p>
+        </div>
+    </footer>
+
+    <script>
+        // 1. Sticky Navbar Effect
+        window.addEventListener('scroll', function () {
+            const header = document.querySelector('header');
+            header.classList.toggle('scrolled', window.scrollY > 50);
+        });
+
+        // 2. Scroll Reveal Animation using Intersection Observer
+        // This is a performant way to animate on scroll
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('active');
+                }
+            });
+        }, {
+            threshold: 0.1 // Trigger when 10% of element is visible
+        });
+
+        const revealElements = document.querySelectorAll('.reveal');
+        revealElements.forEach(el => observer.observe(el));
+
+        // 3. Smooth Scroll for Anchor Links (Optional if css scroll-behavior not supported)
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                document.querySelector(this.getAttribute('href')).scrollIntoView({
+                    behavior: 'smooth'
+                });
+            });
+        });
+    </script>
+</body>
+
+</html>
