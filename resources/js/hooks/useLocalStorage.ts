@@ -98,7 +98,13 @@ export function useCart() {
         try {
             const stored = localStorage.getItem(CART_KEY);
             if (stored) {
-                setCart(JSON.parse(stored));
+                const parsed = JSON.parse(stored);
+                if (Array.isArray(parsed)) {
+                    setCart(parsed);
+                } else {
+                    console.warn('Corrupted cart data found, resetting.');
+                    setCart([]);
+                }
             }
         } catch (e) {
             console.error('Error loading cart:', e);
@@ -161,12 +167,14 @@ export function useCart() {
     // Get cart items grouped by store
     const getByStore = () => {
         const grouped: Record<number, { storeName: string; items: CartItem[] }> = {};
-        cart.forEach((item) => {
-            if (!grouped[item.storeId]) {
-                grouped[item.storeId] = { storeName: item.storeName, items: [] };
-            }
-            grouped[item.storeId].items.push(item);
-        });
+        if (Array.isArray(cart)) {
+            cart.forEach((item) => {
+                if (!grouped[item.storeId]) {
+                    grouped[item.storeId] = { storeName: item.storeName, items: [] };
+                }
+                grouped[item.storeId].items.push(item);
+            });
+        }
         return grouped;
     };
 
