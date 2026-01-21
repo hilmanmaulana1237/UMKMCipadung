@@ -90,9 +90,9 @@ class CheckoutController extends Controller
         $store = UmkmStore::findOrFail($validated['store_id']);
 
         // Check if store is open (Time Aware)
+        // SIMPLIFIED DEBUGGING: Use static message to rule out Carbon crash
         if (!$store->is_open) {
-            $openTime = rescue(fn() => $store->open_time ? \Carbon\Carbon::parse($store->open_time)->format('H:i') : '08:00', '08:00', false);
-            return back()->withErrors(['store' => "Maaf, toko sedang tutup. Silakan checkout kembali besok jam $openTime."]); 
+            return back()->withErrors(['store' => "Maaf, toko sedang tutup."]); 
         }
 
 
