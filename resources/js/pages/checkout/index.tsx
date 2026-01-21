@@ -51,8 +51,6 @@ export default function CheckoutIndex() {
     useEffect(() => {
         if (serverStore && !selectedStoreId) {
             setSelectedStoreId(serverStore.id);
-        } else if (!selectedStoreId && storeIds.length > 0) {
-            setSelectedStoreId(Number(storeIds[0]));
         }
     }, [serverStore, storeIds, selectedStoreId]);
 
