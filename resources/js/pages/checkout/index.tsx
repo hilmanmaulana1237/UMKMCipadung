@@ -47,6 +47,15 @@ export default function CheckoutIndex() {
     const [pendingRemoveItem, setPendingRemoveItem] = useState<{ productId: number; name: string } | null>(null);
     const [errorModal, setErrorModal] = useState<{ show: boolean; title: string; message: string }>({ show: false, title: '', message: '' });
 
+    // Auto-select store if serverStore provided or fallback to first available
+    useEffect(() => {
+        if (serverStore && !selectedStoreId) {
+            setSelectedStoreId(serverStore.id);
+        } else if (!selectedStoreId && storeIds.length > 0) {
+            setSelectedStoreId(Number(storeIds[0]));
+        }
+    }, [serverStore, storeIds, selectedStoreId]);
+
     // --- RESTORED LOGIC ---
     const checkStoreStatus = () => {
         if (storeIds.length === 0) return;

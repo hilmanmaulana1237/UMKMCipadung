@@ -15,7 +15,11 @@ interface Props {
 export default function ProductDetail({ product, relatedProducts }: Props) {
     const [quantity, setQuantity] = useState(1);
     const [added, setAdded] = useState(false);
-    const { addToCart, getItemCount } = useCart();
+    const { addToCart, getItemCount, cart } = useCart();
+
+    // Derived store ID for robust checkout link
+    const storeId = cart.length > 0 ? cart[0].storeId : null;
+    const checkoutUrl = storeId ? `/checkout?store_id=${storeId}` : '/checkout';
 
     const { auth } = usePage<any>().props;
     const isBuyer = auth.user.role === 'buyer';
@@ -86,7 +90,7 @@ export default function ProductDetail({ product, relatedProducts }: Props) {
                 </div>
 
                 {isBuyer && (
-                    <Link href="/checkout" className="relative p-2 hover:bg-muted rounded-full">
+                    <Link href={checkoutUrl} className="relative p-2 hover:bg-muted rounded-full">
                         <ShoppingCart className="w-5 h-5" />
                         {getItemCount() > 0 && (
                             <span className="absolute -top-1 -right-1 w-5 h-5 bg-primary text-white text-xs rounded-full flex items-center justify-center">
