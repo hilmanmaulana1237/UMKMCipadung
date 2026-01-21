@@ -47,6 +47,13 @@ export default function CheckoutIndex() {
     const [pendingRemoveItem, setPendingRemoveItem] = useState<{ productId: number; name: string } | null>(null);
     const [errorModal, setErrorModal] = useState<{ show: boolean; title: string; message: string }>({ show: false, title: '', message: '' });
 
+    // Helper to check store status (Robust: Checks Fetch first, then Prop)
+    const isStoreOpen = (id: number) => {
+        if (storeStatuses[id]) return storeStatuses[id].is_open;
+        if (serverStore && serverStore.id === id) return (serverStore as any).is_open;
+        return true; // Default to open if unknown to avoid blocking (Backend will validate)
+    };
+
     // Auto-select store if serverStore provided or fallback to first available
     useEffect(() => {
         if (serverStore && !selectedStoreId) {
@@ -538,7 +545,7 @@ export default function CheckoutIndex() {
                                                 setSelectedStoreId(Number(id));
                                             }}
                                             className="px-6 py-2.5 bg-primary text-white rounded-xl font-medium shadow-lg shadow-primary/20 hover:scale-105 transition-all text-sm disabled:opacity-50 disabled:grayscale disabled:hover:scale-100"
-                                            disabled={(storeStatuses[Number(id)] && !storeStatuses[Number(id)].is_open) || group.items.some(item => item.stock !== undefined && item.quantity > item.stock)}
+                                            disabled={!isStoreOpen(Number(id)) || group.items.some(item => item.stock !== undefined && item.quantity > item.stock)}
                                         >
                                             Checkout Toko Ini
                                         </button>
@@ -672,7 +679,7 @@ export default function CheckoutIndex() {
                         </div>
                     )}
                     {/* Store Closed Warning */}
-                    {activeShopId && storeStatuses[activeShopId] && !storeStatuses[activeShopId].is_open && (
+                    {activeShopId && !isStoreOpen(activeShopId) && (
                         <div className="bg-destructive/10 border border-destructive/20 rounded-2xl p-4 flex items-start gap-3">
                             <AlertTriangle className="w-6 h-6 text-destructive shrink-0" />
                             <div>

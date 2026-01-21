@@ -45,6 +45,16 @@ class UmkmStore extends Model
         'admin_fee' => 'decimal:2',
     ];
 
+    protected $appends = ['is_open'];
+
+    /**
+     * Get dynamic is_open status (time-aware).
+     */
+    public function getIsOpenAttribute(): bool
+    {
+        return $this->isOpen();
+    }
+
     /**
      * Check if store is currently open.
      */
