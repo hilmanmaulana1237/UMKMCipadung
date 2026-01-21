@@ -708,7 +708,7 @@ export default function CheckoutIndex() {
                                     <div className="flex-1 min-w-0">
                                         <p className="font-medium text-foreground line-clamp-1">{item.name}</p>
                                         <p className="text-sm text-primary font-bold">
-                                            Rp {item.price.toLocaleString('id-ID')}
+                                            Rp {Number(item.price).toLocaleString('id-ID')}
                                         </p>
                                     </div>
                                     <div className="flex flex-col items-end gap-1">
