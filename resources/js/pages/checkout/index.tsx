@@ -692,7 +692,7 @@ export default function CheckoutIndex() {
                             <div>
                                 <h3 className="font-bold text-destructive">Toko Sedang Tutup 🛑</h3>
                                 <p className="text-sm text-foreground mt-1">
-                                    Maaf, toko ini sedang tidak beroperasional. Silakan kembali lagi besok pukul <span className="font-bold">{storeStatuses[activeShopId].open_time?.substring(0, 5)}</span> untuk melakukan checkout.
+                                    Maaf, toko ini sedang tidak beroperasional. Silakan kembali lagi besok pukul <span className="font-bold">{storeStatuses[activeShopId]?.open_time?.substring(0, 5) || '08:00'}</span> untuk melakukan checkout.
                                 </p>
                             </div>
                         </div>
