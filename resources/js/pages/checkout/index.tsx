@@ -49,9 +49,16 @@ export default function CheckoutIndex() {
 
     // Helper to check store status (Robust: Checks Fetch first, then Prop)
     const isStoreOpen = (id: number) => {
-        if (storeStatuses[id]) return storeStatuses[id].is_open;
-        if (serverStore && serverStore.id === id) return (serverStore as any).is_open;
-        return true; // Default to open if unknown to avoid blocking (Backend will validate)
+        try {
+            if (storeStatuses && storeStatuses[id]) return storeStatuses[id].is_open;
+            // Safe check for serverStore
+            if (serverStore && typeof serverStore === 'object' && (serverStore as any).id === id) {
+                return (serverStore as any).is_open;
+            }
+        } catch (e) {
+            console.error("isStoreOpen Error:", e);
+        }
+        return true; // Default to open if unknown/error
     };
 
     // Auto-select store if serverStore provided or fallback to first available
