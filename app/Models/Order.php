@@ -27,6 +27,7 @@ class Order extends Model
         'courier_status',
         'total_amount',
         'courier_fee',
+        'shipping_discount',
         'payment_proof_path',
         'shipping_address',
         'shipping_lat',

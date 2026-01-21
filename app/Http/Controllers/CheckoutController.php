@@ -229,8 +229,12 @@ class CheckoutController extends Controller
 
             // Handle Promo Code (already validated before transaction)
             $discountAmount = 0;
-            $courierFee = $baseCourierFee; // Use DB setting, not hardcoded constant
+            $shippingDiscount = 0;
             $promoId = null;
+            $finalTotal = $finalTransferAmount; // Start with ALL fees included
+            
+            // Re-fetch base courier fee just in case, though locally available
+            $currentCourierFee = $baseCourierFee; 
 
             if (!empty($validated['promo_code'])) {
                 // Use pre-validated $affiliator from outer scope
@@ -242,15 +246,20 @@ class CheckoutController extends Controller
                         'status' => 'potential',
                     ]);
                 } elseif ($promo) {
-                    // Use pre-validated $promo from outer scope
                     $promoId = $promo->id;
                     
                     if ($promo->type === 'free_shipping') {
-                        $discount = min($courierFee, $promo->value);
-                        $discountAmount = $discount; 
+                        // For free shipping, we discount the COURIER FEE (Cash), not the TRANSFER AMOUNT.
+                        // So $finalTotal (Transfer) remains same.
+                        // We just record the discount.
+                        $discount = min($currentCourierFee, $promo->value);
+                        $shippingDiscount = $discount;
+                        $discountAmount = $discount; // For stats
                     } elseif ($promo->type === 'discount') {
-                        $discountAmount = min($totalAmount, $promo->value);
-                        $totalAmount -= $discountAmount;
+                        // For product discount, we reduce the TRANSFER AMOUNT.
+                        $discount = min($finalTotal, $promo->value);
+                        $finalTotal -= $discount;
+                        $discountAmount = $discount;
                     }
 
                     // Increment used count
@@ -261,8 +270,9 @@ class CheckoutController extends Controller
             // Update order with final amounts if changed by promo
             if ($promoId) {
                 $order->update([
-                    'courier_fee' => $allDigital ? 0 : $courierFee,
-                    'total_amount' => $totalAmount,
+                    'courier_fee' => $allDigital ? 0 : $currentCourierFee,
+                    'total_amount' => $finalTotal,
+                    'shipping_discount' => $shippingDiscount,
                     'promo_code_used' => $validated['promo_code'],
                 ]);
             }
