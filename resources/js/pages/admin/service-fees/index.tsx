@@ -6,7 +6,7 @@ interface FeeData {
     umkm_store_id: number;
     total_unbilled: string; // Decimal comes as string
     order_count: number;
-    umkm_store: {
+    store: {
         id: number;
         name: string;
         bank_name: string;
@@ -76,9 +76,9 @@ export default function ServiceFeesIndex({ fees }: Props) {
                                                         <Store className="w-4 h-4 text-blue-600" />
                                                     </div>
                                                     <div>
-                                                        <p className="font-medium text-foreground">{item.umkm_store.name}</p>
+                                                        <p className="font-medium text-foreground">{item.store.name}</p>
                                                         <p className="text-xs text-muted-foreground">
-                                                            {item.umkm_store.bank_name} - {item.umkm_store.bank_account}
+                                                            {item.store.bank_name} - {item.store.bank_account}
                                                         </p>
                                                     </div>
                                                 </div>
@@ -93,7 +93,7 @@ export default function ServiceFeesIndex({ fees }: Props) {
                                             </td>
                                             <td className="px-6 py-4 text-right">
                                                 <button
-                                                    onClick={() => handleBill(item.umkm_store_id, item.umkm_store.name)}
+                                                    onClick={() => handleBill(item.umkm_store_id, item.store.name)}
                                                     className="inline-flex items-center gap-2 px-3 py-1.5 bg-primary text-white text-xs font-medium rounded-lg hover:bg-primary/90 transition-colors"
                                                 >
                                                     <CheckCircle2 className="w-3.5 h-3.5" />

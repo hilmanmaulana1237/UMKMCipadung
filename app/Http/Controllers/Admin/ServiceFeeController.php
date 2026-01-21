@@ -27,7 +27,7 @@ class ServiceFeeController extends Controller
             ->where('admin_fee_status', 'pending')
             ->where('admin_fee', '>', 0)
             ->groupBy('umkm_store_id')
-            ->with('umkmStore:id,name,bank_name,bank_account,bank_holder')
+            ->with('store:id,name,bank_name,bank_account,bank_holder')
             ->get();
 
         return Inertia::render('admin/service-fees/index', [
