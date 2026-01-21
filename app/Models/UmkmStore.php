@@ -68,12 +68,16 @@ class UmkmStore extends Model
         
         // If open/close times are set, check if current time is within range
         if ($this->open_time && $this->close_time) {
-            $openStr = is_string($this->open_time) ? $this->open_time : $this->open_time->format('H:i');
-            $closeStr = is_string($this->close_time) ? $this->close_time : $this->close_time->format('H:i');
+            try {
+                $openStr = is_string($this->open_time) ? $this->open_time : $this->open_time->format('H:i');
+                $closeStr = is_string($this->close_time) ? $this->close_time : $this->close_time->format('H:i');
 
-            $openTime = $now->copy()->setTimeFromTimeString($openStr);
-            $closeTime = $now->copy()->setTimeFromTimeString($closeStr);
-            return $now->between($openTime, $closeTime);
+                $openTime = $now->copy()->setTimeFromTimeString($openStr);
+                $closeTime = $now->copy()->setTimeFromTimeString($closeStr);
+                return $now->between($openTime, $closeTime);
+            } catch (\Throwable $e) {
+                return false; // Safely return closed if data invalid
+            }
         }
 
         return true; // If no time set, just check is_open_today
