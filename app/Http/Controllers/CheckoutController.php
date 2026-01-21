@@ -32,8 +32,8 @@ class CheckoutController extends Controller
         foreach ($stores as $store) {
             $statuses[$store->id] = [
                 'is_open' => $store->is_open, // Use Accessor (Time Aware)
-                'open_time' => $store->open_time ? $store->open_time->format('H:i') : null,
-                'close_time' => $store->close_time ? $store->close_time->format('H:i') : '21:00',
+                'open_time' => $store->open_time ? \Carbon\Carbon::parse($store->open_time)->format('H:i') : null,
+                'close_time' => $store->close_time ? \Carbon\Carbon::parse($store->close_time)->format('H:i') : '21:00',
                 'admin_fee' => (int)$store->admin_fee,
             ];
         }
@@ -91,7 +91,7 @@ class CheckoutController extends Controller
 
         // Check if store is open (Time Aware)
         if (!$store->is_open) {
-            $openTime = $store->open_time ? $store->open_time->format('H:i') : '08:00';
+            $openTime = $store->open_time ? \Carbon\Carbon::parse($store->open_time)->format('H:i') : '08:00';
             return back()->withErrors(['store' => "Maaf, toko sedang tutup. Silakan checkout kembali besok jam $openTime."]); 
         }
 
