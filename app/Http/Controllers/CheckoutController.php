@@ -189,28 +189,28 @@ class CheckoutController extends Controller
             // - Courier Fee is PAID CASH to courier, unless Free Shipping promo is used.
             // - We store the calculated courier_fee in DB for record.
 
-            $adminFee = $globalAdminFee; // Global Admin Fee (Recorded for Billing)
-            $storeFee = $store->admin_fee ? (int)$store->admin_fee : 0; // Store Service Fee
-            if ($storeFee > 500) $storeFee = 500; // Force Cap at 500 per user request
+            $finalAdminFee = $globalAdminFee; 
+            $finalStoreFee = $store->admin_fee ? (int)$store->admin_fee : 0;
+            if ($finalStoreFee > 500) $finalStoreFee = 500;
+            
             $courierFee = $allDigital ? 0 : $baseCourierFee;
             
-            // Recalculate total amount from items to ensure accuracy + Add Global Admin Fee + Add Store Fee
             $itemsTotal = 0;
             foreach ($orderItems as $item) {
                 $itemsTotal += $item['price'] * $item['quantity'];
             }
-            // Total Transfer = Items + Global Admin Fee + Store QRIS Fee
-            $finalTransferAmount = $itemsTotal + $adminFee + $storeFee;
+            // Total Transfer = Items + Global Admin Fee + Store Fee
+            $finalTransferAmount = $itemsTotal + $finalAdminFee + $finalStoreFee;
 
             $order = Order::create([
                 'buyer_id' => auth()->id(),
                 'umkm_store_id' => $store->id,
                 'status' => 'waiting_verification',
                 'courier_status' => $allDigital ? 'not_required' : 'idle',
-                'total_amount' => $finalTransferAmount, // Transfer Amount (Products + Global Admin Fee)
-                'courier_fee' => $courierFee,   // Cash to Courier
-                'admin_fee' => $adminFee,       // Recorded Service Fee
-                'store_fee' => $storeFee,       // Store-specific QRIS/Service Fee
+                'total_amount' => $finalTransferAmount, 
+                'courier_fee' => $courierFee,
+                'admin_fee' => $finalAdminFee,
+                'store_fee' => $finalStoreFee,
                 'admin_fee_status' => 'pending', // Default status for billing
                 'payment_proof_path' => $proofPath,
                 'shipping_address' => $validated['shipping_address'],

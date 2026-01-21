@@ -363,6 +363,7 @@ export default function OrderStatus({ order, waitingTooLong, canReview, canRate,
                                         <span className="line-through text-muted-foreground mr-2">
                                             Rp {Number(order.courier_fee).toLocaleString('id-ID')}
                                         </span>
+                                        {' '}
                                         <span className="text-success">
                                             Rp {Math.max(0, Number(order.courier_fee) - order.shipping_discount).toLocaleString('id-ID')}
                                         </span>
