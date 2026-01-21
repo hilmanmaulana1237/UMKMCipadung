@@ -346,11 +346,11 @@ export default function OrderStatus({ order, waitingTooLong, canReview, canRate,
                                 <span className="font-medium">Rp {Number(order.admin_fee).toLocaleString('id-ID')}</span>
                             </div>
                         )}
-                        {(Number(order.total_amount) - ((order.items || []).reduce((acc, i) => acc + (i.price * i.quantity), 0)) - Number(order.admin_fee || 0)) > 0 && (
+                        {(Number(order.store_fee || 0) > 0) && (
                             <div className="flex justify-between text-sm">
-                                <span className="text-muted-foreground">Biaya Layanan QRIS Toko</span>
+                                <span className="text-muted-foreground">Biaya Operasional Toko</span>
                                 <span className="font-medium">
-                                    Rp {(Number(order.total_amount) - ((order.items || []).reduce((acc, i) => acc + (i.price * i.quantity), 0)) - Number(order.admin_fee || 0)).toLocaleString('id-ID')}
+                                    Rp {Number(order.store_fee).toLocaleString('id-ID')}
                                 </span>
                             </div>
                         )}
