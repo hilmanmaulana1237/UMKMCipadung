@@ -121,17 +121,18 @@ export function useCart() {
     };
 
     const addToCart = (item: Omit<CartItem, 'quantity'>, quantity: number = 1) => {
-        const existing = cart.find((c) => c.productId === item.productId);
+        const currentCart = Array.isArray(cart) ? cart : [];
+        const existing = currentCart.find((c) => c.productId === item.productId);
 
         if (existing) {
-            const updated = cart.map((c) =>
+            const updated = currentCart.map((c) =>
                 c.productId === item.productId
                     ? { ...c, quantity: c.quantity + quantity }
                     : c
             );
             saveCart(updated);
         } else {
-            saveCart([...cart, { ...item, quantity }]);
+            saveCart([...currentCart, { ...item, quantity }]);
         }
     };
 
@@ -140,14 +141,16 @@ export function useCart() {
             removeFromCart(productId);
             return;
         }
-        const updated = cart.map((c) =>
+        const currentCart = Array.isArray(cart) ? cart : [];
+        const updated = currentCart.map((c) =>
             c.productId === productId ? { ...c, quantity } : c
         );
         saveCart(updated);
     };
 
     const removeFromCart = (productId: number) => {
-        const updated = cart.filter((c) => c.productId !== productId);
+        const currentCart = Array.isArray(cart) ? cart : [];
+        const updated = currentCart.filter((c) => c.productId !== productId);
         saveCart(updated);
     };
 
@@ -157,11 +160,11 @@ export function useCart() {
     };
 
     const getTotal = () => {
-        return cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+        return (Array.isArray(cart) ? cart : []).reduce((sum, item) => sum + item.price * item.quantity, 0);
     };
 
     const getItemCount = () => {
-        return cart.reduce((sum, item) => sum + item.quantity, 0);
+        return (Array.isArray(cart) ? cart : []).reduce((sum, item) => sum + item.quantity, 0);
     };
 
     // Get cart items grouped by store
