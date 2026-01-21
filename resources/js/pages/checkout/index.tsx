@@ -626,7 +626,13 @@ export default function CheckoutIndex() {
                 <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm px-4 py-3 flex items-center gap-3 border-b border-border">
                     {activeShopId ? (
                         <button
-                            onClick={() => setSelectedStoreId(null)}
+                            onClick={() => {
+                                if (serverStore) {
+                                    router.visit('/marketplace');
+                                } else {
+                                    setSelectedStoreId(null);
+                                }
+                            }}
                             className="p-2 hover:bg-muted rounded-full"
                         >
                             <ArrowLeft className="w-5 h-5" />
