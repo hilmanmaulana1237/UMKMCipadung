@@ -992,12 +992,10 @@ export default function CheckoutIndex() {
                             <span className="text-muted-foreground">Biaya Layanan Aplikasi</span>
                             <span>Rp {adminFee.toLocaleString('id-ID')}</span>
                         </div>
-                        {effectiveStoreFee > 0 && (
-                            <div className="flex justify-between text-sm">
-                                <span className="text-muted-foreground">Biaya Layanan QRIS Toko</span>
-                                <span>Rp {effectiveStoreFee.toLocaleString('id-ID')}</span>
-                            </div>
-                        )}
+                        <div className="flex justify-between text-sm">
+                            <span className="text-muted-foreground">Biaya Operasional Toko</span>
+                            <span>Rp {effectiveStoreFee.toLocaleString('id-ID')}</span>
+                        </div>
 
                         {promoStatus === 'valid' && promoType === 'discount' && (
                             <div className="flex justify-between text-sm text-green-600">
