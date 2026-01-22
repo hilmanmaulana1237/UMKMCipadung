@@ -31,6 +31,7 @@ class User extends Authenticatable
         'is_courier_active',
         'current_lat',
         'current_lng',
+        'is_suspended',
     ];
 
     /**
@@ -60,6 +61,7 @@ class User extends Authenticatable
             'is_courier_active' => 'boolean',
             'current_lat' => 'decimal:8',
             'current_lng' => 'decimal:8',
+            'is_suspended' => 'boolean',
         ];
     }
 

@@ -1,6 +1,6 @@
 import AppLayout from '@/layouts/app-layout';
 import { Head, Link, router } from '@inertiajs/react';
-import { Order } from '@/types';
+import { Order, User } from '@/types';
 import { Radar, Power, MapPin, Truck, AlertTriangle, ArrowRight, Loader2, Zap, CheckCircle, Bot, Sparkles, Star, RefreshCw } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
@@ -33,9 +33,11 @@ interface Props {
     isActive: boolean;
     activeOrder: ActiveOrder | null;
     courierRating?: CourierRating;
+    auth: { user: User }; // Get auth user to check suspension
 }
 
-export default function CourierRadar({ availableJobs, isActive, activeOrder, courierRating }: Props) {
+export default function CourierRadar({ availableJobs, isActive, activeOrder, courierRating, auth }: Props) {
+    const isSuspended = auth.user.is_suspended;
     const [isToggling, setIsToggling] = useState(false);
     const [acceptingJobId, setAcceptingJobId] = useState<number | null>(null);
     const [acceptedJobId, setAcceptedJobId] = useState<number | null>(null);
@@ -77,6 +79,11 @@ export default function CourierRadar({ availableJobs, isActive, activeOrder, cou
         : null;
 
     const toggleActive = () => {
+        if (isSuspended) {
+            toast.error('Akun ditangguhkan. Hubungi Admin.');
+            return;
+        }
+
         setIsToggling(true);
 
         const doToggle = (lat: number | null, lng: number | null) => {
@@ -88,7 +95,7 @@ export default function CourierRadar({ availableJobs, isActive, activeOrder, cou
                 },
                 onError: (errors) => {
                     console.error('Toggle Error:', errors);
-                    toast.error('Gagal mengubah status. Coba lagi.');
+                    toast.error(errors.error || 'Gagal mengubah status. Coba lagi.');
                     setIsToggling(false);
                 }
             });
@@ -153,14 +160,18 @@ export default function CourierRadar({ availableJobs, isActive, activeOrder, cou
 
     // Auto update location on mount if active
     useEffect(() => {
-        if (isActive) {
+        if (isActive && !isSuspended) {
             updateLocation(true);
         }
-    }, [isActive]);
+    }, [isActive, isSuspended]);
 
     // Open modal and request location
     const handleAcceptClick = (job: AvailableJob) => {
         if (activeOrder || acceptingJobId) return;
+        if (isSuspended) {
+            toast.error('Akun ditangguhkan. Hubungi Admin.');
+            return;
+        }
 
         setSelectedJob(job);
         setShowAcceptModal(true);
@@ -200,6 +211,11 @@ export default function CourierRadar({ availableJobs, isActive, activeOrder, cou
     // Submit accept job with location
     const confirmAcceptJob = () => {
         if (!selectedJob || !currentLocation) return;
+
+        if (isSuspended) {
+            toast.error('Akun ditangguhkan.');
+            return;
+        }
 
         // Frontend validation - block if outside Cipadung
         if (!isWithinCipadung) {
@@ -249,8 +265,35 @@ export default function CourierRadar({ availableJobs, isActive, activeOrder, cou
         <AppLayout activeTab="radar">
             <Head title="Radar Kurir" />
 
+            {/* Suspended Alert */}
+            {isSuspended && (
+                <div className="px-4 pt-4">
+                    <div className="bg-red-100 border-2 border-red-500 rounded-2xl p-4 flex items-start gap-3 shadow-lg">
+                        <div className="bg-red-500 rounded-full p-2 flex-shrink-0 animate-pulse">
+                            <AlertTriangle className="w-6 h-6 text-white" />
+                        </div>
+                        <div>
+                            <h3 className="font-bold text-red-900 text-lg">AKUN DITANGGUHKAN</h3>
+                            <p className="text-red-800 text-sm mt-1 leading-snug">
+                                Anda sedang di-banned sementara. Anda tidak bisa mengambil pesanan baru.
+                            </p>
+                            <div className="mt-3">
+                                <a
+                                    href="https://wa.me/6281234567890?text=Halo%20Admin,%20kenapa%20akun%20saya%20di-suspend?"
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="inline-flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-red-700 transition"
+                                >
+                                    Hubungi Admin
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Header with Toggle */}
-            <div className={`px-4 pt-6 pb-6 transition-all duration-500 ${isActive ? 'bg-gradient-to-br from-success to-emerald-600' : 'bg-muted'}`}>
+            <div className={`px-4 pt-6 pb-6 transition-all duration-500 ${isSuspended ? 'bg-muted opacity-50 pointer-events-none grayscale' : isActive ? 'bg-gradient-to-br from-success to-emerald-600' : 'bg-muted'}`}>
                 <div className="flex items-center justify-between">
                     <div>
                         <h1 className={`text-xl font-bold ${isActive ? 'text-white' : 'text-foreground'}`}>

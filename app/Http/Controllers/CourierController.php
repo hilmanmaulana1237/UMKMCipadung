@@ -70,6 +70,10 @@ class CourierController extends Controller
     {
         $user = auth()->user();
 
+        if ($user->is_suspended) {
+            return back()->withErrors(['error' => 'Akun Anda ditangguhkan. Hubungi admin.']);
+        }
+
         $request->validate([
             'lat' => 'nullable|numeric',
             'lng' => 'nullable|numeric',
@@ -136,6 +140,10 @@ class CourierController extends Controller
         }
 
         $user = auth()->user();
+
+        if ($user->is_suspended) {
+            return back()->withErrors(['error' => 'Akun Anda ditangguhkan. Anda tidak dapat mengambil pesanan. Silakan hubungi admin.']);
+        }
 
         // Update courier's current location
         $user->update([

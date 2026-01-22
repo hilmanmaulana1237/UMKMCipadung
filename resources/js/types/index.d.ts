@@ -49,6 +49,7 @@ export interface User {
     is_courier_active: boolean;
     current_lat?: number;
     current_lng?: number;
+    is_suspended?: boolean;
     created_at: string;
     updated_at: string;
     // Courier rating stats (for courier users)

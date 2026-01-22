@@ -990,10 +990,12 @@ INGAT: Kamu membantu perangkat desa yang mungkin tidak familiar dengan teknologi
             abort(404);
         }
 
-        $courier->is_courier_active = !$courier->is_courier_active;
+        $courier->is_suspended = !$courier->is_suspended;
         $courier->save();
 
-        return back()->with('success', 'Status kurir berhasil diperbarui.');
+        return back()->with('success', $courier->is_suspended 
+            ? 'Kurir berhasil di-suspend (dinonaktifkan sementara).' 
+            : 'Suspensi kurir dicabut. Kurir dapat aktif kembali.');
     }
 
     /**
