@@ -17,7 +17,7 @@ interface Props {
 export default function CourierDetail({ courier, stats, recentDeliveries, complaints }: Props) {
 
     const handleToggleStatus = () => {
-        if (confirm(`Apakah Anda yakin ingin ${courier.is_courier_active ? 'menonaktifkan' : 'mengaktifkan'} kurir ini?`)) {
+        if (confirm(`Apakah Anda yakin ingin ${courier.is_suspended ? 'mencabut suspensi' : 'mensuspensi (banned)'} kurir ini?`)) {
             router.post(`/admin/couriers/${courier.id}/toggle-status`);
         }
     };
@@ -60,10 +60,12 @@ export default function CourierDetail({ courier, stats, recentDeliveries, compla
                             <div>
                                 <h1 className="text-2xl font-bold flex items-center gap-2">
                                     {courier.name}
-                                    {courier.is_courier_active ? (
+                                    {courier.is_suspended ? (
+                                        <Ban className="w-5 h-5 text-red-500" />
+                                    ) : courier.is_courier_active ? (
                                         <CheckCircle className="w-5 h-5 text-green-500" />
                                     ) : (
-                                        <XCircle className="w-5 h-5 text-red-500" />
+                                        <XCircle className="w-5 h-5 text-gray-400" />
                                     )}
                                 </h1>
                                 <div className="flex items-center gap-3 text-sm text-muted-foreground mt-1">
@@ -95,20 +97,20 @@ export default function CourierDetail({ courier, stats, recentDeliveries, compla
                         )}
                         <button
                             onClick={handleToggleStatus}
-                            className={`px-4 py-2 rounded-xl flex items-center gap-2 text-sm font-medium transition-colors ${courier.is_courier_active
-                                    ? 'bg-red-50 text-red-600 hover:bg-red-100 border border-red-200'
-                                    : 'bg-green-600 text-white hover:bg-green-700'
+                            className={`px-4 py-2 rounded-xl flex items-center gap-2 text-sm font-medium transition-colors ${!courier.is_suspended
+                                ? 'bg-red-50 text-red-600 hover:bg-red-100 border border-red-200'
+                                : 'bg-green-600 text-white hover:bg-green-700'
                                 }`}
                         >
-                            {courier.is_courier_active ? (
+                            {!courier.is_suspended ? (
                                 <>
                                     <Ban className="w-4 h-4" />
-                                    Nonaktifkan Akun
+                                    Suspend Akun
                                 </>
                             ) : (
                                 <>
-                                    <RefreshCw className="w-4 h-4" />
-                                    Aktifkan Akun
+                                    <CheckCircle className="w-4 h-4" />
+                                    Buka Suspensi
                                 </>
                             )}
                         </button>

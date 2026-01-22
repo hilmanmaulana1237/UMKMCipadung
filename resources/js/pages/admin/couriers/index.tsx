@@ -1,6 +1,6 @@
 import AdminLayout from '@/layouts/admin-layout';
 import { Head, Link, router } from '@inertiajs/react';
-import { Search, User, CheckCircle, XCircle, Truck, Star, Filter } from 'lucide-react';
+import { Search, User, CheckCircle, XCircle, Truck, Star, Filter, Ban } from 'lucide-react';
 import { useState } from 'react';
 
 interface Courier {
@@ -9,6 +9,7 @@ interface Courier {
     email: string;
     avatar_path: string | null;
     is_courier_active: boolean;
+    is_suspended?: boolean;
     deliveries_count: number;
     rating: number;
     total_ratings: number;
@@ -73,8 +74,8 @@ export default function CourierList({ couriers, filters }: Props) {
                         <button
                             onClick={() => handleFilterChange('')}
                             className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors ${statusFilter === ''
-                                    ? 'bg-primary text-primary-foreground'
-                                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                                ? 'bg-primary text-primary-foreground'
+                                : 'bg-muted text-muted-foreground hover:bg-muted/80'
                                 }`}
                         >
                             Semua
@@ -82,8 +83,8 @@ export default function CourierList({ couriers, filters }: Props) {
                         <button
                             onClick={() => handleFilterChange('active')}
                             className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors ${statusFilter === 'active'
-                                    ? 'bg-green-600 text-white'
-                                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                                ? 'bg-green-600 text-white'
+                                : 'bg-muted text-muted-foreground hover:bg-muted/80'
                                 }`}
                         >
                             Aktif
@@ -91,8 +92,8 @@ export default function CourierList({ couriers, filters }: Props) {
                         <button
                             onClick={() => handleFilterChange('inactive')}
                             className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors ${statusFilter === 'inactive'
-                                    ? 'bg-red-600 text-white'
-                                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                                ? 'bg-red-600 text-white'
+                                : 'bg-muted text-muted-foreground hover:bg-muted/80'
                                 }`}
                         >
                             Nonaktif
@@ -134,13 +135,18 @@ export default function CourierList({ couriers, filters }: Props) {
                                             </div>
                                         </td>
                                         <td className="px-6 py-4">
-                                            {courier.is_courier_active ? (
+                                            {courier.is_suspended ? (
+                                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700">
+                                                    <Ban className="w-3 h-3" />
+                                                    Suspended
+                                                </span>
+                                            ) : courier.is_courier_active ? (
                                                 <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">
                                                     <CheckCircle className="w-3 h-3" />
                                                     Aktif
                                                 </span>
                                             ) : (
-                                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700">
+                                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
                                                     <XCircle className="w-3 h-3" />
                                                     Nonaktif
                                                 </span>
@@ -189,8 +195,8 @@ export default function CourierList({ couriers, filters }: Props) {
                                         key={i}
                                         href={link.url || '#'}
                                         className={`px-3 py-1 rounded-md text-sm ${link.active
-                                                ? 'bg-primary text-primary-foreground'
-                                                : 'text-muted-foreground hover:bg-muted'
+                                            ? 'bg-primary text-primary-foreground'
+                                            : 'text-muted-foreground hover:bg-muted'
                                             } ${!link.url && 'opacity-50 cursor-not-allowed'}`}
                                         dangerouslySetInnerHTML={{ __html: link.label }}
                                     />
