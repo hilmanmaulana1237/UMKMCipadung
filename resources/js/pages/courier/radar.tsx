@@ -279,7 +279,7 @@ export default function CourierRadar({ availableJobs, isActive, activeOrder, cou
                             </p>
                             <div className="mt-3">
                                 <a
-                                    href="https://wa.me/6281234567890?text=Halo%20Admin,%20kenapa%20akun%20saya%20di-suspend?"
+                                    href="https://wa.me/6287827718245?text=Halo%20Admin,%20kenapa%20akun%20saya%20di-suspend?"
                                     target="_blank"
                                     rel="noreferrer"
                                     className="inline-flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-red-700 transition"
