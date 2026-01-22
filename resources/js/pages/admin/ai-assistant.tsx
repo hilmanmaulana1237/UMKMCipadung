@@ -45,7 +45,7 @@ export default function AIAssistant({ auth }: Props) {
         { id: 'trend', label: 'Apa tren pasar minggu ini?', icon: 'BarChart3' },
         { id: 'strategy', label: 'Buatkan strategi promosi IG', icon: 'Megaphone' },
         { id: 'finance', label: 'Tips kelola keuangan UMKM', icon: 'BookOpen' },
-        { id: 'sales', label: 'Analisis penjualan saya', icon: 'Sparkles' },
+        { id: 'sales', label: 'Analisis penjualan UMKM Kelurahan', icon: 'Sparkles' },
     ];
 
     const iconMap: Record<string, any> = {
@@ -261,8 +261,8 @@ export default function AIAssistant({ auth }: Props) {
 
                                         <div
                                             className={`max-w-[85%] lg:max-w-[75%] rounded-2xl px-5 py-3.5 shadow-sm ${message.role === 'user'
-                                                    ? 'bg-blue-600 text-white rounded-br-sm'
-                                                    : 'bg-slate-800 text-slate-200 border border-white/5 rounded-bl-sm'
+                                                ? 'bg-blue-600 text-white rounded-br-sm'
+                                                : 'bg-slate-800 text-slate-200 border border-white/5 rounded-bl-sm'
                                                 }`}
                                         >
                                             <p className="whitespace-pre-wrap text-[15px] leading-relaxed">
