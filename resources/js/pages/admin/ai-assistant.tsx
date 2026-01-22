@@ -17,7 +17,6 @@ import {
 } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { Toaster } from 'sonner';
-import { BottomNavigation } from '@/components/ui/bottomnavigation';
 
 interface Message {
     role: 'user' | 'assistant';
@@ -351,10 +350,7 @@ export default function AIAssistant({ auth }: Props) {
                 </main>
             </div>
 
-            {/* Mobile Bottom Navigation (Only visible on mobile) */}
-            <div className="lg:hidden">
-                <BottomNavigation userRole={auth.user.role} activeTab="dashboard" />
-            </div>
+
 
             <Toaster position="top-right" theme="dark" />
         </div>
