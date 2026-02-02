@@ -536,6 +536,7 @@ class AIService
 
     /**
      * Generate visual-rich description for AI Video.
+     * Max 1000 characters.
      */
     public function generateVisualDescription(string $storeName, string $category, string $productName, string $additionalProducts = ''): string
     {
@@ -554,11 +555,12 @@ class AIService
         2. FOKUS pada elemen VISUAL: pencahayaan (natural/warm), tekstur produk (uap mengepul, embun es, serat kain), aktivitas (tangan menyajikan, menuangkan saus), dan suasana (ramai, cozy).
         3. Pastikan visual sesuai kategori toko. Jika toko {$category}, jangan tampilkan visual kategori lain.
         4. {$context}
-        5. Tulis dalam 1 paragraf mengalir (3-4 kalimat panjang).
+        5. Tulis dalam 1 paragraf mengalir (2-3 kalimat).
         6. Gunakan Bahasa Indonesia yang deskriptif.
+        7. PENTING: MAKSIMAL 1000 KARAKTER. Jangan lebih dari itu.
         
         Contoh yang Bagus:
-        'Close up shot mangkuk bakso dengan uap panas yang masih mengepul, memperlihatkan tekstur daging yang kenyal dan kuah kaldu yang bening berminyak. Kamera bergerak perlahan (panning) memperlihatkan suasana warung yang nyaman dengan cahaya matahari sore yang hangat. Seorang penjual dengan celemek bersih sedang menuangkan sambal ke dalam mangkuk dengan gerakan tangan yang natural.'";
+        'Close up shot mangkuk bakso dengan uap panas yang masih mengepul, memperlihatkan tekstur daging yang kenyal dan kuah kaldu yang bening berminyak. Kamera bergerak perlahan (panning) memperlihatkan suasana warung yang nyaman dengan cahaya matahari sore yang hangat.'";
 
         // Use Secondary API (OpenRouter/Gemini usually good enough for creative writing)
         $this->useSecondaryApi();
@@ -571,10 +573,23 @@ class AIService
 
         // Clean response
         $response = preg_replace('/<think>.*?<\/think>/s', '', $response);
-        $response = preg_replace('/^"/ ', '', $response);
-        $response = preg_replace('/"$/ ', '', $response);
+        $response = preg_replace('/^"/', '', $response);
+        $response = preg_replace('/"$/', '', $response);
+        $response = trim($response);
 
-        return trim($response);
+        // Enforce max 1000 character limit
+        if (mb_strlen($response) > 1000) {
+            // Truncate at last complete sentence within limit
+            $truncated = mb_substr($response, 0, 1000);
+            $lastPeriod = mb_strrpos($truncated, '.');
+            if ($lastPeriod !== false && $lastPeriod > 500) {
+                $response = mb_substr($truncated, 0, $lastPeriod + 1);
+            } else {
+                $response = $truncated;
+            }
+        }
+
+        return $response;
     }
 
     /**
