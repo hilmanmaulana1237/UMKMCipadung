@@ -19,7 +19,11 @@ class PosterAIService
         $config = ApiSetting::getConfig('video');
         $this->apiKey = $config['api_key'] ?? '';
         $this->baseUrl = $config['base_url'] ?: 'https://api.kie.ai/api/v1/jobs';
+<<<<<<< HEAD
         $this->model = 'seedream/4.5-edit'; // Bytedance Seedream 4.5 - better text rendering
+=======
+        $this->model = 'google/nano-banana-edit'; // Gemini 2.5 Flash Image Edit
+>>>>>>> 13b4fdec4db7d79efecf96089fcbe7af372482d9
 
         // Safety check: Fix for issue where OpenRouter URL is incorrectly set for Video config
         if (str_contains($this->baseUrl, 'openrouter.ai')) {
@@ -45,11 +49,19 @@ class PosterAIService
         }
 
         try {
+<<<<<<< HEAD
             // Prepare input array for Seedream 4.5-edit
             $input = [
                 'prompt' => $this->buildPrompt($replacements, $productImageUrl, $posterType),
                 'aspect_ratio' => '3:4', // Taller poster format for promotional flyers
                 'quality' => 'high', // 4K quality for better text rendering
+=======
+            // Prepare input array
+            $input = [
+                'prompt' => $this->buildPrompt($replacements, $productImageUrl, $posterType),
+                'output_format' => 'jpeg',
+                'image_size' => '3:4', // Taller poster to avoid cropping
+>>>>>>> 13b4fdec4db7d79efecf96089fcbe7af372482d9
             ];
 
             // Add template URL
@@ -64,7 +76,11 @@ class PosterAIService
             if ($productImageUrl) {
                 // If the URL is local (localhost/127.0.0.1), try to upload to temp host
                 if (str_contains($productImageUrl, 'localhost') || str_contains($productImageUrl, '127.0.0.1') || str_contains($productImageUrl, ':8000')) {
+<<<<<<< HEAD
 
+=======
+                    
+>>>>>>> 13b4fdec4db7d79efecf96089fcbe7af372482d9
                     $publicUrl = null;
                     if ($localFilePath && file_exists($localFilePath)) {
                         Log::info('PosterAIService: Uploading local image to temp host...', ['path' => $localFilePath]);
@@ -79,7 +95,11 @@ class PosterAIService
                         $fallbackUrl = 'https://tempfileb.aiquickdraw.com/kieai/market/1768682951963_k0D05XBN.jpeg';
                         $input['image_urls'][] = $fallbackUrl;
                     }
+<<<<<<< HEAD
 
+=======
+                    
+>>>>>>> 13b4fdec4db7d79efecf96089fcbe7af372482d9
                 } else {
                     // Public URL (Production)
                     $input['image_urls'][] = $productImageUrl;
@@ -96,9 +116,15 @@ class PosterAIService
                 'Authorization' => 'Bearer ' . $this->apiKey,
                 'Content-Type' => 'application/json',
             ])->timeout(60)->post($this->baseUrl . '/createTask', [
+<<<<<<< HEAD
                         'model' => $this->model,
                         'input' => $input,
                     ]);
+=======
+                'model' => $this->model,
+                'input' => $input,
+            ]);
+>>>>>>> 13b4fdec4db7d79efecf96089fcbe7af372482d9
 
             if ($response->successful()) {
                 $data = $response->json();
@@ -139,9 +165,13 @@ class PosterAIService
     {
         try {
             $response = Http::attach(
+<<<<<<< HEAD
                 'file',
                 file_get_contents($path),
                 basename($path)
+=======
+                'file', file_get_contents($path), basename($path)
+>>>>>>> 13b4fdec4db7d79efecf96089fcbe7af372482d9
             )->post('https://file.io/?expires=1d');
 
             if ($response->successful()) {
@@ -168,8 +198,13 @@ class PosterAIService
             $response = Http::withHeaders([
                 'Authorization' => 'Bearer ' . $this->apiKey,
             ])->timeout(30)->get('https://api.kie.ai/api/v1/jobs/recordInfo', [
+<<<<<<< HEAD
                         'taskId' => $taskId,
                     ]);
+=======
+                'taskId' => $taskId,
+            ]);
+>>>>>>> 13b4fdec4db7d79efecf96089fcbe7af372482d9
 
             if ($response->successful()) {
                 $data = $response->json();
@@ -216,6 +251,7 @@ class PosterAIService
      */
     private function buildPrompt(array $replacements, ?string $productImageUrl, string $posterType): string
     {
+<<<<<<< HEAD
         $prompt = "CRITICAL TEXT ACCURACY REQUIREMENT: Every text must be spelled EXACTLY as provided. Double-check each letter.\n\n";
 
         $prompt .= "Create a promotional flyer based on the template design, layout, typography, and background.\n\n";
@@ -236,11 +272,40 @@ class PosterAIService
 
             if ($productImageUrl) {
                 $prompt .= "- Replace main illustration with provided image\n";
+=======
+        $prompt = "Instruksi Utama: Buatlah sebuah gambar flyer promosi berdasarkan struktur desain, tata letak, tipografi, dan latar belakang dari template yang diberikan.\n\n";
+
+        $prompt .= "1. Referensi Gambar & Latar Belakang (Pertahankan dari template):\n";
+        $prompt .= "- Pertahankan latar belakang, gradien warna, dan efek visual asli.\n";
+        $prompt .= "- Pertahankan semua elemen dekoratif latar belakang.\n";
+        $prompt .= "- Pertahankan elemen grafis, garis, panah doodle di sekitar area produk.\n";
+        $prompt .= "- Pertahankan SEMUA gaya font, warna font, ukuran font, dan posisi teks asli.\n\n";
+
+        if ($productImageUrl && $posterType === 'makanan') {
+            $prompt .= "2. Penggantian Produk Utama:\n";
+            $prompt .= "- Gantikan gambar produk di tengah template dengan gambar produk yang disediakan (gambar kedua).\n";
+            $prompt .= "- Pastikan pencahayaan pada produk menyatu dengan suasana latar belakang flyer.\n";
+            $prompt .= "- Pertahankan komposisi dan framing yang sama.\n\n";
+        } elseif ($posterType === 'jasa') {
+            $prompt .= "2. Tipe Poster: DAFTAR LAYANAN/JASA\n";
+            $prompt .= "- Ini adalah poster untuk menampilkan DAFTAR LAYANAN/JASA yang tersedia.\n";
+            $prompt .= "- Template memiliki area untuk menampilkan daftar layanan dengan nomor atau bullet points.\n";
+            $prompt .= "- Pertahankan layout daftar layanan dari template, hanya ganti teks placeholder.\n";
+            
+            if ($productImageUrl) {
+                $prompt .= "- GANTI gambar ilustrasi utama/ikon dengan gambar yang disediakan (gambar kedua).\n";
+                $prompt .= "- Integrasikan gambar tersebut dengan halus ke dalam desain.\n";
+>>>>>>> 13b4fdec4db7d79efecf96089fcbe7af372482d9
             }
             $prompt .= "\n";
         }
 
+<<<<<<< HEAD
         $prompt .= "3. TEXT REPLACEMENTS (SPELL EXACTLY AS SHOWN):\n\n";
+=======
+        $prompt .= "3. Pengeditan Teks (Masukkan Variabel Baru):\n";
+        $prompt .= "Ubah placeholder teks asli di template dengan data berikut, menggunakan GAYA FONT, WARNA, dan UKURAN yang SAMA dengan template aslinya:\n\n";
+>>>>>>> 13b4fdec4db7d79efecf96089fcbe7af372482d9
 
         // Map replacements based on poster type
         if ($posterType === 'makanan') {
@@ -249,6 +314,7 @@ class PosterAIService
             $prompt .= $this->buildServicePosterReplacements($replacements);
         }
 
+<<<<<<< HEAD
         $prompt .= "\n4. CRITICAL TEXT RULES:\n";
         $prompt .= "- VERIFY every letter of every word is correct\n";
         $prompt .= "- NO typos, NO missing letters, NO extra letters\n";
@@ -256,11 +322,21 @@ class PosterAIService
         $prompt .= "- Remove any placeholder text not replaced\n\n";
 
         $prompt .= "5. FINAL CHECK: Before generating, verify ALL text spellings are 100% accurate.";
+=======
+        $prompt .= "\n4. ATURAN PENTING:\n";
+        $prompt .= "- HAPUS semua teks placeholder yang tidak diganti (seperti 'Nama Jasa', 'Nama Produk', 'Nama Warung' dll).\n";
+        $prompt .= "- PASTIKAN ejaan semua teks BENAR dan AKURAT sesuai data yang diberikan.\n";
+        $prompt .= "- JANGAN mengubah atau salah eja teks yang diberikan.\n";
+        $prompt .= "- Pastikan SEMUA teks terlihat lengkap dan tidak terpotong.\n\n";
+
+        $prompt .= "Hasil Akhir: Sebuah flyer yang kohesif, terlihat profesional, menggabungkan latar belakang template dengan semua teks baru yang telah ditentukan di atas. Jaga kualitas gambar tetap tinggi dan resolusi maksimal.";
+>>>>>>> 13b4fdec4db7d79efecf96089fcbe7af372482d9
 
         return $prompt;
     }
 
     /**
+<<<<<<< HEAD
      * Add letter-by-letter spelling hint for critical text
      */
     private function addSpellingHint(string $text): string
@@ -270,6 +346,8 @@ class PosterAIService
     }
 
     /**
+=======
+>>>>>>> 13b4fdec4db7d79efecf96089fcbe7af372482d9
      * Build replacement instructions for food poster
      */
     private function buildFoodPosterReplacements(array $r): string
@@ -277,6 +355,7 @@ class PosterAIService
         $text = "";
 
         if (!empty($r['store_name'])) {
+<<<<<<< HEAD
             $spelled = $this->addSpellingHint($r['store_name']);
             $text .= "- STORE NAME: \"{$r['store_name']}\" (spelled: {$spelled})\n";
         }
@@ -303,6 +382,29 @@ class PosterAIService
 
         if (!empty($r['address'])) {
             $text .= "- ADDRESS (near location icon): \"{$r['address']}\"\n";
+=======
+            $text .= "- Teks 'Nama Warung' atau 'NAMA WARUNG': Ubah menjadi \"{$r['store_name']}\".\n";
+        }
+
+        if (!empty($r['product_name'])) {
+            $text .= "- Teks 'Nama Produk' atau 'NAMA PRODUK': Ubah menjadi \"{$r['product_name']}\".\n";
+        }
+
+        if (!empty($r['slogan'])) {
+            $text .= "- Teks 'Slogan': Ubah menjadi \"{$r['slogan']}\".\n";
+        }
+
+        if (!empty($r['price'])) {
+            $text .= "- Teks 'Harga' atau area harga: Ubah menjadi \"{$r['price']}\".\n";
+        }
+
+        if (!empty($r['phone'])) {
+            $text .= "- Di sebelah ikon telepon atau teks 'Nomor Telepon' / 'Nomor-telepon': Ubah menjadi \"{$r['phone']}\".\n";
+        }
+
+        if (!empty($r['address'])) {
+            $text .= "- Di sebelah ikon lokasi atau teks 'Alamat Toko' / 'Alamat': Ubah menjadi \"{$r['address']}\".\n";
+>>>>>>> 13b4fdec4db7d79efecf96089fcbe7af372482d9
         }
 
         return $text;
@@ -332,12 +434,20 @@ class PosterAIService
             $serviceCount = count($r['services']);
             $text .= "\n- DAFTAR LAYANAN (List Services):\n";
             $text .= "  Ganti seluruh daftar layanan/jasa pada template dengan daftar berikut:\n";
+<<<<<<< HEAD
 
+=======
+            
+>>>>>>> 13b4fdec4db7d79efecf96089fcbe7af372482d9
             foreach ($r['services'] as $index => $service) {
                 $num = $index + 1;
                 $text .= "  {$num}. {$service}\n";
             }
+<<<<<<< HEAD
 
+=======
+            
+>>>>>>> 13b4fdec4db7d79efecf96089fcbe7af372482d9
             $text .= "  \n";
             $text .= "  PENTING: Tampilkan SEMUA {$serviceCount} layanan di atas dalam format daftar bernomor atau bullet point.\n";
             $text .= "  Jika template memiliki lebih sedikit item, tambahkan item baru dengan styling yang sama.\n";
@@ -377,7 +487,11 @@ class PosterAIService
     public static function getTemplates(): array
     {
         $githubBase = 'https://github.com/hilman1237050020/datafoto/blob/main/';
+<<<<<<< HEAD
 
+=======
+        
+>>>>>>> 13b4fdec4db7d79efecf96089fcbe7af372482d9
         return [
             'makanan' => [
                 [
@@ -423,7 +537,11 @@ class PosterAIService
     {
         try {
             $response = Http::timeout(30)->get($imageUrl);
+<<<<<<< HEAD
 
+=======
+            
+>>>>>>> 13b4fdec4db7d79efecf96089fcbe7af372482d9
             if ($response->successful()) {
                 $filename = "generated-posters/{$umkmId}_" . time() . ".png";
                 Storage::disk('public')->put($filename, $response->body());
