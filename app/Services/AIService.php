@@ -11,8 +11,8 @@ class AIService
     protected string $apiKey;
     protected string $model;
     protected string $baseUrl = 'https://openrouter.ai/api/v1/chat/completions';
-    protected string $currentTier = 'secondary'; 
-    
+    protected string $currentTier = 'secondary';
+
     // Model Constants Removed - Using Dynamic Config from DB
 
     public function __construct(string $tier = 'secondary')
@@ -27,13 +27,13 @@ class AIService
     {
         $this->currentTier = $tier;
         $config = ApiSetting::getConfig($tier);
-        
+
         // Robust Fallback: Check if key is actually set and not empty
         $this->apiKey = !empty($config['api_key']) ? $config['api_key'] : config('services.openrouter.api_key', '');
-        
+
         // Model fallback
         $this->model = !empty($config['model']) ? $config['model'] : config('services.openrouter.model', 'google/gemini-2.0-flash-exp:free');
-        
+
         // Base URL fallback
         $this->baseUrl = !empty($config['base_url']) ? $config['base_url'] : 'https://openrouter.ai/api/v1/chat/completions';
     }
@@ -72,18 +72,24 @@ class AIService
     {
         try {
             $messages = [];
-            
+
             if ($systemPrompt) {
                 $messages[] = [
                     'role' => 'system',
                     'content' => $systemPrompt,
                 ];
             }
-            
+
             $messages[] = [
                 'role' => 'user',
                 'content' => $prompt,
             ];
+
+            Log::info('AIService Chat Request', [
+                'model' => $this->model,
+                'tier' => $this->currentTier,
+                'base_url' => $this->baseUrl,
+            ]);
 
             $response = Http::withHeaders([
                 'Authorization' => 'Bearer ' . $this->apiKey,
@@ -91,11 +97,11 @@ class AIService
                 'X-Title' => config('app.name', 'MUDAPRENEUR.AI'),
                 'Content-Type' => 'application/json',
             ])->timeout(60)->post($this->baseUrl, [
-                'model' => $modelOverride ?? $this->model,
-                'messages' => $messages,
-                'max_tokens' => 1000,
-                'temperature' => 0.7,
-            ]);
+                        'model' => $this->model,
+                        'messages' => $messages,
+                        'max_tokens' => 1000,
+                        'temperature' => 0.7,
+                    ]);
 
             if ($response->successful()) {
                 $data = $response->json();
@@ -123,9 +129,9 @@ class AIService
     {
         // 1. Switch to Secondary API (Fast)
         $this->useSecondaryApi();
-        
+
         $priceText = $price ? "Rp " . number_format($price, 0, ',', '.') : '';
-        
+
         $prompt = "Buatkan deskripsi produk yang menarik dan persuasif dalam Bahasa Indonesia untuk produk UMKM desa.\n\n" .
             "Nama Produk: {$name}\n" .
             "Kategori: {$category}\n" .
@@ -135,7 +141,7 @@ class AIService
 
         // Use configured secondary model
         $response = $this->chat($prompt);
-        
+
         // Fallback jika API gagal
         if (!$response) {
             return $this->getFallbackDescription($name, $category);
@@ -146,7 +152,7 @@ class AIService
         $response = preg_replace('/\*\*([^*]+)\*\*/', '$1', $response); // Remove bold **text**
         $response = preg_replace('/\*([^*]+)\*/', '$1', $response); // Remove italic *text*
         $response = preg_replace('/^#+\s*/m', '', $response); // Remove headings
-        
+
         return trim($response);
     }
 
@@ -158,7 +164,7 @@ class AIService
     public function suggestPrice(string $name, string $category): array
     {
         $nameLower = strtolower($name);
-        
+
         // Common product prices in rural villages (Cipadung, Bandung)
         $productPrices = [
             // Kuliner
@@ -200,7 +206,7 @@ class AIService
             'potong rambut' => 15000,
             'pijat' => 50000,
         ];
-        
+
         // Find matching product price
         $suggestedPrice = null;
         foreach ($productPrices as $keyword => $price) {
@@ -209,7 +215,7 @@ class AIService
                 break;
             }
         }
-        
+
         // Category-based range defaults for rural village
         $priceRanges = [
             'kuliner' => ['min' => 3000, 'max' => 25000, 'default' => 10000],
@@ -218,10 +224,10 @@ class AIService
         ];
 
         $range = $priceRanges[$category] ?? ['min' => 5000, 'max' => 50000, 'default' => 15000];
-        
+
         // Use product-specific price if found, otherwise use category default
         $suggested = $suggestedPrice ?? $range['default'];
-        
+
         // Ensure suggested is within range
         $suggested = max($range['min'], min($range['max'], $suggested));
 
@@ -289,7 +295,7 @@ class AIService
                     "Gunakan fitur 'AI Poster' untuk membuat materi promosi yang menarik.",
                     'Posting testimoni pembeli ke media sosial untuk meyakinkan calon pembeli.',
                 ];
-                
+
                 $insights[] = [
                     'type' => 'tip',
                     'icon' => '💡',
@@ -375,19 +381,19 @@ class AIService
         // Format history for context
         $messages = [];
         $messages[] = ['role' => 'system', 'content' => $systemPrompt];
-        
+
         foreach ($history as $msg) {
             $messages[] = [
                 'role' => $msg['role'], // 'user' or 'assistant'
                 'content' => $msg['content']
             ];
         }
-        
+
         $messages[] = ['role' => 'user', 'content' => $message];
 
         // Call AI API manually here to support history - Use PRIMARY API for mentor
         $this->usePrimaryApi();
-        
+
         try {
             $response = Http::withHeaders([
                 'Authorization' => 'Bearer ' . $this->apiKey,
@@ -395,15 +401,15 @@ class AIService
                 'X-Title' => config('app.name'),
                 'Content-Type' => 'application/json',
             ])->timeout(45)->post($this->baseUrl, [
-                'model' => $this->model, // Use Configured Primary Model
-                'messages' => $messages,
-                'temperature' => 0.7,
-                'max_tokens' => 1500, // Increased to prevent truncation
-            ]);
+                        'model' => $this->model, // Use Configured Primary Model
+                        'messages' => $messages,
+                        'temperature' => 0.7,
+                        'max_tokens' => 1500, // Increased to prevent truncation
+                    ]);
 
             if ($response->successful()) {
                 $content = $response->json()['choices'][0]['message']['content'] ?? null;
-                
+
                 // Comprehensive cleanup of markdown and reasoning tags
                 $content = preg_replace('/<think>.*?<\/think>/s', '', $content); // Remove DeepSeek reasoning
                 $content = preg_replace('/\*\*([^*]+)\*\*/', '$1', $content); // Remove bold **text**
@@ -411,13 +417,13 @@ class AIService
                 $content = preg_replace('/^#{1,6}\s+/m', '', $content); // Remove headings ### 
                 $content = preg_replace('/^---+$/m', '', $content); // Remove horizontal rules
                 $content = preg_replace('/^\*\s+/m', '- ', $content); // Convert * bullets to -
-                
+
                 return trim($content);
             }
-            
+
             Log::error('AI Mentor Error', ['body' => $response->body()]);
             return "Maaf kak, Si Mudapreneur lagi pusing nih (gangguan koneksi). Bisa tanya lagi nanti?";
-            
+
         } catch (\Exception $e) {
             Log::error('AI Mentor Exception', ['message' => $e->getMessage()]);
             return "Maaf kak, ada gangguan sistem. Silakan coba lagi ya.";
@@ -449,11 +455,11 @@ class AIService
         }
         
         Pastikan idenya kreatif, lucu, atau menggugah selera. Gunakan bahasa gaul sopan.";
-        
+
         // Use Primary API (Smart Model) for better creativity and accuracy
         $this->usePrimaryApi();
         $response = $this->chat($prompt);
-        
+
         if (!$response) {
             return [
                 'title' => 'Promosi ' . $productName,
@@ -470,11 +476,12 @@ class AIService
             $jsonStr = preg_replace('/```json\s*|\s*```/', '', $response);
             $jsonStr = preg_replace('/<think>.*?<\/think>/s', '', $jsonStr);
             $data = json_decode($jsonStr, true);
-            
+
             if (json_last_error() === JSON_ERROR_NONE) {
                 return $data;
             }
-        } catch (\Exception $e) {}
+        } catch (\Exception $e) {
+        }
 
         // Fallback if generic text returned
         return [
@@ -483,7 +490,7 @@ class AIService
             'script_text' => $response // Raw text backup
         ];
     }
-    
+
     /**
      * AI Poster Generator Text
      * Emulates poster creation prompt since we can't generate actual images yet.
@@ -502,11 +509,11 @@ class AIService
             'atmosphere': 'deskripsi mood desain (ceria/elegan/pedes)'
         }
         Pilih warna yang kontras dan menarik perhatian.";
-        
+
         // Use Secondary API
         $this->useSecondaryApi();
         $response = $this->chat($prompt);
-        
+
         try {
             $jsonStr = preg_replace('/```json\s*|\s*```/', '', $response);
             $jsonStr = preg_replace('/<think>.*?<\/think>/s', '', $jsonStr);
@@ -514,8 +521,9 @@ class AIService
             if (json_last_error() === JSON_ERROR_NONE) {
                 return $data;
             }
-        } catch (\Exception $e) {}
-        
+        } catch (\Exception $e) {
+        }
+
         return [
             'backgroundColor' => '#fef3c7', // amber-100
             'headline' => ['text' => $productName, 'color' => '#b45309', 'y' => 50, 'fontSize' => 40],
@@ -555,7 +563,7 @@ class AIService
         // Use Secondary API (OpenRouter/Gemini usually good enough for creative writing)
         $this->useSecondaryApi();
         $response = $this->chat($prompt);
-        
+
         if (!$response) {
             \Illuminate\Support\Facades\Log::warning('Visual Description API Failed, using fallback.');
             return "Video menampilkan {$storeName} dengan suasana yang nyaman dan autentik. Produk unggulan {$productName} diperlihatkan secara close-up dengan pencahayaan natural yang menonjolkan kualitasnya.";
@@ -565,7 +573,7 @@ class AIService
         $response = preg_replace('/<think>.*?<\/think>/s', '', $response);
         $response = preg_replace('/^"/ ', '', $response);
         $response = preg_replace('/"$/ ', '', $response);
-        
+
         return trim($response);
     }
 
@@ -609,16 +617,46 @@ Nasi Goreng spesial cuma Rp 15.000 aja lho~
 HANYA OUTPUT CAPTION, tanpa penjelasan tambahan.";
 
         $this->useSecondaryApi();
+
+        Log::info('PosterCopywriting: Generating caption', [
+            'store' => $storeName,
+            'product' => $productName,
+            'tier' => $this->currentTier,
+            'model' => $this->model,
+        ]);
+
         $response = $this->chat($prompt);
 
+        // Fallback caption
+        $fallback = "🔥 {$productName} tersedia di {$storeName}!\n💰 Harga: {$price}\n📞 Hubungi: {$phone}\n📍 {$address}\n\n#UMKM #PromoSpesial #KulinerLokal";
+
         if (!$response) {
-            // Fallback caption
-            return "🔥 {$productName} tersedia di {$storeName}!\n💰 Harga: {$price}\n📞 Hubungi: {$phone}\n📍 {$address}\n\n#UMKM #PromoSpesial #KulinerLokal";
+            Log::warning('PosterCopywriting: API returned null, using fallback');
+            return $fallback;
         }
 
         // Clean response
         $response = preg_replace('/<think>.*?<\/think>/s', '', $response);
         $response = trim($response);
+
+        // Validate response - check for malformed/garbage output
+        // Detect repeated punctuation or single character spam
+        if (preg_match('/^[!?.@#$%^&*()+=\[\]{}|\\\\<>~`\-_]{10,}$/', $response)) {
+            Log::error('PosterCopywriting: Malformed response detected (repeated punctuation)', [
+                'response' => substr($response, 0, 100)
+            ]);
+            return $fallback;
+        }
+
+        // Check for minimum viable content (at least some Indonesian words)
+        if (strlen($response) < 20 || !preg_match('/[a-zA-Z]{3,}/', $response)) {
+            Log::error('PosterCopywriting: Response too short or no words', [
+                'response' => $response
+            ]);
+            return $fallback;
+        }
+
+        Log::info('PosterCopywriting: Success', ['response_length' => strlen($response)]);
 
         return $response;
     }
@@ -629,46 +667,46 @@ HANYA OUTPUT CAPTION, tanpa penjelasan tambahan.";
     public function getSmartReplies(string $customerMessage): array
     {
         $messageLower = strtolower($customerMessage);
-        
+
         // Context-aware reply suggestions
         $replies = [];
-        
+
         // Stock/availability questions
         if (str_contains($messageLower, 'ready') || str_contains($messageLower, 'stock') || str_contains($messageLower, 'ada')) {
             $replies[] = '✅ Ready stock kak, silakan langsung diorder ya!';
             $replies[] = '📦 Stok tersedia kak, mau pesan berapa?';
         }
-        
+
         // Shipping questions
         if (str_contains($messageLower, 'kirim') || str_contains($messageLower, 'ongkir') || str_contains($messageLower, 'antar')) {
             $replies[] = '🚚 Bisa kirim hari ini kak, ongkir sesuai jarak ya';
             $replies[] = '📍 Untuk pengiriman, bisa COD atau diantar langsung kak';
         }
-        
+
         // Price questions
         if (str_contains($messageLower, 'harga') || str_contains($messageLower, 'berapa') || str_contains($messageLower, 'diskon')) {
             $replies[] = '💰 Harga sudah tertera di produk ya kak';
             $replies[] = '🎁 Untuk pembelian banyak ada harga khusus kak';
         }
-        
+
         // General greetings
         if (str_contains($messageLower, 'halo') || str_contains($messageLower, 'hai') || str_contains($messageLower, 'pagi') || str_contains($messageLower, 'siang')) {
             $replies[] = '👋 Halo kak! Ada yang bisa dibantu?';
             $replies[] = '😊 Selamat datang kak, silakan tanya-tanya dulu ya';
         }
-        
+
         // Order confirmation
         if (str_contains($messageLower, 'order') || str_contains($messageLower, 'pesan') || str_contains($messageLower, 'beli')) {
             $replies[] = '🛒 Siap kak! Langsung checkout aja ya';
             $replies[] = '✨ Terima kasih ordernya kak! Segera diproses ya';
         }
-        
+
         // Thanks
         if (str_contains($messageLower, 'terima kasih') || str_contains($messageLower, 'makasih') || str_contains($messageLower, 'thanks')) {
             $replies[] = '🙏 Sama-sama kak! Ditunggu orderan selanjutnya ya';
             $replies[] = '😊 Terima kasih juga kak, semoga puas dengan produknya!';
         }
-        
+
         // Default replies
         if (empty($replies)) {
             $replies = [
@@ -677,7 +715,7 @@ HANYA OUTPUT CAPTION, tanpa penjelasan tambahan.";
                 '✅ Baik kak, ada info lain yang diperlukan?',
             ];
         }
-        
+
         return array_slice($replies, 0, 3); // Return max 3 suggestions
     }
 
@@ -689,25 +727,25 @@ HANYA OUTPUT CAPTION, tanpa penjelasan tambahan.";
         if (count($products) < 2) {
             return [];
         }
-        
+
         $suggestions = [];
-        
+
         // Group by category
         $byCategory = [];
         foreach ($products as $product) {
             $cat = $product['category'] ?? 'other';
             $byCategory[$cat][] = $product;
         }
-        
+
         // Suggest bundles within same category
         foreach ($byCategory as $category => $catProducts) {
             if (count($catProducts) >= 2) {
                 // Pick two products for bundle
                 $product1 = $catProducts[0];
                 $product2 = $catProducts[1] ?? $catProducts[0];
-                
+
                 $bundlePrice = (($product1['price'] ?? 0) + ($product2['price'] ?? 0)) * 0.9; // 10% discount
-                
+
                 $suggestions[] = [
                     'type' => 'bundle',
                     'icon' => '📦',
@@ -719,7 +757,7 @@ HANYA OUTPUT CAPTION, tanpa penjelasan tambahan.";
                 ];
             }
         }
-        
+
         // Cross-category suggestion (if kuliner exists)
         if (isset($byCategory['kuliner']) && count($byCategory['kuliner']) > 0) {
             $mainProduct = $byCategory['kuliner'][0];
@@ -733,7 +771,7 @@ HANYA OUTPUT CAPTION, tanpa penjelasan tambahan.";
                 'bundle_price' => 0,
             ];
         }
-        
+
         return array_slice($suggestions, 0, 3);
     }
 
@@ -752,25 +790,25 @@ HANYA OUTPUT CAPTION, tanpa penjelasan tambahan.";
                 'highlights' => [],
             ];
         }
-        
+
         $positiveKeywords = ['enak', 'bagus', 'mantap', 'recommended', 'puas', 'cepat', 'ramah', 'fresh', 'segar', 'lezat', 'top'];
         $negativeKeywords = ['lama', 'kecewa', 'jelek', 'basi', 'mahal', 'kurang', 'rusak', 'telat', 'dingin', 'hambar'];
-        
+
         $positiveCount = 0;
         $negativeCount = 0;
         $highlights = [];
-        
+
         foreach ($reviews as $review) {
             $text = strtolower($review['text'] ?? $review['comment'] ?? '');
             $rating = $review['rating'] ?? 3;
-            
+
             // Count by rating
             if ($rating >= 4) {
                 $positiveCount++;
             } elseif ($rating <= 2) {
                 $negativeCount++;
             }
-            
+
             // Extract highlights
             foreach ($positiveKeywords as $keyword) {
                 if (str_contains($text, $keyword)) {
@@ -783,10 +821,10 @@ HANYA OUTPUT CAPTION, tanpa penjelasan tambahan.";
                 }
             }
         }
-        
+
         $total = count($reviews);
         $score = ($positiveCount - $negativeCount) / $total * 100;
-        
+
         // Generate summary
         if ($positiveCount > $negativeCount) {
             $summary = "😊 Pembeli menyukai produk Anda! Banyak yang bilang produknya bagus.";
@@ -798,7 +836,7 @@ HANYA OUTPUT CAPTION, tanpa penjelasan tambahan.";
             $summary = "😐 Ulasan cukup beragam. Pertahankan kualitas dan tingkatkan layanan!";
             $overall = 'neutral';
         }
-        
+
         return [
             'overall' => $overall,
             'score' => round($score),
@@ -834,20 +872,20 @@ HANYA OUTPUT CAPTION, tanpa penjelasan tambahan.";
                 ['name' => 'Cuci Motor', 'growth' => 20, 'icon' => '🏍️'],
             ],
         ];
-        
+
         if ($category !== 'all' && isset($trends[$category])) {
             return $trends[$category];
         }
-        
+
         // Return top trends from all categories
         $allTrends = [];
         foreach ($trends as $catTrends) {
             $allTrends = array_merge($allTrends, $catTrends);
         }
-        
+
         // Sort by growth
         usort($allTrends, fn($a, $b) => $b['growth'] - $a['growth']);
-        
+
         return array_slice($allTrends, 0, 5);
     }
     /**
@@ -861,7 +899,7 @@ HANYA OUTPUT CAPTION, tanpa penjelasan tambahan.";
         }
 
         // Format products for AI context - include key details
-        $productList = $products->take(8)->map(function($p, $index) {
+        $productList = $products->take(8)->map(function ($p, $index) {
             $num = $index + 1;
             $price = number_format($p->price, 0, ',', '.');
             return "{$num}. {$p->name} (Rp{$price}) - {$p->category} - toko: {$p->store->name}";
@@ -903,29 +941,29 @@ INGAT: Jangan tulis list panjang, cukup highlight 1-2 produk terbaik dengan alas
                 'X-Title' => config('app.name'),
                 'Content-Type' => 'application/json',
             ])->timeout(30)->post($this->baseUrl, [
-                'model' => $this->model,
-                'messages' => $messages,
-                'temperature' => 0.8, // More creative for personalized recommendations
-                'max_tokens' => 200, // Allow longer personalized response
-            ]);
+                        'model' => $this->model,
+                        'messages' => $messages,
+                        'temperature' => 0.8, // More creative for personalized recommendations
+                        'max_tokens' => 200, // Allow longer personalized response
+                    ]);
 
             if ($response->successful()) {
                 $content = $response->json()['choices'][0]['message']['content'] ?? null;
-                
+
                 // Cleanup DeepSeek reasoning tags and markdown
                 $content = preg_replace('/<think>.*?<\/think>/s', '', $content);
                 $content = preg_replace('/\*\*([^*]+)\*\*/', '$1', $content); // Remove bold
                 $content = preg_replace('/\*([^*]+)\*/', '$1', $content); // Remove italic
                 $content = preg_replace('/^#+\s*/m', '', $content); // Remove headings
                 $content = trim($content);
-                
+
                 if (empty($content)) {
                     return $this->getFallbackShoppingResponse($products, $message);
                 }
-                
+
                 return $content;
             }
-            
+
             Log::error('AI Shopping Error', ['status' => $response->status(), 'body' => $response->body()]);
             return $this->getFallbackShoppingResponse($products, $message);
 
@@ -943,15 +981,15 @@ INGAT: Jangan tulis list panjang, cukup highlight 1-2 produk terbaik dengan alas
         $count = $products->count();
         $firstProduct = $products->first();
         $category = $firstProduct->category ?? 'produk';
-        
+
         $categoryEmojis = [
             'kuliner' => '🍽️',
             'kriya' => '🎨',
             'jasa' => '⚡',
         ];
-        
+
         $emoji = $categoryEmojis[$category] ?? '✨';
-        
+
         return "Halo Kak! Aku nemu {$count} {$category} yang mungkin cocok buat kamu {$emoji}\n\nLangsung cek aja produknya di bawah ya! Semuanya ready stock dan harga terjangkau 👇";
     }
 
@@ -990,25 +1028,25 @@ INGAT: Jangan tulis list panjang, cukup highlight 1-2 produk terbaik dengan alas
                 'X-Title' => config('app.name'),
                 'Content-Type' => 'application/json',
             ])->timeout(10)->post($this->baseUrl, [
-                'model' => $this->model,
-                'messages' => [
-                    ['role' => 'user', 'content' => $prompt]
-                ],
-                'temperature' => 0.1, // Very low temp for strict JSON
-                'max_tokens' => 200,
-                'response_format' => ['type' => 'json_object'] 
-            ]);
+                        'model' => $this->model,
+                        'messages' => [
+                            ['role' => 'user', 'content' => $prompt]
+                        ],
+                        'temperature' => 0.1, // Very low temp for strict JSON
+                        'max_tokens' => 200,
+                        'response_format' => ['type' => 'json_object']
+                    ]);
 
             if ($response->successful()) {
                 $content = $response->json()['choices'][0]['message']['content'] ?? '{}';
-                
+
                 // Cleanup
                 $content = preg_replace('/<think>.*?<\/think>/s', '', $content);
                 $content = preg_replace('/```json\s*|\s*```/', '', $content);
                 $content = trim($content);
-                
+
                 $data = json_decode($content, true);
-                
+
                 if (json_last_error() === JSON_ERROR_NONE) {
                     return array_merge([
                         'keywords' => [],
@@ -1021,10 +1059,10 @@ INGAT: Jangan tulis list panjang, cukup highlight 1-2 produk terbaik dengan alas
         } catch (\Exception $e) {
             Log::error('AI Extract Intent Error', ['message' => $e->getMessage()]);
         }
-        
+
         // Fallback to basic extraction if AI fails
         return [
-            'keywords' => [], 
+            'keywords' => [],
             'category' => null,
             'max_price' => null,
             'is_random' => false
@@ -1066,23 +1104,23 @@ INGAT: Jangan tulis list panjang, cukup highlight 1-2 produk terbaik dengan alas
                 'HTTP-Referer' => config('app.url'),
                 'Content-Type' => 'application/json',
             ])->timeout(25)->post($this->baseUrl, [
-                'model' => $this->model,
-                'messages' => [
-                    ['role' => 'user', 'content' => $prompt]
-                ],
-                'temperature' => 0.3, // Slightly higher for typo correction creativity
-                'max_tokens' => 300,
-                'response_format' => ['type' => 'json_object'] 
-            ]);
+                        'model' => $this->model,
+                        'messages' => [
+                            ['role' => 'user', 'content' => $prompt]
+                        ],
+                        'temperature' => 0.3, // Slightly higher for typo correction creativity
+                        'max_tokens' => 300,
+                        'response_format' => ['type' => 'json_object']
+                    ]);
 
             if ($response->successful()) {
                 $content = $response->json()['choices'][0]['message']['content'] ?? '{}';
                 $content = preg_replace('/<think>.*?<\/think>/s', '', $content);
                 $content = preg_replace('/```json\s*|\s*```/', '', $content);
                 $content = trim($content);
-                
+
                 $data = json_decode($content, true);
-                
+
                 if (json_last_error() === JSON_ERROR_NONE && !empty($data['product_ids'])) {
                     return $data['product_ids'];
                 }
@@ -1090,7 +1128,7 @@ INGAT: Jangan tulis list panjang, cukup highlight 1-2 produk terbaik dengan alas
         } catch (\Exception $e) {
             Log::error('AI Product ID Extract Error', ['message' => $e->getMessage()]);
         }
-        
+
         return []; // Return empty if failed, controller will handle fallback
     }
 
@@ -1127,29 +1165,29 @@ INGAT: Jangan tulis list panjang, cukup highlight 1-2 produk terbaik dengan alas
         try {
             // Use Secondary API (Fast) for Shopping
             $this->useSecondaryApi();
-            
+
             $response = Http::withHeaders([
                 'Authorization' => 'Bearer ' . $this->apiKey,
                 'HTTP-Referer' => config('app.url'),
                 'Content-Type' => 'application/json',
             ])->timeout(10)->post($this->baseUrl, [
-                'model' => $this->model, // Use Configured Secondary Model
-                'messages' => [
-                    ['role' => 'user', 'content' => $prompt]
-                ],
-                'temperature' => 0.7,
-                'max_tokens' => 300, 
-                'response_format' => ['type' => 'json_object'] 
-            ]);
+                        'model' => $this->model, // Use Configured Secondary Model
+                        'messages' => [
+                            ['role' => 'user', 'content' => $prompt]
+                        ],
+                        'temperature' => 0.7,
+                        'max_tokens' => 300,
+                        'response_format' => ['type' => 'json_object']
+                    ]);
 
             if ($response->successful()) {
                 $content = $response->json()['choices'][0]['message']['content'] ?? '{}';
                 $content = preg_replace('/<think>.*?<\/think>/s', '', $content);
                 $content = preg_replace('/```json\s*|\s*```/', '', $content);
                 $content = trim($content);
-                
+
                 $data = json_decode($content, true);
-                
+
                 if (json_last_error() === JSON_ERROR_NONE) {
                     return [
                         'product_ids' => $data['product_ids'] ?? [],
@@ -1160,7 +1198,7 @@ INGAT: Jangan tulis list panjang, cukup highlight 1-2 produk terbaik dengan alas
         } catch (\Exception $e) {
             Log::error('AI Optimization Error', ['message' => $e->getMessage()]);
         }
-        
+
         // Fallback default
         return [
             'product_ids' => [],
