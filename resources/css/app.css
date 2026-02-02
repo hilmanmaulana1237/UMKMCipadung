@@ -1,0 +1,422 @@
+@import 'tailwindcss';
+
+@import "tw-animate-css";
+
+@source '../views';
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+
+@theme {
+    --font-sans:
+        'Plus Jakarta Sans', 'Instrument Sans', ui-sans-serif, system-ui, sans-serif,
+        'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
+        'Noto Color Emoji';
+
+    --radius-lg: var(--radius);
+    --radius-md: calc(var(--radius) - 2px);
+    --radius-sm: calc(var(--radius) - 4px);
+
+    --color-background: var(--background);
+    --color-foreground: var(--foreground);
+
+    --color-card: var(--card);
+    --color-card-foreground: var(--card-foreground);
+
+    --color-popover: var(--popover);
+    --color-popover-foreground: var(--popover-foreground);
+
+    --color-primary: var(--primary);
+    --color-primary-foreground: var(--primary-foreground);
+
+    --color-secondary: var(--secondary);
+    --color-secondary-foreground: var(--secondary-foreground);
+
+    --color-muted: var(--muted);
+    --color-muted-foreground: var(--muted-foreground);
+
+    --color-accent: var(--accent);
+    --color-accent-foreground: var(--accent-foreground);
+
+    --color-destructive: var(--destructive);
+    --color-destructive-foreground: var(--destructive-foreground);
+
+    --color-success: var(--success);
+    --color-success-foreground: var(--success-foreground);
+
+    --color-warning: var(--warning);
+    --color-warning-foreground: var(--warning-foreground);
+
+    --color-border: var(--border);
+    --color-input: var(--input);
+    --color-ring: var(--ring);
+
+    --color-chart-1: var(--chart-1);
+    --color-chart-2: var(--chart-2);
+    --color-chart-3: var(--chart-3);
+    --color-chart-4: var(--chart-4);
+    --color-chart-5: var(--chart-5);
+
+    --color-sidebar: var(--sidebar);
+    --color-sidebar-foreground: var(--sidebar-foreground);
+    --color-sidebar-primary: var(--sidebar-primary);
+    --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+    --color-sidebar-accent: var(--sidebar-accent);
+    --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+    --color-sidebar-border: var(--sidebar-border);
+    --color-sidebar-ring: var(--sidebar-ring);
+}
+
+/* MUDAPRENEUR.AI Royal Blue Theme - Light Mode Only */
+:root {
+    /* Primary: Royal Blue */
+    --primary: #2563EB;
+    --primary-foreground: #FFFFFF;
+
+    /* Secondary: Sky Blue */
+    --secondary: #38BDF8;
+    --secondary-foreground: #0C4A6E;
+
+    /* Success: Emerald (Money/Profit) */
+    --success: #10B981;
+    --success-foreground: #FFFFFF;
+
+    /* Warning: Amber (Alerts/Pending) */
+    --warning: #F59E0B;
+    --warning-foreground: #78350F;
+
+    /* Destructive: Rose (Errors/Reject) */
+    --destructive: #F43F5E;
+    --destructive-foreground: #FFFFFF;
+
+    /* Surface & Background */
+    --background: #F1F5F9;
+    --foreground: #0F172A;
+    --card: #FFFFFF;
+    --card-foreground: #0F172A;
+    --popover: #FFFFFF;
+    --popover-foreground: #0F172A;
+
+    /* Muted & Accent */
+    --muted: #E2E8F0;
+    --muted-foreground: #64748B;
+    --accent: #DBEAFE;
+    --accent-foreground: #1E40AF;
+
+    /* Borders & Inputs */
+    --border: #CBD5E1;
+    --input: #E2E8F0;
+    --ring: #2563EB;
+
+    /* Charts */
+    --chart-1: #2563EB;
+    --chart-2: #38BDF8;
+    --chart-3: #10B981;
+    --chart-4: #F59E0B;
+    --chart-5: #F43F5E;
+
+    --radius: 0.75rem;
+
+    /* Sidebar (legacy support) */
+    --sidebar: #FFFFFF;
+    --sidebar-foreground: #0F172A;
+    --sidebar-primary: #2563EB;
+    --sidebar-primary-foreground: #FFFFFF;
+    --sidebar-accent: #DBEAFE;
+    --sidebar-accent-foreground: #1E40AF;
+    --sidebar-border: #E2E8F0;
+    --sidebar-ring: #2563EB;
+}
+
+@layer base {
+    * {
+        @apply border-border;
+    }
+
+    body {
+        @apply bg-background text-foreground;
+    }
+}
+
+/* Utility: Hide scrollbar */
+.scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;
+}
+
+/* PWA Safe area for bottom navigation */
+.pb-safe {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* ========================================
+   PRINT STYLES - Professional PDF Output
+   ======================================== */
+@media print {
+
+    /* Page Setup */
+    @page {
+        size: A4 portrait;
+        margin: 15mm 10mm;
+    }
+
+    /* Reset for print */
+    * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        color-adjust: exact !important;
+    }
+
+    /* Hide sidebar, navigation, and interactive elements */
+    #admin-sidebar,
+    [data-sidebar],
+    aside,
+    nav,
+    .sidebar,
+    [class*="sidebar"],
+    [class*="Sidebar"],
+    [class*="bottom-nav"],
+    [class*="BottomNav"],
+    header button,
+    button:not(.print-button),
+    .print\:hidden {
+        display: none !important;
+    }
+
+    /* Make main content full width */
+    body {
+        background: white !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    #admin-main,
+    main,
+    [data-content],
+    .main-content,
+    .flex-1 {
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    /* Container adjustments */
+    .container,
+    .max-w-7xl,
+    .max-w-6xl {
+        max-width: 100% !important;
+        padding: 0 !important;
+    }
+
+    /* Preserve gradients for header */
+    .bg-gradient-to-br,
+    [class*="from-violet"],
+    [class*="from-purple"] {
+        background: linear-gradient(to bottom right, #7c3aed, #9333ea) !important;
+        -webkit-print-color-adjust: exact !important;
+    }
+
+    /* Cards - clean print styling */
+    .bg-white,
+    .bg-card {
+        background: white !important;
+        box-shadow: none !important;
+        border: 1px solid #e5e7eb !important;
+    }
+
+    .rounded-2xl,
+    .rounded-xl {
+        border-radius: 8px !important;
+    }
+
+    /* Space between sections */
+    .space-y-6>*+*,
+    .space-y-4>*+* {
+        margin-top: 12px !important;
+    }
+
+    /* Grid layouts - ensure they print correctly */
+    .grid {
+        display: grid !important;
+    }
+
+    .md\:grid-cols-2 {
+        grid-template-columns: 1fr 1fr !important;
+    }
+
+    .md\:grid-cols-3 {
+        grid-template-columns: 1fr 1fr 1fr !important;
+    }
+
+    .md\:grid-cols-4 {
+        grid-template-columns: repeat(4, 1fr) !important;
+    }
+
+    .md\:grid-cols-5 {
+        grid-template-columns: repeat(5, 1fr) !important;
+    }
+
+    .grid-cols-2 {
+        grid-template-columns: 1fr 1fr !important;
+    }
+
+    .grid-cols-3 {
+        grid-template-columns: 1fr 1fr 1fr !important;
+    }
+
+    /* Gap adjustments for print */
+    .gap-6,
+    .gap-4,
+    .gap-3 {
+        gap: 8px !important;
+    }
+
+    /* Typography for print */
+    .text-3xl {
+        font-size: 20px !important;
+    }
+
+    .text-2xl {
+        font-size: 16px !important;
+    }
+
+    .text-xl {
+        font-size: 14px !important;
+    }
+
+    .text-lg {
+        font-size: 12px !important;
+    }
+
+    .text-sm {
+        font-size: 10px !important;
+    }
+
+    .text-xs {
+        font-size: 9px !important;
+    }
+
+    /* Ensure text colors are visible */
+    .text-white {
+        color: white !important;
+    }
+
+    .text-gray-500,
+    .text-gray-400,
+    .text-muted-foreground {
+        color: #555 !important;
+    }
+
+    /* Stat cards - compact for print */
+    .bg-white.rounded-2xl.p-5 {
+        padding: 10px !important;
+    }
+
+    /* Tables */
+    table {
+        width: 100% !important;
+        border-collapse: collapse !important;
+        font-size: 9px !important;
+    }
+
+    th,
+    td {
+        padding: 6px 8px !important;
+        border-bottom: 1px solid #e5e7eb !important;
+    }
+
+    th {
+        background: #f9fafb !important;
+        font-weight: 600 !important;
+    }
+
+    /* Colored stat boxes */
+    [class*="bg-green-50"],
+    [class*="bg-blue-50"],
+    [class*="bg-violet-50"],
+    [class*="bg-orange-50"],
+    [class*="bg-yellow-50"],
+    [class*="bg-gray-50"] {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+
+    /* Badge colors */
+    [class*="bg-violet-100"],
+    [class*="bg-pink-100"],
+    [class*="bg-green-100"],
+    [class*="bg-yellow-100"],
+    [class*="bg-red-100"] {
+        -webkit-print-color-adjust: exact !important;
+    }
+
+    /* Ensure gradient icon backgrounds show */
+    .p-3.rounded-xl[class*="bg-gradient"] {
+        -webkit-print-color-adjust: exact !important;
+    }
+
+    /* Page break controls */
+    .bg-white.rounded-2xl.p-6 {
+        page-break-inside: avoid;
+        break-inside: avoid;
+    }
+
+    /* Avoid breaking tables */
+    table,
+    tr,
+    tbody {
+        page-break-inside: avoid;
+    }
+
+    /* Footer */
+    .text-center.py-6 {
+        padding: 15px 0 !important;
+        margin-top: 20px !important;
+        border-top: 1px solid #e5e7eb !important;
+    }
+
+    /* Remove hover effects */
+    .hover\:scale-105,
+    .hover\:bg-white\/30 {
+        transform: none !important;
+    }
+
+    /* Fixed elements should be static */
+    .fixed,
+    .sticky {
+        position: static !important;
+    }
+
+    /* Summary cards in header */
+    .bg-white\/10 {
+        background: rgba(255, 255, 255, 0.2) !important;
+        -webkit-print-color-adjust: exact !important;
+    }
+
+    /* Padding adjustments */
+    .p-6 {
+        padding: 12px !important;
+    }
+
+    .p-4,
+    .p-5 {
+        padding: 10px !important;
+    }
+
+    .p-3 {
+        padding: 8px !important;
+    }
+
+    .mb-6,
+    .mb-4 {
+        margin-bottom: 10px !important;
+    }
+
+    .mt-6,
+    .mt-4 {
+        margin-top: 10px !important;
+    }
+}

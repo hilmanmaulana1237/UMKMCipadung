@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pilih Template Landing Page</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 60px;
+        }
+
+        .header h1 {
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 16px;
+            text-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .template-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .template-card {
+            background: white;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .template-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.3);
+        }
+
+        .template-preview {
+            position: relative;
+            height: 250px;
+            overflow: hidden;
+            background: #f5f5f5;
+        }
+
+        .template-preview iframe {
+            width: 100%;
+            height: 600px;
+            border: none;
+            transform: scale(0.42);
+            transform-origin: 0 0;
+            pointer-events: none;
+        }
+
+        .template-badge {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 8px 16px;
+            border-radius: 50px;
+            font-size: 1.5rem;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .template-info {
+            padding: 30px;
+        }
+
+        .template-name {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+            color: #1a1a1a;
+        }
+
+        .template-desc {
+            color: #666;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+
+        .template-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .tag {
+            background: #f0f0f0;
+            color: #666;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .color-palette {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 24px;
+        }
+
+        .color-dot {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            border: 2px solid white;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        .select-btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .select-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .selected {
+            border: 4px solid #667eea;
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.2);
+        }
+
+        .selected .select-btn {
+            background: #2ecc71;
+        }
+
+        .selected-indicator {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: #2ecc71;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            display: none;
+        }
+
+        .selected .selected-indicator {
+            display: block;
+        }
+
+        .footer {
+            text-align: center;
+            color: white;
+            margin-top: 60px;
+        }
+
+        .footer p {
+            opacity: 0.8;
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .template-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .template-preview {
+                height: 200px;
+            }
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            max-width: 500px;
+            width: 90%;
+            text-align: center;
+        }
+
+        .modal-content h2 {
+            color: #1a1a1a;
+            margin-bottom: 16px;
+        }
+
+        .modal-content p {
+            color: #666;
+            margin-bottom: 30px;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 16px;
+        }
+
+        .modal-btn {
+            flex: 1;
+            padding: 14px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .modal-btn.primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .modal-btn.secondary {
+            background: #f0f0f0;
+            color: #666;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>✨ Pilih Template Landing Page</h1>
+            <p>Pilih desain yang sesuai dengan karakter bisnis Anda</p>
+        </div>
+
+        <div class="template-grid" id="templateGrid">
+            <!-- Templates will be loaded here -->
+        </div>
+
+        <div class="footer">
+            <p>💡 Semua template sudah responsif dan siap digunakan</p>
+            <p style="margin-top: 10px; font-size: 0.8rem;">Dibuat dengan ❤️ untuk UMKM Indonesia</p>
+        </div>
+    </div>
+
+    <!-- Modal Konfirmasi -->
+    <div class="modal" id="confirmModal">
+        <div class="modal-content">
+            <h2>✅ Konfirmasi Pilihan</h2>
+            <p id="modalMessage">Apakah Anda yakin ingin menggunakan template ini?</p>
+            <div class="modal-actions">
+                <button class="modal-btn secondary" onclick="closeModal()">Batal</button>
+                <button class="modal-btn primary" onclick="confirmSelection()">Ya, Pilih Template</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let selectedTemplate = null;
+        let templates = [];
+
+        // Load template configuration
+        async function loadTemplates() {
+            try {
+                const response = await fetch('template-config.json');
+                const data = await response.json();
+                templates = data.templates;
+                renderTemplates();
+            } catch (error) {
+                console.error('Error loading templates:', error);
+            }
+        }
+
+        function renderTemplates() {
+            const grid = document.getElementById('templateGrid');
+
+            templates.forEach(template => {
+                const card = document.createElement('div');
+                card.className = 'template-card';
+                card.setAttribute('data-template-id', template.id);
+
+                card.innerHTML = `
+                    <div class="template-preview">
+                        <iframe src="${template.thumbnail}"></iframe>
+                        <div class="template-badge">${template.emoji}</div>
+                        <div class="selected-indicator">✓ Terpilih</div>
+                    </div>
+                    <div class="template-info">
+                        <h3 class="template-name">${template.name}</h3>
+                        <p class="template-desc">${template.description}</p>
+                        
+                        <div class="template-tags">
+                            ${template.category.map(cat => `<span class="tag">${cat}</span>`).join('')}
+                        </div>
+                        
+                        <div class="color-palette">
+                            <div class="color-dot" style="background: ${template.colors.primary}"></div>
+                            <div class="color-dot" style="background: ${template.colors.secondary}"></div>
+                            <div class="color-dot" style="background: ${template.colors.accent}"></div>
+                        </div>
+                        
+                        <button class="select-btn" onclick="selectTemplate('${template.id}', '${template.name}')">
+                            Pilih Template
+                        </button>
+                    </div>
+                `;
+
+                grid.appendChild(card);
+            });
+        }
+
+        function selectTemplate(templateId, templateName) {
+            selectedTemplate = templates.find(t => t.id === templateId);
+
+            // Show confirmation modal
+            document.getElementById('modalMessage').textContent =
+                `Apakah Anda yakin ingin menggunakan template "${templateName}"?`;
+            document.getElementById('confirmModal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('confirmModal').classList.remove('active');
+        }
+
+        function confirmSelection() {
+            if (!selectedTemplate) return;
+
+            // Remove previous selection
+            document.querySelectorAll('.template-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+
+            // Add selection to current
+            const card = document.querySelector(`[data-template-id="${selectedTemplate.id}"]`);
+            card.classList.add('selected');
+
+            // Store selection in localStorage
+            localStorage.setItem('selectedTemplate', JSON.stringify(selectedTemplate));
+
+            // Close modal
+            closeModal();
+
+            // Show success message
+            alert(`✅ Template "${selectedTemplate.name}" berhasil dipilih!\n\nFile template: ${selectedTemplate.file}`);
+
+            // Here you would typically send this to your backend
+            console.log('Selected template:', selectedTemplate);
+
+            // Optional: Redirect to form or next step
+            // window.location.href = '/customize-template?template=' + selectedTemplate.id;
+        }
+
+        // Check if there's a previously selected template
+        window.addEventListener('DOMContentLoaded', () => {
+            loadTemplates();
+
+            // Check localStorage for previous selection
+            const saved = localStorage.getItem('selectedTemplate');
+            if (saved) {
+                const template = JSON.parse(saved);
+                setTimeout(() => {
+                    const card = document.querySelector(`[data-template-id="${template.id}"]`);
+                    if (card) {
+                        card.classList.add('selected');
+                    }
+                }, 500);
+            }
+        });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{STORE_NAME}} | Cita Rasa Nusantara</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Bitter:wght@500;700&family=DM+Sans:wght@400;500;700&display=swap"
+        rel="stylesheet">
+
+    <style>
+        /* --- 1. CONFIGURATION --- */
+        :root {
+            --bg: #FAFAF9;
+            --white: #ffffff;
+            --text-main: #2D2420;
+            --text-sec: #7A6C65;
+            --accent: #D84315;
+
+            --border: #E8E6E1;
+
+            --font-head: 'Bitter', serif;
+            --font-body: 'DM Sans', sans-serif;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text-main);
+            font-family: var(--font-body);
+            line-height: 1.6;
+        }
+
+        a {
+            text-decoration: none;
+            color: inherit;
+            transition: 0.3s;
+        }
+
+        img {
+            display: block;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* --- 2. LAYOUT UTILITIES --- */
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .btn {
+            display: inline-block;
+            background-color: var(--accent);
+            color: white;
+            padding: 12px 30px;
+            border-radius: 50px;
+            font-weight: 500;
+            box-shadow: 0 4px 15px rgba(216, 67, 21, 0.2);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(216, 67, 21, 0.3);
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 2px solid var(--text-main);
+            color: var(--text-main);
+            padding: 10px 28px;
+            border-radius: 50px;
+            font-weight: 700;
+        }
+
+        .btn-outline:hover {
+            background: var(--text-main);
+            color: white;
+        }
+
+        /* --- 3. NAVBAR --- */
+        nav {
+            background: var(--white);
+            border-bottom: 1px solid var(--border);
+            padding: 20px 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .nav-inner {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-family: var(--font-head);
+            font-weight: 700;
+            font-size: 1.5rem;
+            color: var(--accent);
+        }
+
+        .nav-menu {
+            display: flex;
+            gap: 30px;
+        }
+
+        .nav-menu a {
+            font-weight: 500;
+            color: var(--text-sec);
+        }
+
+        .nav-menu a:hover {
+            color: var(--accent);
+        }
+
+        /* --- 4. HERO SECTION --- */
+        .hero {
+            padding: 80px 0;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            align-items: center;
+            gap: 50px;
+        }
+
+        .hero h1 {
+            font-family: var(--font-head);
+            font-size: 3rem;
+            line-height: 1.2;
+            margin-bottom: 20px;
+        }
+
+        .hero p {
+            font-size: 1.1rem;
+            color: var(--text-sec);
+            margin-bottom: 30px;
+            max-width: 450px;
+        }
+
+        .badges {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .badge {
+            background: #FFF3E0;
+            color: var(--accent);
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            font-weight: 700;
+        }
+
+        .hero-img {
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 20px 20px 0px rgba(216, 67, 21, 0.1);
+            aspect-ratio: 4/3;
+        }
+
+        /* --- 5. VALUE PROPOSITION --- */
+        .values {
+            padding: 40px 0;
+            background: var(--white);
+            border-top: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .value-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            text-align: center;
+            gap: 30px;
+        }
+
+        .value-item h4 {
+            font-family: var(--font-head);
+            font-size: 1.2rem;
+            margin-bottom: 5px;
+        }
+
+        .value-item p {
+            font-size: 0.9rem;
+            color: var(--text-sec);
+        }
+
+        /* --- 6. PRODUCT GRID --- */
+        .products {
+            padding: 80px 0;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        .section-header h2 {
+            font-family: var(--font-head);
+            font-size: 2.2rem;
+        }
+
+        .section-header p {
+            color: var(--text-sec);
+            margin-top: 10px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 30px;
+        }
+
+        .product-card {
+            background: var(--white);
+            border-radius: 16px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+            transition: 0.3s;
+            cursor: pointer;
+        }
+
+        .product-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+            border-color: var(--accent);
+        }
+
+        .img-box {
+            width: 100%;
+            aspect-ratio: 1/1;
+            background: #f4f4f4;
+            position: relative;
+        }
+
+        .p-info {
+            padding: 20px;
+            text-align: center;
+        }
+
+        .p-name {
+            font-weight: 700;
+            font-size: 1.1rem;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .p-flavor {
+            color: var(--text-sec);
+            font-size: 0.9rem;
+            margin-bottom: 15px;
+            display: block;
+        }
+
+        .p-price {
+            color: var(--accent);
+            font-weight: 700;
+            font-size: 1.1rem;
+            background: #FFF3E0;
+            padding: 5px 15px;
+            border-radius: 20px;
+            display: inline-block;
+        }
+
+        /* --- 7. FOOTER --- */
+        footer {
+            background: var(--white);
+            padding: 60px 0 30px;
+            border-top: 1px solid var(--border);
+            text-align: center;
+        }
+
+        .footer-logo {
+            font-family: var(--font-head);
+            font-weight: 700;
+            font-size: 1.5rem;
+            color: var(--text-main);
+        }
+
+        /* --- RESPONSIVE --- */
+        @media (max-width: 768px) {
+            .nav-menu {
+                display: none;
+            }
+
+            .hero {
+                grid-template-columns: 1fr;
+                text-align: center;
+                gap: 30px;
+            }
+
+            .hero-img {
+                order: -1;
+                margin-bottom: 20px;
+            }
+
+            .badges {
+                justify-content: center;
+            }
+
+            .value-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+
+            .grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 15px;
+            }
+
+            .p-info {
+                padding: 15px 10px;
+            }
+
+            .p-name {
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <nav>
+        <div class="container nav-inner">
+            <div class="logo">{{STORE_NAME}}.</div>
+            <div class="nav-menu">
+                <a href="#beranda">Beranda</a>
+                <a href="#produk">{{NAV_PRODUCTS}}</a>
+                <a href="#tentang">Tentang</a>
+            </div>
+            <a href="{{WA_LINK}}" class="btn" target="_blank">Pesan via WA</a>
+        </div>
+    </nav>
+
+    <section class="container hero" id="beranda">
+        <div class="hero-text">
+            <div class="badges">
+                <span class="badge">🔥 {{QUALITY_TITLE}}</span>
+                <span class="badge">✅ {{STATS_3_LABEL}}</span>
+            </div>
+            <h1>{{TAGLINE}}</h1>
+            <p>{{DESCRIPTION}}</p>
+            <div style="display: flex; gap: 15px; flex-wrap: wrap; justify-content: inherit;">
+                <a href="#produk" class="btn">Lihat {{NAV_PRODUCTS}}</a>
+                <a href="{{WA_LINK}}" class="btn-outline" target="_blank">{{WHY_US}}</a>
+            </div>
+        </div>
+        <div class="hero-img">
+            <img src="{{HERO_IMAGE}}" alt="{{STORE_NAME}}">
+        </div>
+    </section>
+
+    <section class="values" id="tentang">
+        <div class="container value-grid">
+            <div class="value-item">
+                <h4>🌱 {{FEATURE1_TITLE}}</h4>
+                <p>{{FEATURE1_DESC}}</p>
+            </div>
+            <div class="value-item">
+                <h4>🌶️ {{FEATURE2_TITLE}}</h4>
+                <p>{{FEATURE2_DESC}}</p>
+            </div>
+            <div class="value-item">
+                <h4>❤️ {{FEATURE3_TITLE}}</h4>
+                <p>{{FEATURE3_DESC}}</p>
+            </div>
+        </div>
+    </section>
+
+    </section>
+
+
+
+    <section id="produk" class="products container">
+        <div class="section-header">
+            <h2>{{SECTION_PRODUCTS}}</h2>
+            <p>{{CTA_DESC}}</p>
+        </div>
+
+        <div class="grid">
+            {{PRODUCTS}}
+        </div>
+    </section>
+
+    <!-- Business Info Section -->
+    <section class="values" style="background: #FAFAF9; padding-top: 0; border: none;">
+        <div class="container text-center" style="margin-bottom: 20px;">
+            <h3 style="font-family: var(--font-head); font-size: 1.5rem; color: var(--text-main);">Informasi Kontak</h3>
+        </div>
+        <div class="container value-grid">
+            <div class="value-item"
+                style="background: white; padding: 20px; border-radius: 16px; border: 1px solid var(--border);">
+                <div style="font-size: 2rem; margin-bottom: 10px;">📍</div>
+                <h4>Alamat</h4>
+                <p>{{ADDRESS}}</p>
+            </div>
+            <div class="value-item"
+                style="background: white; padding: 20px; border-radius: 16px; border: 1px solid var(--border);">
+                <div style="font-size: 2rem; margin-bottom: 10px;">📞</div>
+                <h4>Telepon</h4>
+                <p>{{PHONE}}</p>
+            </div>
+            <div class="value-item"
+                style="background: white; padding: 20px; border-radius: 16px; border: 1px solid var(--border);">
+                <div style="font-size: 2rem; margin-bottom: 10px;">🕒</div>
+                <h4>Jam Buka</h4>
+                <p>{{OPERATING_HOURS}}</p>
+            </div>
+            <div class="value-item"
+                style="background: white; padding: 20px; border-radius: 16px; border: 1px solid var(--border);">
+                <div style="font-size: 2rem; margin-bottom: 10px;">📧</div>
+                <h4>Email</h4>
+                <p><a href="{{EMAIL_LINK}}" style="color: inherit; text-decoration: none;">{{EMAIL}}</a></p>
+            </div>
+        </div>
+        <div class="container text-center" style="margin-top: 20px;">
+            <span class="badge" style="font-size: 1rem; padding: 8px 20px;">{{CATEGORY}}</span>
+        </div>
+    </section>
+
+    <footer>
+        <div class="container">
+            <h3 class="footer-logo">{{STORE_NAME}}.</h3>
+            <p style="color: var(--text-sec); font-size: 0.9rem; margin: 15px 0;">
+                {{ADDRESS}}
+            </p>
+            <div style="margin-bottom: 20px;">
+                <a href="{{WA_LINK}}" style="margin: 0 10px; font-weight: 700;" target="_blank">WhatsApp</a>
+                <a href="{{INSTAGRAM_LINK}}" style="margin: 0 10px; font-weight: 700;" target="_blank">{{INSTAGRAM}}</a>
+                <a href="{{EMAIL_LINK}}" style="margin: 0 10px; font-weight: 700;">{{EMAIL}}</a>
+            </div>
+            <p style="font-size: 0.8rem; color: #aaa;">&copy; 2024 {{STORE_NAME}} UMKM.</p>
+            <p style="font-size: 0.8rem; color: #888; margin-top: 5px;">Powered by UMKMCipadung</p>
+        </div>
+    </footer>
+
+</body>
+
+</html>

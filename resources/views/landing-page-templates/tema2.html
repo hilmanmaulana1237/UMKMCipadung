@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cimol Cloud | Fluffy & Tasty</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        /* --- VARIABLES --- */
+        :root {
+            /* Palette: Soft & Sweet */
+            --bg-body: #FFFBF7; /* Warm White */
+            --bg-card: #FFFFFF;
+            --primary: #FF8E88; /* Soft Salmon/Pink */
+            --primary-hover: #FF7069;
+            --secondary: #FFD166; /* Soft Yellow */
+            --accent-green: #06D6A0; /* Soft Mint */
+            
+            --text-main: #4A403A; /* Dark Brown-ish Grey (softer than black) */
+            --text-muted: #9C948F;
+            
+            --shadow-soft: 0 20px 40px rgba(255, 142, 136, 0.1);
+            --shadow-hover: 0 25px 50px rgba(255, 142, 136, 0.2);
+            --radius-xl: 30px;
+            --radius-btn: 50px;
+        }
+
+        /* --- RESET --- */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            font-family: 'Nunito', sans-serif; /* Rounded font */
+            overflow-x: hidden;
+            line-height: 1.6;
+        }
+
+        h1, h2, h3 { font-weight: 800; color: var(--text-main); letter-spacing: -0.5px; }
+        a { text-decoration: none; transition: 0.3s; }
+        ul { list-style: none; }
+        img { max-width: 100%; display: block; border-radius: var(--radius-xl); }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 0 25px;
+        }
+
+        /* --- BUTTONS --- */
+        .btn {
+            display: inline-block;
+            padding: 14px 40px;
+            background-color: var(--primary);
+            color: white;
+            font-weight: 700;
+            border-radius: var(--radius-btn);
+            box-shadow: 0 10px 20px rgba(255, 142, 136, 0.3);
+            transform: translateY(0);
+        }
+
+        .btn:hover {
+            background-color: var(--primary-hover);
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(255, 142, 136, 0.4);
+        }
+
+        .btn-secondary {
+            background-color: #fff;
+            color: var(--primary);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.05);
+        }
+        .btn-secondary:hover { color: var(--primary-hover); background: #fff5f5; }
+
+        /* --- ANIMATIONS --- */
+        .fade-up {
+            opacity: 0;
+            transform: translateY(40px);
+            transition: all 0.8s cubic-bezier(0.25, 1, 0.5, 1); /* Smooth easing */
+        }
+        .fade-up.visible { opacity: 1; transform: translateY(0); }
+
+        /* --- DECORATION --- */
+        .blob {
+            position: absolute;
+            z-index: -1;
+            filter: blur(60px);
+            opacity: 0.6;
+        }
+
+        /* --- NAVBAR --- */
+        nav {
+            padding: 25px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: var(--primary);
+        }
+        .logo span { color: var(--text-main); }
+
+        .nav-menu { display: flex; gap: 30px; }
+        .nav-menu a { color: var(--text-muted); font-weight: 600; }
+        .nav-menu a:hover { color: var(--primary); }
+
+        /* --- HERO --- */
+        .hero {
+            padding: 60px 0 100px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: relative;
+        }
+
+        .hero-text { flex: 1; padding-right: 50px; z-index: 2; }
+        
+        .hero h1 {
+            font-size: 3.8rem;
+            line-height: 1.1;
+            margin-bottom: 25px;
+        }
+
+        .hero h1 span { color: var(--primary); }
+
+        .hero p {
+            font-size: 1.2rem;
+            color: var(--text-muted);
+            margin-bottom: 40px;
+            max-width: 450px;
+        }
+
+        .hero-img-wrapper {
+            flex: 1;
+            position: relative;
+            z-index: 2;
+        }
+
+        .hero-img-wrapper img {
+            width: 100%;
+            box-shadow: var(--shadow-soft);
+            transform: rotate(-3deg);
+            transition: 0.5s;
+        }
+        
+        .hero-img-wrapper:hover img { transform: rotate(0deg) scale(1.02); }
+
+        /* Abstract Blob Background */
+        .bg-blob {
+            position: absolute;
+            top: 0; right: -100px;
+            width: 600px; height: 600px;
+            background: #FFE8E6;
+            border-radius: 46% 54% 60% 40% / 55% 57% 43% 45%;
+            z-index: -1;
+            animation: morph 8s ease-in-out infinite;
+        }
+
+        @keyframes morph {
+            0%, 100% { border-radius: 46% 54% 60% 40% / 55% 57% 43% 45%; }
+            50% { border-radius: 60% 40% 46% 54% / 43% 45% 55% 57%; }
+        }
+
+        /* --- CARDS (Features & Menu) --- */
+        .section-title { text-align: center; margin-bottom: 60px; }
+        .section-title span { 
+            color: var(--primary); 
+            font-weight: 700; 
+            text-transform: uppercase; 
+            letter-spacing: 2px; 
+            font-size: 0.8rem;
+            background: #FFE8E6;
+            padding: 5px 15px;
+            border-radius: 20px;
+        }
+        .section-title h2 { font-size: 2.5rem; margin-top: 15px; }
+
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 40px;
+        }
+
+        .feature-box {
+            background: white;
+            padding: 40px;
+            border-radius: var(--radius-xl);
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.03);
+            transition: 0.3s;
+            border: 1px solid #f0f0f0;
+        }
+
+        .feature-box:hover {
+            transform: translateY(-10px);
+            box-shadow: var(--shadow-soft);
+            border-color: var(--primary);
+        }
+
+        .emoji-icon { font-size: 3rem; margin-bottom: 20px; display: inline-block; }
+
+        /* --- MENU --- */
+        .menu-section { padding: 100px 0; }
+        
+        .menu-card {
+            background: var(--bg-card);
+            border-radius: var(--radius-xl);
+            overflow: hidden;
+            box-shadow: var(--shadow-soft);
+            transition: 0.3s;
+            position: relative;
+        }
+
+        .menu-card:hover { transform: translateY(-10px); box-shadow: var(--shadow-hover); }
+
+        .menu-img { height: 250px; overflow: hidden; }
+        .menu-img img { width: 100%; height: 100%; object-fit: cover; border-radius: 0; transition: 0.5s; }
+        .menu-card:hover .menu-img img { transform: scale(1.1); }
+
+        .menu-content { padding: 30px; }
+        .tag { 
+            background: var(--secondary); 
+            color: #5a4b18; padding: 5px 12px; 
+            border-radius: 15px; font-size: 0.75rem; font-weight: 800;
+            position: absolute; top: 20px; left: 20px;
+        }
+
+        .price { font-size: 1.4rem; color: var(--primary); font-weight: 800; display: block; margin-top: 10px;}
+
+        /* --- STATS --- */
+        .stats {
+            background: white;
+            padding: 80px 0;
+            margin: 100px 0;
+            border-radius: var(--radius-xl);
+            box-shadow: 0 10px 50px rgba(0,0,0,0.03);
+        }
+        .stat-item h3 { font-size: 3rem; color: var(--primary); margin-bottom: 5px; }
+        .stat-item p { color: var(--text-muted); font-weight: 600; }
+
+        /* --- FOOTER --- */
+        footer {
+            background: #fff;
+            padding: 50px 0;
+            text-align: center;
+            margin-top: 100px;
+            border-top: 2px dashed #eee;
+        }
+
+        /* --- RESPONSIVE --- */
+        @media (max-width: 768px) {
+            .hero { flex-direction: column-reverse; text-align: center; padding-top: 40px; }
+            .hero-text { padding-right: 0; margin-top: 40px; }
+            .nav-menu { display: none; }
+            .bg-blob { width: 300px; height: 300px; top: 0; right: 0; }
+            .hero h1 { font-size: 2.5rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <nav>
+            <div class="logo">Cimol<span>Cloud.</span></div>
+            <div class="nav-menu">
+                <a href="#">Beranda</a>
+                <a href="#">Menu</a>
+                <a href="#">Tentang Kami</a>
+            </div>
+        </nav>
+
+        <section class="hero">
+            <div class="bg-blob"></div> <div class="hero-text fade-up">
+                <h1>Kenyal, Gurih, <br><span>Bikin Nagih.</span></h1>
+                <p>Cimol premium dengan tekstur selembut awan dan isian keju lumer. Camilan sempurna untuk menemani harimu yang santai.</p>
+                <div class="hero-btns">
+                    <a href="https://wa.me/62812345678?text=Halo%2C%20saya%20ingin%20memesan%20Cimol%20Cloud" class="btn" target="_blank">Pesan Sekarang</a>
+                </div>
+            </div>
+
+            <div class="hero-img-wrapper fade-up">
+                <img src="https://images.unsplash.com/photo-1541592106381-b31e9677c0e5?ixlib=rb-1.2.1&auto=format&fit=crop&w=1000&q=80" alt="Cimol Enak">
+            </div>
+        </section>
+    </div>
+
+    <div class="container">
+        <section class="stats fade-up">
+            <div class="card-grid" style="text-align: center;">
+                <div class="stat-item">
+                    <h3>10k+</h3>
+                    <p>Paket Terjual</p>
+                </div>
+                <div class="stat-item">
+                    <h3>4.9</h3>
+                    <p>Rating Bintang</p>
+                </div>
+                <div class="stat-item">
+                    <h3>100%</h3>
+                    <p>Bahan Alami</p>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <section class="container" style="padding: 50px 25px;">
+        <div class="section-title fade-up">
+            <span>Kenapa Kami?</span>
+            <h2>Rahasia Kelezatan</h2>
+        </div>
+
+        <div class="card-grid">
+            <div class="feature-box fade-up">
+                <span class="emoji-icon">☁️</span>
+                <h3>Tekstur Awan</h3>
+                <p>Formula rahasia tepung pilihan membuat cimol tetap kenyal dan empuk meski sudah dingin. Tidak alot!</p>
+            </div>
+            <div class="feature-box fade-up">
+                <span class="emoji-icon">🧀</span>
+                <h3>Real Cheese</h3>
+                <p>Kami menggunakan balok keju cheddar dan mozzarella asli, bukan saus keju instan.</p>
+            </div>
+            <div class="feature-box fade-up">
+                <span class="emoji-icon">📦</span>
+                <h3>Eco Packaging</h3>
+                <p>Kemasannya lucu, aman untuk makanan, dan ramah lingkungan. Cocok buat kado mantan.</p>
+            </div>
+        </div>
+    </section>
+
+    <section id="menu" class="menu-section">
+        <div class="container">
+            <div class="section-title fade-up">
+                <span>Pilih Favoritmu</span>
+                <h2>Menu Paling Laris</h2>
+            </div>
+
+            <div class="card-grid">
+                <div class="menu-card fade-up">
+                    <span class="tag">Best Seller</span>
+                    <div class="menu-img">
+                        <img src="https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80" alt="Cimol Keju">
+                    </div>
+                    <div class="menu-content">
+                        <h3>Cimol Mozza Melt</h3>
+                        <p style="color:var(--text-muted); font-size: 0.9rem;">Isian keju mozzarella yang bisa ditarik panjang. Gurih di luar, lumer di dalam.</p>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px;">
+                            <span class="price">Rp 25.000</span>
+                            <a href="https://wa.me/62812345678?text=Halo%2C%20saya%20ingin%20memesan%20Cimol%20Mozza%20Melt%20(Rp%2025.000)" class="btn" style="padding: 8px 20px; font-size: 0.9rem;" target="_blank">Pesan via WA</a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="menu-card fade-up">
+                    <span class="tag" style="background: #A0C4FF; color: #fff;">New</span>
+                    <div class="menu-img">
+                        <img src="https://images.unsplash.com/photo-1599487488170-d11ec9c172f0?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80" alt="Cimol Pedas">
+                    </div>
+                    <div class="menu-content">
+                        <h3>Cimol Spicy Garlic</h3>
+                        <p style="color:var(--text-muted); font-size: 0.9rem;">Bumbu bawang goreng melimpah dengan bubuk cabai asli yang nendang.</p>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px;">
+                            <span class="price">Rp 23.000</span>
+                            <a href="https://wa.me/62812345678?text=Halo%2C%20saya%20ingin%20memesan%20Cimol%20Spicy%20Garlic%20(Rp%2023.000)" class="btn" style="padding: 8px 20px; font-size: 0.9rem;" target="_blank">Pesan via WA</a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="menu-card fade-up">
+                    <div class="menu-img">
+                        <img src="https://images.unsplash.com/photo-1576092768241-dec231879fc3?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80" alt="Cimol Original">
+                    </div>
+                    <div class="menu-content">
+                        <h3>Original Salty</h3>
+                        <p style="color:var(--text-muted); font-size: 0.9rem;">Kembali ke klasik. Rasa asin gurih original yang tidak pernah salah.</p>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px;">
+                            <span class="price">Rp 18.000</span>
+                            <a href="https://wa.me/62812345678?text=Halo%2C%20saya%20ingin%20memesan%20Original%20Salty%20(Rp%2018.000)" class="btn" style="padding: 8px 20px; font-size: 0.9rem;" target="_blank">Pesan via WA</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="container">
+            <h3 style="color: var(--primary);">CimolCloud.</h3>
+            <p style="margin: 10px 0; color: var(--text-muted);">Dibuat dengan ❤️ di Bandung.</p>
+            <p style="font-size: 0.8rem; color: #ccc;">&copy; 2024 Cimol Cloud Official</p>
+        </div>
+    </footer>
+
+    <script>
+        // Intersection Observer for Fade Up animation
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                }
+            });
+        }, { threshold: 0.1 });
+
+        document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
+    </script>
+
+</body>
+</html>

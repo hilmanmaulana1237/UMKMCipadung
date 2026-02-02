@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /courier/
+Disallow: /umkm/
+Disallow: /storage/*.zip
+Disallow: /storage/*.backup
+
+Sitemap: https://umkmcipadung.com/sitemap.xml
