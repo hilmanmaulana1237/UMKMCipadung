@@ -331,31 +331,98 @@ function LandingPagePanel({ store, landingPage, products, templates }: {
             {/* Step 1: Template Selection */}
             {step === 'template' && (
                 <div className="bg-white rounded-2xl p-5 shadow-lg border border-gray-100">
-                    <h2 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
+                    <h2 className="font-bold text-gray-800 mb-2 flex items-center gap-2">
                         <Layout className="w-5 h-5 text-violet-600" />
-                        Pilih Template
+                        Pilih Tampilan Toko
                     </h2>
-                    <div className="grid grid-cols-2 gap-3">
-                        {Object.entries(templates).map(([id, template]) => (
-                            <div
-                                key={id}
-                                onClick={() => handleTemplateSelect(id)}
-                                className={`border rounded-xl overflow-hidden cursor-pointer transition-all ${selectedTemplate === id ? 'border-violet-500 ring-2 ring-violet-200' : 'border-gray-200 hover:border-gray-300'}`}
-                            >
-                                <div className={`h-20 flex items-center justify-center text-2xl ${id === 'tema1' ? 'bg-gradient-to-br from-gray-900 to-gray-700' :
-                                    id === 'tema2' ? 'bg-gradient-to-br from-pink-100 to-pink-50' :
-                                        id === 'tema3' ? 'bg-gradient-to-br from-gray-100 to-white' :
-                                            id === 'tema4' ? 'bg-gradient-to-br from-orange-100 to-orange-50' :
-                                                'bg-gradient-to-br from-blue-100 to-blue-50'
-                                    }`}>
-                                    {id === 'tema1' ? '✨' : id === 'tema2' ? '🎀' : id === 'tema3' ? '🖼️' : id === 'tema4' ? '🌿' : '💧'}
+                    <p className="text-sm text-gray-500 mb-4">Klik untuk melihat preview, atau langsung pilih tampilan yang Anda suka</p>
+
+                    <div className="space-y-3">
+                        {Object.entries(templates).map(([id, template]) => {
+                            // User-friendly template info
+                            const templateInfo: Record<string, { emoji: string; friendlyName: string; examples: string[]; colors: { bg: string; text: string } }> = {
+                                tema1: {
+                                    emoji: '✨',
+                                    friendlyName: 'Elegan Hitam Emas',
+                                    examples: ['Restoran', 'Cafe', 'Catering'],
+                                    colors: { bg: 'from-gray-900 to-gray-700', text: 'text-yellow-400' },
+                                },
+                                tema2: {
+                                    emoji: '🎀',
+                                    friendlyName: 'Lucu & Ceria',
+                                    examples: ['Kue', 'Dessert', 'Snack'],
+                                    colors: { bg: 'from-pink-200 to-pink-100', text: 'text-pink-600' },
+                                },
+                                tema3: {
+                                    emoji: '🖼️',
+                                    friendlyName: 'Simpel & Bersih',
+                                    examples: ['Fashion', 'Aksesoris', 'Tas'],
+                                    colors: { bg: 'from-gray-100 to-white', text: 'text-gray-800' },
+                                },
+                                tema4: {
+                                    emoji: '🌿',
+                                    friendlyName: 'Hangat & Tradisional',
+                                    examples: ['Oleh-oleh', 'Keripik', 'Kerajinan'],
+                                    colors: { bg: 'from-orange-200 to-orange-100', text: 'text-orange-700' },
+                                },
+                                tema5: {
+                                    emoji: '💼',
+                                    friendlyName: 'Profesional Biru',
+                                    examples: ['Laundry', 'Service', 'Jasa'],
+                                    colors: { bg: 'from-blue-200 to-blue-100', text: 'text-blue-700' },
+                                },
+                            };
+
+                            const info = templateInfo[id] || { emoji: '📄', friendlyName: template.name, examples: [], colors: { bg: 'from-gray-100 to-white', text: 'text-gray-700' } };
+
+                            return (
+                                <div
+                                    key={id}
+                                    onClick={() => handleTemplateSelect(id)}
+                                    className={`border rounded-xl overflow-hidden cursor-pointer transition-all ${selectedTemplate === id
+                                            ? 'border-violet-500 ring-2 ring-violet-200 bg-violet-50'
+                                            : 'border-gray-200 hover:border-violet-300 hover:shadow-md'
+                                        }`}
+                                >
+                                    <div className="flex items-stretch">
+                                        {/* Preview thumbnail */}
+                                        <div className={`w-24 h-24 flex-shrink-0 bg-gradient-to-br ${info.colors.bg} flex items-center justify-center`}>
+                                            <span className="text-3xl">{info.emoji}</span>
+                                        </div>
+
+                                        {/* Template info */}
+                                        <div className="flex-1 p-3 flex flex-col justify-center">
+                                            <h3 className="font-bold text-gray-800 text-sm flex items-center gap-2">
+                                                {info.friendlyName}
+                                                {selectedTemplate === id && (
+                                                    <span className="text-xs bg-violet-100 text-violet-600 px-2 py-0.5 rounded-full">Terpilih</span>
+                                                )}
+                                            </h3>
+                                            <p className="text-xs text-gray-500 mt-1 line-clamp-1">
+                                                {template.description}
+                                            </p>
+                                            <div className="flex flex-wrap gap-1 mt-2">
+                                                {info.examples.map((ex, i) => (
+                                                    <span key={i} className="text-[10px] bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
+                                                        {ex}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        {/* Arrow */}
+                                        <div className="flex items-center pr-3">
+                                            <ChevronLeft className="w-5 h-5 text-gray-300 rotate-180" />
+                                        </div>
+                                    </div>
                                 </div>
-                                <div className="p-3">
-                                    <h3 className="font-semibold text-sm text-gray-800">{template.name}</h3>
-                                    <p className="text-xs text-gray-500 mt-1 line-clamp-2">{template.description}</p>
-                                </div>
-                            </div>
-                        ))}
+                            );
+                        })}
+                    </div>
+
+                    {/* Quick tips */}
+                    <div className="mt-4 p-3 bg-blue-50 rounded-xl text-xs text-blue-700">
+                        💡 <b>Tips:</b> Pilih tampilan sesuai jenis usaha Anda. Anda bisa menggantinya kapanpun!
                     </div>
                 </div>
             )}
