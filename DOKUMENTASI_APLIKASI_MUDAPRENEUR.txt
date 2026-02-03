@@ -1,0 +1,845 @@
+================================================================================
+                    DOKUMENTASI LENGKAP APLIKASI MUDAPRENEUR.AI
+                     Platform Marketplace UMKM Digital Cipadung
+================================================================================
+
+================================================================================
+                            1. INFORMASI UMUM APLIKASI
+================================================================================
+
+NAMA APLIKASI       : MUDAPRENEUR.AI
+JENIS APLIKASI      : Progressive Web Application (PWA) / Super App Ecosystem
+TUJUAN              : Membangun ekosistem digital lengkap yang menghubungkan 
+                      UMKM lokal Cipadung dengan pembeli, kurir, dan affiliator
+LOKASI TARGET       : Kelurahan Cipadung, Kota Bandung, Jawa Barat, Indonesia
+
+
+--------------------------------------------------------------------------------
+                           1.1 TEKNOLOGI YANG DIGUNAKAN
+--------------------------------------------------------------------------------
+
+Backend Framework   : Laravel 11 (PHP)
+Frontend Framework  : Inertia.js dengan React + TypeScript
+Styling             : Tailwind CSS v4
+Database            : MySQL
+Arsitektur          : Modern Monolith (Server-side Routing, Client-side Rendering)
+Design Philosophy   : Mobile-First, Native-Like Experience (Gojek-style)
+AI Integration      : OpenAI API / Gemini API untuk berbagai fitur AI
+
+
+--------------------------------------------------------------------------------
+                           1.2 TEMA DESAIN (ROYAL BLUE)
+--------------------------------------------------------------------------------
+
+Primary Color       : #2563EB (Royal Blue - Aksi Utama)
+Secondary Color     : #38BDF8 (Sky Blue - Aksen)
+Success Color       : #10B981 (Emerald - Uang/Profit)
+Warning Color       : #F59E0B (Amber - Peringatan)
+Danger Color        : #F43F5E (Rose - Error)
+Background          : #F1F5F9 (Slate 100)
+Font Family         : Plus Jakarta Sans
+
+
+================================================================================
+                      2. PERAN PENGGUNA (USER ROLES)
+================================================================================
+
+Aplikasi ini memiliki 5 peran pengguna yang berbeda:
+
+--------------------------------------------------------------------------------
+                           2.1 BUYER (Pembeli)
+--------------------------------------------------------------------------------
+
+Deskripsi   : Pengguna umum yang melakukan pembelian produk UMKM
+Fitur Utama :
+  • Akses marketplace untuk melihat dan membeli produk
+  • Pencarian produk dengan AI Shopping Assistant
+  • Keranjang belanja dan checkout
+  • Upload bukti pembayaran (QRIS/Transfer)
+  • Riwayat pesanan tersimpan di Local Storage
+  • Input kode promo dari affiliator
+  • Tracking status pesanan real-time
+  • Memberikan rating dan review setelah pesanan selesai
+  • Fitur komplain jika ada masalah dengan pesanan
+
+
+--------------------------------------------------------------------------------
+                           2.2 UMKM (Penjual/Seller)
+--------------------------------------------------------------------------------
+
+Deskripsi   : Pelaku UMKM yang menjual produk melalui platform
+Fitur Utama :
+  • Dashboard toko dengan statistik penjualan
+  • Manajemen produk (CRUD - Create, Read, Update, Delete)
+  • Verifikasi bukti pembayaran dari pembeli
+  • Manajemen pesanan (terima/tolak pesanan)
+  • Update status pesanan (processing, ready to ship)
+  • Pengaturan toko (nama, deskripsi, alamat, QRIS, jam operasional)
+  • Analytics penjualan
+  
+AI TOOLS KHUSUS UMKM:
+  • AI Generate Deskripsi Produk otomatis
+  • AI Saran Harga produk
+  • AI Business Mentor (chat dengan AI untuk konsultasi bisnis)
+  • AI Content Generator:
+    - Video Script Generator untuk TikTok/Reels
+    - Video AI Generator (integrasi Sora API)
+    - Poster Generator dengan template
+    - Copywriting Generator untuk media sosial
+  • AI Landing Page Generator dengan 4 template pilihan
+  • AI Smart Replies untuk balasan chat pelanggan
+  • AI Bundle Strategist untuk saran paket produk
+  • AI Sentiment Analysis dari review pelanggan
+  • AI Trend Spotter untuk mengetahui tren produk
+
+
+--------------------------------------------------------------------------------
+                           2.3 COURIER (Kurir)
+--------------------------------------------------------------------------------
+
+Deskripsi   : Pengantar pesanan dengan pengalaman seperti Gojek
+Fitur Utama :
+  • Toggle aktif/non-aktif kurir
+  • Job Radar (melihat pesanan yang perlu dikirim)
+  • Informasi jarak jemput, komisi ongkir, rute
+  • Ambil pesanan yang tersedia
+  • Active Trip Mode:
+    - State 1: Menuju Toko (navigasi ke UMKM)
+    - State 2: Mengantar ke Pembeli (navigasi ke buyer)
+  • Update status pengiriman:
+    - pickup_otw (menuju toko)
+    - delivery_otw (sedang mengantar)
+    - delivered (selesai)
+  • Swipe to Complete (gesture untuk menyelesaikan pengiriman)
+  • Wallet dan riwayat penghasilan
+  • AI Insights untuk kurir
+  • Komisi tetap: Rp 3.000 per pengiriman
+
+
+--------------------------------------------------------------------------------
+                           2.4 AFFILIATOR (Marketer)
+--------------------------------------------------------------------------------
+
+Deskripsi   : Pemasar yang mendapatkan komisi dari referral
+Fitur Utama :
+  • Generate kode promo unik (contoh: "BERKAHRAMADHAN")
+  • Dashboard statistik:
+    - Kode Dipakai: jumlah order menggunakan kode
+    - Komisi Cair: total reward status "paid"
+    - Potensi: reward status "potential" atau "verified"
+  • Fitur share kode promo
+  • Wallet untuk melihat saldo komisi
+  • Sistem komisi tetap: Rp 1.000 per transaksi berhasil
+
+
+--------------------------------------------------------------------------------
+                           2.5 ADMIN (Administrator)
+--------------------------------------------------------------------------------
+
+Deskripsi   : Pengelola sistem dengan akses penuh
+Fitur Utama :
+  • Dashboard admin dengan statistik keseluruhan
+  • Manajemen pengguna (lihat, create, suspend)
+  • Manajemen toko UMKM
+  • Manajemen pesanan (resolve masalah)
+  • Manajemen kurir (toggle status)
+  • Manajemen komplain dan respond
+  • Manajemen promo (create/delete)
+  • Manajemen affiliator
+  • Manajemen withdrawal (approve/reject penarikan)
+  • Pengaturan API (konfigurasi AI API keys)
+  • Pengaturan maintenance mode
+  • Database backup dan restore
+  • Service fees management
+  • AI Assistant untuk admin
+  • Innovillage Competition Reports
+  • Poster Templates Management
+
+
+================================================================================
+                           3. FITUR UTAMA APLIKASI
+================================================================================
+
+--------------------------------------------------------------------------------
+                           3.1 MARKETPLACE
+--------------------------------------------------------------------------------
+
+• Halaman utama menampilkan toko unggulan dan toko top rated
+• Pencarian produk dan toko
+• Filter berdasarkan kategori: kuliner, kriya, jasa
+• Halaman detail produk dengan informasi lengkap
+• Halaman profil toko dengan produk-produknya
+• AI Shopping Assistant untuk rekomendasi cerdas
+• View count untuk setiap produk
+
+
+--------------------------------------------------------------------------------
+                           3.2 CHECKOUT & PEMBAYARAN
+--------------------------------------------------------------------------------
+
+• Keranjang belanja
+• Input alamat pengiriman
+• Perhitungan ongkos kirim
+• Input kode promo opsional (validasi AJAX real-time)
+• Pembayaran via QRIS atau transfer bank
+• Upload bukti pembayaran
+• Redirect ke halaman status pesanan
+
+
+--------------------------------------------------------------------------------
+                           3.3 SISTEM PESANAN (ORDER FLOW)
+--------------------------------------------------------------------------------
+
+STATUS PESANAN:
+  1. pending_payment     : Menunggu pembayaran
+  2. waiting_verification: Menunggu verifikasi oleh UMKM
+  3. processing          : Pesanan sedang diproses
+  4. ready_to_ship       : Siap dikirim (menunggu kurir)
+  5. on_delivery         : Sedang dalam pengiriman
+  6. completed           : Pesanan selesai
+  7. cancelled           : Pesanan dibatalkan
+
+STATUS KURIR:
+  1. idle               : Tidak ada aktivitas
+  2. finding_driver     : Mencari kurir
+  3. driver_assigned    : Kurir telah ditugaskan
+  4. pickup_otw         : Kurir menuju toko
+  5. delivery_otw       : Kurir mengantar ke pembeli
+  6. delivered          : Pengiriman selesai
+  7. not_required       : Tidak memerlukan kurir (produk digital)
+
+
+--------------------------------------------------------------------------------
+                           3.4 SISTEM AFFILIATE
+--------------------------------------------------------------------------------
+
+ALUR AFFILIATE REWARD:
+  1. Affiliator membuat kode promo unik
+  2. Pembeli menggunakan kode saat checkout
+  3. Reward dengan status "potential" dibuat (Rp 1.000)
+  4. UMKM verifikasi pesanan → status menjadi "verified"
+  5. Kurir selesaikan pengiriman → status menjadi "paid"
+  6. Saldo affiliator bertambah Rp 1.000
+
+BENEFIT:
+  • Pembeli: Potensi diskon ongkir
+  • Affiliator: Komisi Rp 1.000 per transaksi berhasil
+
+
+--------------------------------------------------------------------------------
+                           3.5 AI CONTENT GENERATOR
+--------------------------------------------------------------------------------
+
+A. VIDEO GENERATOR
+   • 2 versi: foto toko/gerobak ATAU foto produk saja
+   • AI membuatkan prompt otomatis dari data toko
+   • Template prompt untuk video iklan UMKM dinamis
+   • Integrasi dengan Sora API untuk generate video 15 detik
+   • Gaya visual: realistic cinematic, Indonesian atmosphere
+
+B. POSTER GENERATOR
+   • Template poster yang bisa dipilih
+   • AI generate copywriting dan layout
+   • Customizable dengan data produk
+   • Caption untuk media sosial otomatis
+
+C. LANDING PAGE GENERATOR
+   • 4 template landing page tersedia
+   • User pilih template dan isi data toko
+   • AI generate deskripsi otomatis
+   • Maksimal 10 produk per landing page
+   • URL custom: www.umkmcipadung.com/toko/nama-toko
+   • Bisa share ke media sosial
+   • Bisa regenerate dengan template berbeda
+
+
+--------------------------------------------------------------------------------
+                           3.6 AI BUSINESS MENTOR
+--------------------------------------------------------------------------------
+
+• Chat dengan AI untuk konsultasi bisnis UMKM
+• Saran pengembangan usaha
+• Tips marketing dan penjualan
+• Analisis kekuatan dan kelemahan bisnis
+• Berbahasa Indonesia yang ramah
+
+
+--------------------------------------------------------------------------------
+                           3.7 RATING & REVIEW
+--------------------------------------------------------------------------------
+
+• Pembeli bisa memberikan rating bintang (1-5)
+• Review teks untuk toko
+• Rating untuk kurir
+• Sistem rating mempengaruhi ranking toko di marketplace
+
+
+--------------------------------------------------------------------------------
+                           3.8 WALLET & WITHDRAWAL
+--------------------------------------------------------------------------------
+
+• Saldo wallet untuk kurir dan affiliator
+• Riwayat penghasilan
+• Request penarikan dana
+• Minimal penarikan: Rp 10.000
+• Input rekening bank (nama bank, nomor rekening, nama pemilik)
+• Status withdrawal: pending, approved, rejected
+
+
+--------------------------------------------------------------------------------
+                           3.9 KOMPLAIN
+--------------------------------------------------------------------------------
+
+• Pembeli bisa ajukan komplain untuk pesanan bermasalah
+• Form komplain dengan deskripsi masalah
+• Admin respond dan resolve komplain
+• Tracking status komplain
+
+
+================================================================================
+                          4. STRUKTUR DATABASE
+================================================================================
+
+--------------------------------------------------------------------------------
+                           4.1 TABEL UTAMA
+--------------------------------------------------------------------------------
+
+A. USERS (Pengguna)
+   - id, name, email, password
+   - role (buyer/umkm/courier/affiliator/admin)
+   - wa_number (format 628...)
+   - avatar_path
+   - wallet_balance
+   - affiliate_code (untuk affiliator)
+   - is_courier_active (toggle untuk kurir)
+   - current_lat, current_lng (lokasi kurir)
+   - is_suspended
+   - two_factor authentication fields
+
+B. UMKM_STORES (Toko UMKM)
+   - id, user_id, name, slug
+   - category (kuliner/kriya/jasa)
+   - description, address_pickup
+   - latitude, longitude
+   - contact_number
+   - bank_name, bank_account, bank_holder
+   - qris_path, qris_handle
+   - banner_path, store_photo_path, profile_photo_path
+   - is_open_today, open_time, close_time
+   - operating_days (array)
+   - admin_fee
+
+C. PRODUCTS (Produk)
+   - id, umkm_store_id
+   - name, slug, price, stock
+   - category (kuliner/kriya/jasa)
+   - image_path, description
+   - is_active, is_digital, is_physical
+
+D. ORDERS (Pesanan)
+   - id, order_number (INV-YYYYMMDD-XXXXX)
+   - buyer_id, umkm_store_id, courier_id
+   - promo_code_used
+   - status, courier_status
+   - total_amount, courier_fee, admin_fee, store_fee
+   - shipping_discount
+   - payment_proof_path
+   - shipping_address, shipping_lat, shipping_lng
+   - is_digital_order
+   - cancelled_at, cancellation_code, cancelled_by
+   - courier_accepted_at, courier_last_activity_at
+
+E. ORDER_ITEMS (Item Pesanan)
+   - id, order_id, product_id
+   - quantity, price
+
+F. AFFILIATE_REWARDS (Reward Affiliate)
+   - id, affiliate_id, order_id
+   - amount (default Rp 1.000)
+   - status (potential/verified/paid)
+
+G. RATINGS (Rating)
+   - id, user_id, target_id, target_type (store/courier)
+   - order_id, stars, comment
+
+H. STORE_REVIEWS (Review Toko)
+   - id, umkm_store_id, order_id, user_id
+   - rating, content
+
+I. COMPLAINTS (Komplain)
+   - id, user_id, order_id
+   - subject, description
+   - status, admin_response
+
+J. WITHDRAWAL_REQUESTS (Penarikan Dana)
+   - id, user_id, amount
+   - bank_name, bank_account, bank_holder
+   - status (pending/approved/rejected)
+
+K. UMKM_LANDING_PAGES (Landing Page)
+   - id, umkm_store_id, template_id
+   - slug, title, description
+   - hero_image_path, phone_number
+   - products (array), features
+   - social_media, business_info
+   - is_published
+
+L. AI_GENERATED_CONTENTS (Konten AI)
+   - id, umkm_store_id
+   - content_type, content, prompt
+   - status (pending/processing/completed/failed)
+   - external_id, video_url
+
+M. POSTER_TEMPLATES (Template Poster)
+   - id, name, description, preview_image
+   - is_active
+
+N. API_SETTINGS (Pengaturan API)
+   - id, key, value, is_encrypted
+   - description
+
+
+================================================================================
+                              5. ALUR APLIKASI
+================================================================================
+
+--------------------------------------------------------------------------------
+                           5.1 ALUR PEMBELI (BUYER)
+--------------------------------------------------------------------------------
+
+1. Pembeli membuka halaman utama marketplace
+2. Melihat toko unggulan dan produk
+3. Mencari produk atau gunakan AI Shopping Assistant
+4. Pilih produk dan masukkan ke keranjang
+5. Checkout:
+   a. Input alamat pengiriman
+   b. Input kode promo (opsional)
+   c. Lihat total pembayaran
+   d. Upload bukti pembayaran (QRIS/Transfer)
+6. Menunggu verifikasi dari UMKM
+7. Pesanan diproses oleh UMKM
+8. Kurir menjemput dan mengantarkan pesanan
+9. Pesanan selesai, berikan rating dan review
+10. Jika ada masalah, ajukan komplain
+
+
+--------------------------------------------------------------------------------
+                           5.2 ALUR UMKM (PENJUAL)
+--------------------------------------------------------------------------------
+
+1. Registrasi sebagai UMKM
+2. Setup toko:
+   a. Nama toko dan deskripsi
+   b. Alamat pickup
+   c. Jam operasional
+   d. Rekening bank dan QRIS
+3. Tambah produk:
+   a. Nama, harga, stok
+   b. Kategori (kuliner/kriya/jasa)
+   c. Foto produk
+   d. Gunakan AI untuk generate deskripsi
+4. Terima pesanan:
+   a. Lihat notifikasi pesanan masuk
+   b. Verifikasi bukti pembayaran
+   c. Terima atau tolak pesanan
+   d. Proses pesanan
+   e. Set "Ready to Ship"
+5. Gunakan AI Tools:
+   a. AI Mentor untuk konsultasi bisnis
+   b. AI Content Generator untuk promosi
+   c. AI Landing Page untuk website toko
+6. Pantau analytics dan revenue
+
+
+--------------------------------------------------------------------------------
+                           5.3 ALUR KURIR
+--------------------------------------------------------------------------------
+
+1. Registrasi sebagai kurir
+2. Aktifkan toggle "Available"
+3. Job Radar:
+   a. Lihat daftar pesanan ready_to_ship
+   b. Lihat jarak, komisi, dan rute
+   c. Pilih dan ambil order
+4. Active Trip - Pickup:
+   a. Navigasi ke toko UMKM
+   b. Jemput barang
+   c. Konfirmasi "Barang Sudah Diambil"
+5. Active Trip - Delivery:
+   a. Navigasi ke alamat pembeli
+   b. Antarkan barang
+   c. Swipe to Complete
+6. Pengiriman selesai, komisi masuk wallet
+7. Withdraw saldo ke rekening bank
+
+
+--------------------------------------------------------------------------------
+                           5.4 ALUR AFFILIATOR
+--------------------------------------------------------------------------------
+
+1. Registrasi sebagai affiliator
+2. Generate kode promo unik
+3. Share kode ke media sosial atau langsung ke orang
+4. Pantau dashboard:
+   a. Jumlah kode dipakai
+   b. Reward potential/verified
+   c. Komisi yang sudah cair
+5. Withdraw komisi ke rekening bank
+
+
+--------------------------------------------------------------------------------
+                           5.5 ALUR ADMIN
+--------------------------------------------------------------------------------
+
+1. Login sebagai admin
+2. Pantau dashboard keseluruhan
+3. Kelola pengguna (approve, suspend, dll)
+4. Kelola toko UMKM
+5. Resolve pesanan bermasalah
+6. Respond komplain pembeli
+7. Approve/reject withdrawal
+8. Konfigurasi API dan pengaturan sistem
+9. Backup database
+10. Generate laporan Innovillage
+
+
+================================================================================
+                         6. FITUR AI TERINTEGRASI
+================================================================================
+
+--------------------------------------------------------------------------------
+                           6.1 DAFTAR FITUR AI
+--------------------------------------------------------------------------------
+
+1.  AI Generate Product Description
+    Input: nama produk, kategori, harga
+    Output: deskripsi produk menarik dalam Bahasa Indonesia
+
+2.  AI Price Suggestion
+    Input: nama produk, kategori
+    Output: rentang harga yang sesuai untuk ekonomi Cipadung
+
+3.  AI Business Insights
+    Input: data toko (penjualan, produk, traffic)
+    Output: insight dan saran pengembangan bisnis
+
+4.  AI Business Mentor Chat
+    Input: pertanyaan user tentang bisnis
+    Output: jawaban konsultasi bisnis UMKM
+
+5.  AI Video Script Generator
+    Input: nama toko, produk, USP
+    Output: script video TikTok/Reels
+
+6.  AI Video Prompt Generator
+    Input: data toko, kategori
+    Output: prompt untuk generate video AI
+
+7.  AI Poster Copywriting
+    Input: nama toko, produk, harga, slogan
+    Output: caption Instagram/WhatsApp dengan emoji
+
+8.  AI Smart Replies
+    Input: pesan dari pelanggan
+    Output: 3 opsi balasan cepat profesional
+
+9.  AI Bundle Suggestions
+    Input: daftar produk
+    Output: saran paket bundling produk
+
+10. AI Sentiment Analysis
+    Input: review pelanggan
+    Output: ringkasan sentimen positif/negatif
+
+11. AI Trend Spotter
+    Input: kategori
+    Output: prediksi tren produk
+
+12. AI Shopping Assistant
+    Input: query pembeli, katalog produk
+    Output: rekomendasi produk yang sesuai
+
+13. AI Search Intent Extractor
+    Input: query percakapan
+    Output: structured search parameters
+
+14. AI Courier Insights
+    Input: data pengiriman kurir
+    Output: analisis dan saran optimasi rute
+
+
+--------------------------------------------------------------------------------
+                           6.2 KONFIGURASI API AI
+--------------------------------------------------------------------------------
+
+Aplikasi mendukung multiple API tier:
+
+PRIMARY API   : Untuk tugas kompleks (mentoring, insights)
+SECONDARY API : Untuk tugas sederhana (deskripsi, balasan)
+VIDEO API     : Untuk generate video (Sora API)
+
+Konfigurasi tersimpan di database (api_settings) dengan enkripsi untuk API keys.
+
+
+================================================================================
+                      7. STRUKTUR FOLDER PROYEK
+================================================================================
+
+UMKMCipadung-main/
+├── app/
+│   ├── Actions/          - Aksi spesifik (Fortify)
+│   ├── Console/          - Artisan commands
+│   ├── Http/
+│   │   ├── Controllers/  - Controller aplikasi (19 file)
+│   │   │   ├── Admin/    - Controller khusus admin
+│   │   │   ├── Settings/ - Controller pengaturan
+│   │   │   ├── AdminController.php
+│   │   │   ├── AIContentController.php
+│   │   │   ├── AIChatController.php
+│   │   │   ├── AIController.php
+│   │   │   ├── AffiliateController.php
+│   │   │   ├── CheckoutController.php
+│   │   │   ├── ComplaintController.php
+│   │   │   ├── CourierController.php
+│   │   │   ├── CourierAIController.php
+│   │   │   ├── LandingPageController.php
+│   │   │   ├── MarketplaceController.php
+│   │   │   ├── ProductController.php
+│   │   │   ├── RatingController.php
+│   │   │   ├── ReviewController.php
+│   │   │   ├── ShoppingAssistantController.php
+│   │   │   └── UmkmController.php
+│   │   └── Middleware/   - Middleware custom
+│   ├── Models/           - Model Eloquent (19 model)
+│   ├── Providers/        - Service providers
+│   └── Services/         - Layanan aplikasi
+│       ├── AIService.php         - Layanan AI utama
+│       ├── AIPromptService.php   - Template prompt AI
+│       ├── PosterAIService.php   - Layanan poster AI
+│       ├── KieAIService.php      - Layanan AI Kie
+│       ├── ImageService.php      - Layanan gambar
+│       └── WhatsAppService.php   - Layanan WhatsApp
+│
+├── bootstrap/            - Bootstrap framework
+├── config/               - Konfigurasi aplikasi
+├── database/
+│   ├── factories/        - Factory untuk seeding
+│   ├── migrations/       - 46 migration files
+│   └── seeders/          - Database seeders
+│
+├── public/
+│   └── landing-page/     - 4 template landing page
+│
+├── resources/
+│   ├── css/              - Stylesheet
+│   ├── js/
+│   │   ├── components/   - Komponen React reusable
+│   │   ├── hooks/        - Custom React hooks
+│   │   ├── layouts/      - Layout templates
+│   │   ├── lib/          - Library utilities
+│   │   ├── pages/        - Halaman React (63+ halaman)
+│   │   │   ├── admin/    - 21 halaman admin
+│   │   │   ├── affiliate/
+│   │   │   ├── auth/
+│   │   │   ├── buyer/
+│   │   │   ├── checkout/
+│   │   │   ├── complaints/
+│   │   │   ├── courier/
+│   │   │   ├── marketplace/
+│   │   │   ├── profile/
+│   │   │   ├── search/
+│   │   │   ├── settings/
+│   │   │   ├── umkm/     - 12 halaman UMKM
+│   │   │   ├── wallet/
+│   │   │   └── welcome.tsx
+│   │   └── types/        - TypeScript types
+│   └── views/            - Blade views
+│
+├── routes/
+│   ├── web.php           - Route utama (523 baris)
+│   ├── settings.php      - Route pengaturan
+│   └── auth.php          - Route autentikasi
+│
+├── storage/              - Storage files
+├── tests/                - Unit & Feature tests
+└── vendor/               - Composer dependencies
+
+
+================================================================================
+                           8. INSTALASI & DEPLOYMENT
+================================================================================
+
+--------------------------------------------------------------------------------
+                           8.1 REQUIREMENTS
+--------------------------------------------------------------------------------
+
+• PHP >= 8.2
+• Composer
+• Node.js >= 18
+• MySQL >= 8.0
+• Git
+
+
+--------------------------------------------------------------------------------
+                           8.2 LANGKAH INSTALASI
+--------------------------------------------------------------------------------
+
+1. Clone repository
+   git clone [repository-url]
+
+2. Install PHP dependencies
+   composer install
+
+3. Install Node.js dependencies
+   npm install
+
+4. Copy environment file
+   cp .env.example .env
+
+5. Generate application key
+   php artisan key:generate
+
+6. Konfigurasi database di .env
+   DB_DATABASE=mudapreneur
+   DB_USERNAME=root
+   DB_PASSWORD=
+
+7. Konfigurasi API Keys di .env atau via admin panel
+   AI_API_KEY=xxx
+   VIDEO_API_KEY=xxx
+
+8. Jalankan migration
+   php artisan migrate
+
+9. Jalankan seeder (opsional)
+   php artisan db:seed
+
+10. Build assets
+    npm run build
+
+11. Jalankan server development
+    php artisan serve
+    npm run dev
+
+
+--------------------------------------------------------------------------------
+                           8.3 URL ENDPOINTS PENTING
+--------------------------------------------------------------------------------
+
+PUBLIC:
+  /                         - Halaman utama
+  /toko/{slug}              - Landing page public toko
+
+AUTH:
+  /login                    - Login
+  /register                 - Registrasi
+
+BUYER:
+  /marketplace              - Marketplace
+  /marketplace/ai-assistant - AI Shopping Assistant
+  /checkout                 - Checkout
+  /history                  - Riwayat pesanan
+  /orders/{id}/status       - Status pesanan
+  /complaints               - Komplain
+
+UMKM:
+  /umkm/dashboard           - Dashboard UMKM
+  /umkm/setup-toko          - Setup toko
+  /products                 - Manajemen produk
+  /umkm/orders              - Pesanan masuk
+  /umkm/analytics           - Analytics
+  /umkm/ai-mentor           - AI Mentor chat
+  /umkm/ai-content          - AI Content Generator
+  /umkm/landing-page        - Landing Page Generator
+
+COURIER:
+  /courier/radar            - Job radar
+  /courier/active           - Active trip
+  /courier/history          - Riwayat pengiriman
+  /courier/ai-insights      - AI Insights
+
+AFFILIATE:
+  /affiliate/dashboard      - Dashboard affiliate
+  /affiliate/share          - Share code
+
+ADMIN:
+  /admin/dashboard          - Dashboard admin
+  /admin/users              - Manajemen user
+  /admin/stores             - Manajemen toko
+  /admin/orders             - Manajemen pesanan
+  /admin/couriers           - Manajemen kurir
+  /admin/complaints         - Komplain
+  /admin/promos             - Promo
+  /admin/affiliates         - Affiliator
+  /admin/withdrawals        - Penarikan dana
+  /admin/settings/api       - API Settings
+  /admin/database           - Database backup
+  /admin/ai-assistant       - AI Assistant admin
+  /admin/innovillage-reports- Laporan Innovillage
+
+
+================================================================================
+                          9. INOVASI & KEUNGGULAN
+================================================================================
+
+--------------------------------------------------------------------------------
+                           9.1 INOVASI TEKNOLOGI
+--------------------------------------------------------------------------------
+
+1. AI-POWERED UMKM TOOLS
+   • Pertama di Indonesia: AI yang khusus untuk UMKM desa
+   • Generate konten promosi tanpa perlu skill desain/marketing
+   • Harga yang disarankan sesuai ekonomi lokal Cipadung
+
+2. SUPER APP ECOSYSTEM
+   • Satu aplikasi untuk semua kebutuhan: beli, jual, antar, promosi
+   • Pengalaman seperti Gojek untuk kurir lokal
+   • Sistem affiliate untuk community marketing
+
+3. NO-CODE LANDING PAGE
+   • UMKM bisa punya website tanpa coding
+   • AI generate konten otomatis
+   • 4 template profesional
+
+4. MOBILE-FIRST PWA
+   • Bisa di-install seperti aplikasi native
+   • Offline capability dengan local storage
+   • Notifikasi push-ready
+
+
+--------------------------------------------------------------------------------
+                           9.2 DAMPAK SOSIAL
+--------------------------------------------------------------------------------
+
+1. PEMBERDAYAAN UMKM
+   • Akses teknologi AI gratis untuk UMKM lokal
+   • Edukasi digital marketing melalui AI Mentor
+   • Visibilitas produk lebih luas
+
+2. LAPANGAN KERJA
+   • Kurir lokal mendapat penghasilan tambahan
+   • Affiliator dari kalangan pemuda bisa mendapat komisi
+   • UMKM bisa scale-up bisnis mereka
+
+3. EKONOMI LOKAL
+   • Transaksi tetap di dalam komunitas
+   • Rantai distribusi lebih pendek
+   • Harga lebih terjangkau untuk pembeli
+
+
+================================================================================
+                           10. KONTAK & TIM
+================================================================================
+
+NAMA PROYEK     : MUDAPRENEUR.AI
+KOMPETISI       : Innovillage
+LOKASI          : Kelurahan Cipadung, Kota Bandung
+
+================================================================================
+                          AKHIR DOKUMENTASI
+================================================================================
+
+Dokumen ini dibuat untuk keperluan pelaporan kompetisi Innovillage.
+Tanggal pembuatan: 3 Februari 2026
+
+================================================================================
