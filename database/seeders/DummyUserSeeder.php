@@ -114,7 +114,7 @@ class DummyUserSeeder extends Seeder
                 'name' => $nama,
                 'email' => $email,
                 'password' => Hash::make('password123'),
-                'role' => 'user',
+                'role' => 'buyer',
                 'email_verified_at' => now(),
             ]);
 
