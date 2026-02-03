@@ -45,6 +45,51 @@ interface Props {
     templates: Record<string, Template>;
 }
 
+// Template data yang lebih user-friendly untuk UMKM
+const templateInfo: Record<string, {
+    emoji: string;
+    friendlyName: string;
+    simpleDesc: string;
+    examples: string[];
+    colors: { primary: string; secondary: string; accent: string };
+}> = {
+    tema1: {
+        emoji: '✨',
+        friendlyName: 'Elegan Hitam Emas',
+        simpleDesc: 'Tampilan mewah dan premium. Warna hitam dengan aksen emas yang elegan.',
+        examples: ['Restoran', 'Cafe', 'Makanan Premium', 'Catering'],
+        colors: { primary: '#1a1a1a', secondary: '#d4af37', accent: '#fff8e7' },
+    },
+    tema2: {
+        emoji: '🎀',
+        friendlyName: 'Lucu & Ceria',
+        simpleDesc: 'Tampilan imut dengan warna pink pastel. Cocok untuk produk yang manis dan menggemaskan.',
+        examples: ['Kue', 'Dessert', 'Snack', 'Produk Anak'],
+        colors: { primary: '#ff9a9e', secondary: '#fad0c4', accent: '#fff5f5' },
+    },
+    tema3: {
+        emoji: '🖼️',
+        friendlyName: 'Simpel & Bersih',
+        simpleDesc: 'Tampilan minimalis hitam-putih. Fokus pada foto produk dengan desain yang bersih.',
+        examples: ['Fashion', 'Aksesoris', 'Tas', 'Sepatu'],
+        colors: { primary: '#1a1a1a', secondary: '#f5f5f5', accent: '#ffffff' },
+    },
+    tema4: {
+        emoji: '🌿',
+        friendlyName: 'Hangat & Tradisional',
+        simpleDesc: 'Tampilan hangat dengan warna oranye kecoklatan. Cocok untuk produk tradisional.',
+        examples: ['Oleh-oleh', 'Keripik', 'Makanan Tradisional', 'Kerajinan'],
+        colors: { primary: '#c45c26', secondary: '#f4a460', accent: '#fff3e0' },
+    },
+    tema5: {
+        emoji: '💼',
+        friendlyName: 'Profesional Biru',
+        simpleDesc: 'Tampilan profesional dengan warna biru. Cocok untuk jasa dan layanan.',
+        examples: ['Laundry', 'Service', 'Jasa', 'Bengkel'],
+        colors: { primary: '#2563eb', secondary: '#3b82f6', accent: '#eff6ff' },
+    }
+};
+
 export default function LandingPageBuilder({ store, landingPage, products, templates }: Props) {
     const [selectedTemplate, setSelectedTemplate] = useState<string>(landingPage?.template || '');
     const [tagline, setTagline] = useState(landingPage?.tagline || '');
@@ -59,11 +104,21 @@ export default function LandingPageBuilder({ store, landingPage, products, templ
     const [generatingAI, setGeneratingAI] = useState(false);
     const [step, setStep] = useState<'template' | 'customize'>(landingPage ? 'customize' : 'template');
     const [copySuccess, setCopySuccess] = useState(false);
+    const [previewModal, setPreviewModal] = useState<{ open: boolean; templateId: string | null }>({ open: false, templateId: null });
+    const [previewDevice, setPreviewDevice] = useState<'desktop' | 'mobile'>('desktop');
+    const [showChangeTemplate, setShowChangeTemplate] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const handleTemplateSelect = (templateId: string) => {
         setSelectedTemplate(templateId);
         setStep('customize');
+    };
+
+    const handleChangeTemplate = (templateId: string) => {
+        if (confirm('Yakin ingin ganti template?\n\nData tagline, deskripsi, dan produk akan tetap tersimpan.')) {
+            setSelectedTemplate(templateId);
+            setShowChangeTemplate(false);
+        }
     };
 
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -151,61 +206,283 @@ export default function LandingPageBuilder({ store, landingPage, products, templ
         return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(price);
     };
 
+    const openPreview = (templateId: string) => {
+        setPreviewModal({ open: true, templateId });
+    };
+
+    const closePreview = () => {
+        setPreviewModal({ open: false, templateId: null });
+    };
+
+    const getPreviewUrl = (templateId: string) => {
+        return `/landing-page-templates/${templateId}`;
+    };
+
+    const templateIds = Object.keys(templateInfo);
+    const currentPreviewIndex = previewModal.templateId ? templateIds.indexOf(previewModal.templateId) : 0;
+
+    const navigatePreview = (direction: 'prev' | 'next') => {
+        const newIndex = direction === 'prev'
+            ? (currentPreviewIndex - 1 + templateIds.length) % templateIds.length
+            : (currentPreviewIndex + 1) % templateIds.length;
+        setPreviewModal({ open: true, templateId: templateIds[newIndex] });
+    };
+
+    // Styles
+    const cardStyle: React.CSSProperties = {
+        background: '#fff',
+        borderRadius: '16px',
+        overflow: 'hidden',
+        boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+        transition: 'all 0.3s ease',
+        cursor: 'pointer',
+        border: '2px solid transparent',
+    };
+
+    const selectedCardStyle: React.CSSProperties = {
+        ...cardStyle,
+        border: '2px solid #22c55e',
+        boxShadow: '0 4px 20px rgba(34, 197, 94, 0.2)',
+    };
+
     return (
         <AppLayout>
             <Head title="Landing Page Builder" />
 
-            <div style={{ padding: '20px', maxWidth: '900px', margin: '0 auto', paddingBottom: '100px' }}>
+            <div style={{ padding: '20px', maxWidth: '1000px', margin: '0 auto', paddingBottom: '120px' }}>
                 {/* Header */}
                 <div style={{ marginBottom: '24px' }}>
                     <h1 style={{ fontSize: '1.5rem', fontWeight: '700', marginBottom: '8px' }}>
-                        🌐 Landing Page Builder
+                        🌐 Buat Landing Page Toko
                     </h1>
                     <p style={{ color: '#6b7280', fontSize: '0.9rem' }}>
-                        Buat landing page profesional untuk toko Anda dalam hitungan menit.
+                        Pilih tampilan yang cocok untuk usaha Anda. Cukup 3 langkah!
                     </p>
+                </div>
+
+                {/* Progress Steps */}
+                <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    marginBottom: '24px',
+                    background: '#f9fafb',
+                    padding: '12px 16px',
+                    borderRadius: '12px',
+                }}>
+                    <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        color: step === 'template' ? '#3b82f6' : '#22c55e',
+                        fontWeight: '600',
+                    }}>
+                        <span style={{
+                            background: step === 'template' ? '#3b82f6' : '#22c55e',
+                            color: '#fff',
+                            width: '24px',
+                            height: '24px',
+                            borderRadius: '50%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontSize: '0.8rem',
+                        }}>
+                            {step === 'customize' || landingPage ? '✓' : '1'}
+                        </span>
+                        Pilih Tampilan
+                    </div>
+                    <div style={{ flex: 1, height: '2px', background: '#e5e7eb', margin: '0 12px' }} />
+                    <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        color: step === 'customize' ? '#3b82f6' : '#9ca3af',
+                        fontWeight: '600',
+                    }}>
+                        <span style={{
+                            background: step === 'customize' ? '#3b82f6' : '#e5e7eb',
+                            color: step === 'customize' ? '#fff' : '#9ca3af',
+                            width: '24px',
+                            height: '24px',
+                            borderRadius: '50%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontSize: '0.8rem',
+                        }}>2</span>
+                        Isi Konten
+                    </div>
+                    <div style={{ flex: 1, height: '2px', background: '#e5e7eb', margin: '0 12px' }} />
+                    <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        color: '#9ca3af',
+                        fontWeight: '600',
+                    }}>
+                        <span style={{
+                            background: '#e5e7eb',
+                            color: '#9ca3af',
+                            width: '24px',
+                            height: '24px',
+                            borderRadius: '50%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontSize: '0.8rem',
+                        }}>3</span>
+                        Publish
+                    </div>
                 </div>
 
                 {/* Step 1: Template Selection */}
                 {step === 'template' && (
                     <div>
-                        <h2 style={{ fontSize: '1.1rem', fontWeight: '600', marginBottom: '16px' }}>
-                            Pilih Template
+                        <h2 style={{ fontSize: '1.2rem', fontWeight: '600', marginBottom: '8px' }}>
+                            🎨 Pilih Tampilan yang Cocok
                         </h2>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '16px' }}>
-                            {Object.entries(templates).map(([id, template]) => (
+                        <p style={{ color: '#6b7280', fontSize: '0.9rem', marginBottom: '20px' }}>
+                            Klik "Lihat Preview" untuk melihat contoh tampilan
+                        </p>
+
+                        <div style={{
+                            display: 'grid',
+                            gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+                            gap: '20px',
+                        }}>
+                            {Object.entries(templateInfo).map(([id, info]) => (
                                 <div
                                     key={id}
-                                    onClick={() => handleTemplateSelect(id)}
-                                    style={{
-                                        border: selectedTemplate === id ? '2px solid #3b82f6' : '1px solid #e5e7eb',
-                                        borderRadius: '12px',
-                                        overflow: 'hidden',
-                                        cursor: 'pointer',
-                                        transition: 'all 0.2s',
-                                        background: '#fff',
-                                    }}
+                                    style={selectedTemplate === id ? selectedCardStyle : cardStyle}
                                 >
-                                    {/* Preview Image Placeholder */}
+                                    {/* Preview Thumbnail */}
                                     <div style={{
-                                        height: '120px',
-                                        background: id === 'tema1' ? 'linear-gradient(135deg, #1a1a1a, #333)' :
-                                            id === 'tema2' ? 'linear-gradient(135deg, #fff5f5, #ffe8e6)' :
-                                                id === 'tema3' ? 'linear-gradient(135deg, #fff, #f5f5f5)' :
-                                                    id === 'tema4' ? 'linear-gradient(135deg, #fff3e0, #ffe0b2)' :
-                                                        'linear-gradient(135deg, #e3f2fd, #bbdefb)',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        fontSize: '2rem',
+                                        height: '180px',
+                                        position: 'relative',
+                                        overflow: 'hidden',
+                                        background: '#f5f5f5',
                                     }}>
-                                        {id === 'tema1' ? '✨' : id === 'tema2' ? '🎀' : id === 'tema3' ? '🖼️' : id === 'tema4' ? '🌿' : '💧'}
+                                        <iframe
+                                            src={getPreviewUrl(id)}
+                                            style={{
+                                                width: '200%',
+                                                height: '400%',
+                                                border: 'none',
+                                                transform: 'scale(0.5)',
+                                                transformOrigin: '0 0',
+                                                pointerEvents: 'none',
+                                            }}
+                                            title={info.friendlyName}
+                                        />
+                                        {/* Overlay & Badge */}
+                                        <div style={{
+                                            position: 'absolute',
+                                            top: '12px',
+                                            left: '12px',
+                                            background: 'rgba(255,255,255,0.95)',
+                                            padding: '6px 12px',
+                                            borderRadius: '20px',
+                                            fontSize: '1.2rem',
+                                            boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                                        }}>
+                                            {info.emoji}
+                                        </div>
+                                        {selectedTemplate === id && (
+                                            <div style={{
+                                                position: 'absolute',
+                                                top: '12px',
+                                                right: '12px',
+                                                background: '#22c55e',
+                                                color: '#fff',
+                                                padding: '6px 12px',
+                                                borderRadius: '20px',
+                                                fontSize: '0.8rem',
+                                                fontWeight: '600',
+                                            }}>
+                                                ✓ Dipilih
+                                            </div>
+                                        )}
+                                        {/* Preview Button Overlay */}
+                                        <button
+                                            onClick={(e) => { e.stopPropagation(); openPreview(id); }}
+                                            style={{
+                                                position: 'absolute',
+                                                bottom: '12px',
+                                                left: '50%',
+                                                transform: 'translateX(-50%)',
+                                                background: 'rgba(0,0,0,0.7)',
+                                                color: '#fff',
+                                                padding: '8px 16px',
+                                                borderRadius: '20px',
+                                                border: 'none',
+                                                cursor: 'pointer',
+                                                fontSize: '0.85rem',
+                                                fontWeight: '500',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '6px',
+                                            }}
+                                        >
+                                            👁️ Lihat Preview
+                                        </button>
                                     </div>
-                                    <div style={{ padding: '12px' }}>
-                                        <h3 style={{ fontWeight: '600', marginBottom: '4px' }}>{template.name}</h3>
-                                        <p style={{ fontSize: '0.8rem', color: '#6b7280', lineHeight: '1.4' }}>
-                                            {template.description}
+
+                                    {/* Card Info */}
+                                    <div style={{ padding: '16px' }}>
+                                        <h3 style={{ fontWeight: '700', fontSize: '1.1rem', marginBottom: '8px' }}>
+                                            {info.friendlyName}
+                                        </h3>
+                                        <p style={{ fontSize: '0.85rem', color: '#6b7280', marginBottom: '12px', lineHeight: '1.5' }}>
+                                            {info.simpleDesc}
                                         </p>
+
+                                        {/* Example Tags */}
+                                        <div style={{ marginBottom: '16px' }}>
+                                            <span style={{ fontSize: '0.75rem', color: '#9ca3af', marginRight: '8px' }}>
+                                                Cocok untuk:
+                                            </span>
+                                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '6px' }}>
+                                                {info.examples.map((ex, i) => (
+                                                    <span key={i} style={{
+                                                        background: info.colors.accent,
+                                                        color: info.colors.primary,
+                                                        padding: '4px 10px',
+                                                        borderRadius: '12px',
+                                                        fontSize: '0.75rem',
+                                                        fontWeight: '500',
+                                                    }}>
+                                                        {ex}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        {/* Color Palette */}
+                                        <div style={{ display: 'flex', gap: '6px', marginBottom: '16px' }}>
+                                            <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: info.colors.primary, border: '2px solid #fff', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }} />
+                                            <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: info.colors.secondary, border: '2px solid #fff', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }} />
+                                            <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: info.colors.accent, border: '2px solid #fff', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }} />
+                                        </div>
+
+                                        {/* Select Button */}
+                                        <button
+                                            onClick={() => handleTemplateSelect(id)}
+                                            style={{
+                                                width: '100%',
+                                                padding: '12px',
+                                                background: selectedTemplate === id
+                                                    ? 'linear-gradient(135deg, #22c55e, #16a34a)'
+                                                    : 'linear-gradient(135deg, #3b82f6, #2563eb)',
+                                                color: '#fff',
+                                                border: 'none',
+                                                borderRadius: '10px',
+                                                fontSize: '0.95rem',
+                                                fontWeight: '600',
+                                                cursor: 'pointer',
+                                            }}
+                                        >
+                                            {selectedTemplate === id ? '✓ Template Ini Dipilih' : '✓ Pilih Template Ini'}
+                                        </button>
                                     </div>
                                 </div>
                             ))}
@@ -216,22 +493,42 @@ export default function LandingPageBuilder({ store, landingPage, products, templ
                 {/* Step 2: Customize */}
                 {step === 'customize' && (
                     <div>
-                        {/* Back Button */}
-                        <button
-                            onClick={() => setStep('template')}
-                            style={{
-                                background: 'none',
-                                border: 'none',
-                                color: '#3b82f6',
-                                cursor: 'pointer',
-                                marginBottom: '16px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '4px',
-                            }}
-                        >
-                            ← Ganti Template
-                        </button>
+                        {/* Template Info Bar */}
+                        <div style={{
+                            background: templateInfo[selectedTemplate]?.colors.accent || '#f9fafb',
+                            padding: '12px 16px',
+                            borderRadius: '12px',
+                            marginBottom: '20px',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                        }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                <span style={{ fontSize: '1.5rem' }}>{templateInfo[selectedTemplate]?.emoji}</span>
+                                <div>
+                                    <div style={{ fontWeight: '600' }}>
+                                        Template: {templateInfo[selectedTemplate]?.friendlyName}
+                                    </div>
+                                    <div style={{ fontSize: '0.8rem', color: '#6b7280' }}>
+                                        Klik "Ganti Tampilan" jika ingin pilih yang lain
+                                    </div>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => setShowChangeTemplate(true)}
+                                style={{
+                                    background: '#fff',
+                                    border: '1px solid #e5e7eb',
+                                    padding: '8px 16px',
+                                    borderRadius: '8px',
+                                    cursor: 'pointer',
+                                    fontWeight: '500',
+                                    fontSize: '0.85rem',
+                                }}
+                            >
+                                🔄 Ganti Tampilan
+                            </button>
+                        </div>
 
                         {/* Current Status */}
                         {landingPage && (
@@ -246,11 +543,11 @@ export default function LandingPageBuilder({ store, landingPage, products, templ
                             }}>
                                 <div>
                                     <span style={{ fontWeight: '600' }}>
-                                        {landingPage.is_published ? '✅ Sudah Dipublish' : '⏳ Draft'}
+                                        {landingPage.is_published ? '✅ Sudah Online' : '⏳ Masih Draft'}
                                     </span>
                                     {landingPage.is_published && (
                                         <div style={{ fontSize: '0.8rem', color: '#374151', marginTop: '4px' }}>
-                                            URL: {window.location.origin}/lp/{landingPage.slug}
+                                            Link: {window.location.origin}/lp/{landingPage.slug}
                                         </div>
                                     )}
                                 </div>
@@ -267,7 +564,7 @@ export default function LandingPageBuilder({ store, landingPage, products, templ
                                             fontSize: '0.85rem',
                                         }}
                                     >
-                                        {copySuccess ? '✓ Copied!' : '📋 Copy Link'}
+                                        {copySuccess ? '✓ Link Disalin!' : '📋 Salin Link'}
                                     </button>
                                 )}
                             </div>
@@ -276,8 +573,11 @@ export default function LandingPageBuilder({ store, landingPage, products, templ
                         {/* Hero Image Upload */}
                         <div style={{ marginBottom: '24px' }}>
                             <label style={{ fontWeight: '600', display: 'block', marginBottom: '8px' }}>
-                                📸 Foto Utama (Hero)
+                                📸 Foto Utama Toko (opsional)
                             </label>
+                            <p style={{ fontSize: '0.8rem', color: '#6b7280', marginBottom: '12px' }}>
+                                Upload foto terbaik produk atau toko Anda
+                            </p>
                             <div
                                 onClick={() => fileInputRef.current?.click()}
                                 style={{
@@ -294,9 +594,12 @@ export default function LandingPageBuilder({ store, landingPage, products, templ
                                 }}
                             >
                                 {!heroPreview && (
-                                    <span style={{ color: '#6b7280' }}>
-                                        Klik untuk upload foto toko/produk utama
-                                    </span>
+                                    <div>
+                                        <div style={{ fontSize: '2rem', marginBottom: '8px' }}>📷</div>
+                                        <span style={{ color: '#6b7280' }}>
+                                            Klik untuk upload foto
+                                        </span>
+                                    </div>
                                 )}
                                 {heroPreview && (
                                     <span style={{
@@ -305,7 +608,7 @@ export default function LandingPageBuilder({ store, landingPage, products, templ
                                         padding: '8px 16px',
                                         borderRadius: '8px',
                                     }}>
-                                        Klik untuk ganti
+                                        Klik untuk ganti foto
                                     </span>
                                 )}
                             </div>
@@ -321,7 +624,7 @@ export default function LandingPageBuilder({ store, landingPage, products, templ
                         {/* Tagline & Description */}
                         <div style={{ marginBottom: '24px' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                                <label style={{ fontWeight: '600' }}>✏️ Tagline & Deskripsi</label>
+                                <label style={{ fontWeight: '600' }}>✏️ Judul & Deskripsi</label>
                                 <button
                                     onClick={generateAIContent}
                                     disabled={generatingAI}
@@ -335,12 +638,15 @@ export default function LandingPageBuilder({ store, landingPage, products, templ
                                         fontSize: '0.8rem',
                                     }}
                                 >
-                                    {generatingAI ? '⏳ Generating...' : '🤖 Generate AI'}
+                                    {generatingAI ? '⏳ Membuat...' : '🤖 Buat Otomatis (AI)'}
                                 </button>
                             </div>
+                            <p style={{ fontSize: '0.8rem', color: '#6b7280', marginBottom: '12px' }}>
+                                Tulis judul menarik dan deskripsi singkat toko Anda
+                            </p>
                             <input
                                 type="text"
-                                placeholder="Tagline singkat dan menarik..."
+                                placeholder="Contoh: Bakso Pak Joko - Bakso Enak Harga Merakyat!"
                                 value={tagline}
                                 onChange={e => setTagline(e.target.value)}
                                 style={{
@@ -353,7 +659,7 @@ export default function LandingPageBuilder({ store, landingPage, products, templ
                                 }}
                             />
                             <textarea
-                                placeholder="Deskripsi toko Anda..."
+                                placeholder="Contoh: Kami menyediakan bakso dengan kuah gurih spesial dan daging sapi pilihan sejak tahun 2010..."
                                 value={description}
                                 onChange={e => setDescription(e.target.value)}
                                 rows={3}
@@ -369,27 +675,30 @@ export default function LandingPageBuilder({ store, landingPage, products, templ
 
                         {/* Product Selection */}
                         <div style={{ marginBottom: '24px' }}>
-                            <label style={{ fontWeight: '600', display: 'block', marginBottom: '8px' }}>
-                                🛒 Pilih Produk (Max 10)
-                                <span style={{ fontWeight: '400', color: '#6b7280', marginLeft: '8px' }}>
-                                    {selectedProducts.length}/10 terpilih
-                                </span>
+                            <label style={{ fontWeight: '600', display: 'block', marginBottom: '4px' }}>
+                                🛒 Pilih Produk Unggulan (Max 10)
                             </label>
+                            <p style={{ fontSize: '0.8rem', color: '#6b7280', marginBottom: '12px' }}>
+                                Klik produk yang ingin ditampilkan di landing page ({selectedProducts.length}/10 dipilih)
+                            </p>
 
                             {products.length === 0 ? (
                                 <div style={{
-                                    background: '#f9fafb',
+                                    background: '#fef3c7',
                                     padding: '24px',
                                     borderRadius: '12px',
                                     textAlign: 'center',
-                                    color: '#6b7280',
                                 }}>
-                                    Belum ada produk. Tambahkan produk terlebih dahulu.
+                                    <div style={{ fontSize: '2rem', marginBottom: '8px' }}>📦</div>
+                                    <div style={{ fontWeight: '500', marginBottom: '4px' }}>Belum ada produk</div>
+                                    <div style={{ fontSize: '0.85rem', color: '#6b7280' }}>
+                                        Tambahkan produk terlebih dahulu di menu "Produk"
+                                    </div>
                                 </div>
                             ) : (
                                 <div style={{
                                     display: 'grid',
-                                    gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))',
+                                    gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))',
                                     gap: '12px',
                                 }}>
                                     {products.map(product => (
@@ -425,7 +734,7 @@ export default function LandingPageBuilder({ store, landingPage, products, templ
                                                 </div>
                                             )}
                                             <div style={{
-                                                height: '100px',
+                                                height: '90px',
                                                 background: product.image_path ? `url(/storage/${product.image_path}) center/cover` : '#f3f4f6',
                                                 display: 'flex',
                                                 alignItems: 'center',
@@ -434,10 +743,10 @@ export default function LandingPageBuilder({ store, landingPage, products, templ
                                                 {!product.image_path && '📦'}
                                             </div>
                                             <div style={{ padding: '10px' }}>
-                                                <div style={{ fontWeight: '500', fontSize: '0.85rem', marginBottom: '4px', lineHeight: '1.3' }}>
+                                                <div style={{ fontWeight: '500', fontSize: '0.8rem', marginBottom: '4px', lineHeight: '1.3' }}>
                                                     {product.name}
                                                 </div>
-                                                <div style={{ color: '#22c55e', fontWeight: '600', fontSize: '0.8rem' }}>
+                                                <div style={{ color: '#22c55e', fontWeight: '600', fontSize: '0.75rem' }}>
                                                     {formatPrice(product.price)}
                                                 </div>
                                             </div>
@@ -474,7 +783,7 @@ export default function LandingPageBuilder({ store, landingPage, products, templ
                                         fontWeight: '600',
                                     }}
                                 >
-                                    🗑️ Hapus
+                                    🗑️
                                 </button>
                             )}
                             <button
@@ -505,12 +814,268 @@ export default function LandingPageBuilder({ store, landingPage, products, templ
                                     fontWeight: '600',
                                 }}
                             >
-                                {saving ? '⏳ Menyimpan...' : '🚀 Publish'}
+                                {saving ? '⏳ Menyimpan...' : '🚀 Publish Online'}
                             </button>
                         </div>
                     </div>
                 )}
             </div>
+
+            {/* Preview Modal */}
+            {previewModal.open && previewModal.templateId && (
+                <div style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    background: 'rgba(0,0,0,0.9)',
+                    zIndex: 1000,
+                    display: 'flex',
+                    flexDirection: 'column',
+                }}>
+                    {/* Modal Header */}
+                    <div style={{
+                        background: '#1a1a1a',
+                        padding: '12px 20px',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                    }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <span style={{ fontSize: '1.5rem' }}>
+                                {templateInfo[previewModal.templateId]?.emoji}
+                            </span>
+                            <span style={{ color: '#fff', fontWeight: '600' }}>
+                                {templateInfo[previewModal.templateId]?.friendlyName}
+                            </span>
+                        </div>
+                        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                            {/* Device Toggle */}
+                            <div style={{
+                                display: 'flex',
+                                background: '#333',
+                                borderRadius: '8px',
+                                padding: '4px',
+                            }}>
+                                <button
+                                    onClick={() => setPreviewDevice('desktop')}
+                                    style={{
+                                        background: previewDevice === 'desktop' ? '#fff' : 'transparent',
+                                        color: previewDevice === 'desktop' ? '#1a1a1a' : '#999',
+                                        border: 'none',
+                                        padding: '6px 12px',
+                                        borderRadius: '6px',
+                                        cursor: 'pointer',
+                                        fontSize: '0.85rem',
+                                    }}
+                                >
+                                    💻 Desktop
+                                </button>
+                                <button
+                                    onClick={() => setPreviewDevice('mobile')}
+                                    style={{
+                                        background: previewDevice === 'mobile' ? '#fff' : 'transparent',
+                                        color: previewDevice === 'mobile' ? '#1a1a1a' : '#999',
+                                        border: 'none',
+                                        padding: '6px 12px',
+                                        borderRadius: '6px',
+                                        cursor: 'pointer',
+                                        fontSize: '0.85rem',
+                                    }}
+                                >
+                                    📱 HP
+                                </button>
+                            </div>
+                            <button
+                                onClick={closePreview}
+                                style={{
+                                    background: '#333',
+                                    color: '#fff',
+                                    border: 'none',
+                                    padding: '8px 16px',
+                                    borderRadius: '8px',
+                                    cursor: 'pointer',
+                                    fontWeight: '500',
+                                }}
+                            >
+                                ✕ Tutup
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Navigation & Preview */}
+                    <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+                        {/* Prev Button */}
+                        <button
+                            onClick={() => navigatePreview('prev')}
+                            style={{
+                                position: 'absolute',
+                                left: '20px',
+                                background: 'rgba(255,255,255,0.2)',
+                                color: '#fff',
+                                border: 'none',
+                                padding: '16px 20px',
+                                borderRadius: '12px',
+                                cursor: 'pointer',
+                                fontSize: '1.2rem',
+                            }}
+                        >
+                            ←
+                        </button>
+
+                        {/* Preview Frame */}
+                        <div style={{
+                            width: previewDevice === 'desktop' ? '90%' : '375px',
+                            maxWidth: previewDevice === 'desktop' ? '1200px' : '375px',
+                            height: previewDevice === 'desktop' ? '85%' : '667px',
+                            background: '#fff',
+                            borderRadius: '12px',
+                            overflow: 'hidden',
+                            boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
+                        }}>
+                            <iframe
+                                src={getPreviewUrl(previewModal.templateId)}
+                                style={{
+                                    width: '100%',
+                                    height: '100%',
+                                    border: 'none',
+                                }}
+                                title="Template Preview"
+                            />
+                        </div>
+
+                        {/* Next Button */}
+                        <button
+                            onClick={() => navigatePreview('next')}
+                            style={{
+                                position: 'absolute',
+                                right: '20px',
+                                background: 'rgba(255,255,255,0.2)',
+                                color: '#fff',
+                                border: 'none',
+                                padding: '16px 20px',
+                                borderRadius: '12px',
+                                cursor: 'pointer',
+                                fontSize: '1.2rem',
+                            }}
+                        >
+                            →
+                        </button>
+                    </div>
+
+                    {/* Select Button */}
+                    <div style={{ padding: '16px', textAlign: 'center' }}>
+                        <button
+                            onClick={() => { handleTemplateSelect(previewModal.templateId!); closePreview(); }}
+                            style={{
+                                background: 'linear-gradient(135deg, #22c55e, #16a34a)',
+                                color: '#fff',
+                                padding: '14px 40px',
+                                borderRadius: '12px',
+                                border: 'none',
+                                cursor: 'pointer',
+                                fontSize: '1rem',
+                                fontWeight: '600',
+                            }}
+                        >
+                            ✓ Pilih Template Ini
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {/* Change Template Modal */}
+            {showChangeTemplate && (
+                <div style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    background: 'rgba(0,0,0,0.8)',
+                    zIndex: 1000,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '20px',
+                }}>
+                    <div style={{
+                        background: '#fff',
+                        borderRadius: '20px',
+                        maxWidth: '800px',
+                        width: '100%',
+                        maxHeight: '90vh',
+                        overflow: 'auto',
+                        padding: '24px',
+                    }}>
+                        <div style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            marginBottom: '20px',
+                        }}>
+                            <h2 style={{ fontSize: '1.2rem', fontWeight: '700' }}>🔄 Ganti Tampilan</h2>
+                            <button
+                                onClick={() => setShowChangeTemplate(false)}
+                                style={{
+                                    background: '#f3f4f6',
+                                    border: 'none',
+                                    padding: '8px 16px',
+                                    borderRadius: '8px',
+                                    cursor: 'pointer',
+                                }}
+                            >
+                                ✕ Batal
+                            </button>
+                        </div>
+                        <p style={{ color: '#6b7280', fontSize: '0.9rem', marginBottom: '20px' }}>
+                            Data tagline, deskripsi, dan produk akan tetap tersimpan saat ganti tampilan.
+                        </p>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '16px' }}>
+                            {Object.entries(templateInfo).map(([id, info]) => (
+                                <div
+                                    key={id}
+                                    onClick={() => handleChangeTemplate(id)}
+                                    style={{
+                                        border: selectedTemplate === id ? '2px solid #22c55e' : '1px solid #e5e7eb',
+                                        borderRadius: '12px',
+                                        overflow: 'hidden',
+                                        cursor: 'pointer',
+                                        background: selectedTemplate === id ? '#f0fdf4' : '#fff',
+                                    }}
+                                >
+                                    <div style={{
+                                        height: '100px',
+                                        background: info.colors.accent,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        fontSize: '2rem',
+                                    }}>
+                                        {info.emoji}
+                                    </div>
+                                    <div style={{ padding: '12px' }}>
+                                        <div style={{ fontWeight: '600', marginBottom: '4px' }}>{info.friendlyName}</div>
+                                        {selectedTemplate === id && (
+                                            <span style={{
+                                                background: '#22c55e',
+                                                color: '#fff',
+                                                padding: '2px 8px',
+                                                borderRadius: '4px',
+                                                fontSize: '0.7rem',
+                                            }}>
+                                                Aktif
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            )}
         </AppLayout>
     );
 }

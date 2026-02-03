@@ -284,10 +284,64 @@
             color: #999;
         }
 
+        /* --- MOBILE MENU TOGGLE --- */
+        .mobile-menu-btn {
+            display: none;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 10px;
+            z-index: 1001;
+        }
+
+        .mobile-menu-btn span {
+            display: block;
+            width: 25px;
+            height: 2px;
+            background: var(--btn-bg);
+            margin: 5px 0;
+            transition: 0.3s;
+        }
+
+        .mobile-menu-btn.active span:nth-child(1) {
+            transform: rotate(45deg) translate(5px, 5px);
+        }
+
+        .mobile-menu-btn.active span:nth-child(2) {
+            opacity: 0;
+        }
+
+        .mobile-menu-btn.active span:nth-child(3) {
+            transform: rotate(-45deg) translate(5px, -5px);
+        }
+
         /* --- RESPONSIVE MOBILE --- */
         @media (max-width: 768px) {
+            .mobile-menu-btn {
+                display: block;
+            }
+
             .nav-links {
                 display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(255, 255, 255, 0.98);
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                gap: 30px;
+                z-index: 999;
+            }
+
+            .nav-links.active {
+                display: flex;
+            }
+
+            .nav-links a {
+                font-size: 1.2rem;
             }
 
             .hero {
@@ -297,31 +351,61 @@
 
             .hero-image-container {
                 order: -1;
-                height: 400px;
+                height: 350px;
             }
 
             .hero-text {
-                padding: 40px 0;
+                padding: 30px 0;
                 text-align: center;
             }
 
             .hero h1 {
-                font-size: 2.5rem;
+                font-size: 2rem;
             }
 
             .hero p {
-                margin: 0 auto 32px;
+                margin: 0 auto 24px;
             }
 
             .grid {
                 grid-template-columns: repeat(2, 1fr);
-                gap: 24px 16px;
+                gap: 20px 15px;
             }
 
             .catalog-header {
                 flex-direction: column;
                 align-items: flex-start;
                 gap: 10px;
+            }
+
+            .philosophy {
+                padding: 60px 0;
+            }
+
+            .philosophy h2 {
+                font-size: 1.5rem;
+            }
+
+            footer {
+                padding: 40px 0;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+
+            .hero h1 {
+                font-size: 1.6rem;
+            }
+
+            .hero-image-container {
+                height: 280px;
+            }
+
+            .philosophy h2 {
+                font-size: 1.3rem;
             }
         }
     </style>
@@ -335,11 +419,17 @@
             <div class="nav-inner">
                 <a href="#" class="logo">{{STORE_NAME}}</a>
 
-                <div class="nav-links">
+                <div class="nav-links" id="navLinks">
                     <a href="#" class="active">{{NAV_PRODUCTS}}</a>
                     <a href="#tentang">Tentang</a>
                     <a href="#kontak">Kontak</a>
                 </div>
+
+                <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Menu">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
 
                 <a href="{{WA_LINK}}" class="uppercase" style="font-weight: 500;" target="_blank">
                     Hubungi Kami
@@ -434,6 +524,29 @@
             <p style="text-align: center; font-size: 0.8rem; color: #888; margin-top: 10px;">Powered by UMKMCipadung</p>
         </div>
     </footer>
+
+    <script>
+        // Mobile Menu Toggle
+        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+        const navLinks = document.getElementById('navLinks');
+
+        if (mobileMenuBtn && navLinks) {
+            mobileMenuBtn.addEventListener('click', function () {
+                this.classList.toggle('active');
+                navLinks.classList.toggle('active');
+                document.body.style.overflow = navLinks.classList.contains('active') ? 'hidden' : '';
+            });
+
+            // Close menu when clicking a link
+            navLinks.querySelectorAll('a').forEach(link => {
+                link.addEventListener('click', function () {
+                    mobileMenuBtn.classList.remove('active');
+                    navLinks.classList.remove('active');
+                    document.body.style.overflow = '';
+                });
+            });
+        }
+    </script>
 
 </body>
 

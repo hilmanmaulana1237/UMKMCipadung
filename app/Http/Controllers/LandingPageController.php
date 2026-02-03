@@ -87,7 +87,7 @@ class LandingPageController extends Controller
 
         // Find or create landing page
         $landingPage = UmkmLandingPage::firstOrNew(['umkm_store_id' => $store->id]);
-        
+
         // Generate slug if new
         if (!$landingPage->exists) {
             $landingPage->slug = UmkmLandingPage::generateSlug($store->name);
@@ -116,7 +116,7 @@ class LandingPageController extends Controller
             if ($landingPage->hero_image_path) {
                 Storage::disk('public')->delete($landingPage->hero_image_path);
             }
-            
+
             $path = $request->file('hero_image')->store('landing-pages/hero', 'public');
             $landingPage->hero_image_path = $path;
         }
@@ -152,10 +152,10 @@ class LandingPageController extends Controller
             'tema4' => 'dynamic-tema4-traditional-warm.html',
             'tema5' => 'dynamic-tema5-professional-blue.html',
         ];
-        
+
         $templateFile = $templateMap[$landingPage->template] ?? 'dynamic-tema1-luxury-dark.html';
         $templatePath = resource_path('views/landing-page-templates/' . $templateFile);
-        
+
         if (!file_exists($templatePath)) {
             // Fallback to tema1 if specific template not found
             $templatePath = resource_path('views/landing-page-templates/dynamic-tema1-luxury-dark.html');
@@ -165,7 +165,7 @@ class LandingPageController extends Controller
         }
 
         $html = file_get_contents($templatePath);
-        
+
         // Use the replacePlaceholders method to inject content into the template
         $html = $this->replacePlaceholders($html, $landingPage, $store, $products);
 
@@ -184,8 +184,8 @@ class LandingPageController extends Controller
         $html = '';
         foreach ($products as $product) {
             $price = 'Rp ' . number_format($product->price, 0, ',', '.');
-            $imgUrl = $product->image_path 
-                ? asset('storage/' . $product->image_path) 
+            $imgUrl = $product->image_path
+                ? asset('storage/' . $product->image_path)
                 : 'https://via.placeholder.com/400x300?text=' . urlencode($product->name);
             $waLink = 'https://wa.me/' . $waNumber . '?text=' . urlencode("Halo, saya tertarik dengan produk: {$product->name}");
             $description = $product->description ?? 'Produk berkualitas dari toko kami.';
@@ -225,7 +225,7 @@ class LandingPageController extends Controller
             ->get();
 
         $templatePath = resource_path('views/landing-page-templates/' . $landingPage->template . '.html');
-        
+
         if (!file_exists($templatePath)) {
             abort(404, 'Template tidak ditemukan.');
         }
@@ -268,6 +268,99 @@ class LandingPageController extends Controller
     }
 
     /**
+     * Preview template with sample data (public access for iframe)
+     */
+    public function previewTemplate($templateId)
+    {
+        $templateMap = [
+            'tema1' => 'dynamic-tema1-luxury-dark',
+            'tema2' => 'dynamic-tema2-cute-pastel',
+            'tema3' => 'dynamic-tema3-minimalist-catalog',
+            'tema4' => 'dynamic-tema4-traditional-warm',
+            'tema5' => 'dynamic-tema5-professional-blue',
+        ];
+
+        $templateFile = $templateMap[$templateId] ?? 'dynamic-tema1-luxury-dark';
+        $templatePath = resource_path('views/landing-page-templates/' . $templateFile . '.html');
+
+        if (!file_exists($templatePath)) {
+            abort(404, 'Template tidak ditemukan.');
+        }
+
+        $html = file_get_contents($templatePath);
+
+        // Sample data for preview
+        $sampleData = [
+            'STORE_NAME' => 'Nama Toko Anda',
+            'TAGLINE' => 'Tagline Toko yang Menarik',
+            'DESCRIPTION' => 'Deskripsi singkat tentang toko Anda. Jelaskan apa yang membuat toko Anda spesial dan mengapa pelanggan harus memilih Anda.',
+            'STORE_DESCRIPTION' => 'Deskripsi lengkap toko Anda akan muncul di sini.',
+            'ADDRESS' => 'Jl. Contoh No. 123, Kota Anda',
+            'PHONE' => '081234567890',
+            'WA_LINK' => 'https://wa.me/6281234567890',
+            'WA_NUMBER' => '6281234567890',
+            'EMAIL' => 'toko@contoh.com',
+            'EMAIL_LINK' => 'mailto:toko@contoh.com',
+            'INSTAGRAM' => '@tokoanda',
+            'INSTAGRAM_LINK' => 'https://instagram.com/tokoanda',
+            'CATEGORY' => '🍽️ Kuliner',
+            'HERO_IMAGE' => '/storage/placeholder-hero.jpg',
+            'NAV_PRODUCTS' => 'Produk',
+            'WHY_US' => 'Mengapa Kami',
+            'FOOTER_YEAR' => date('Y'),
+            'OPERATING_HOURS' => 'Senin - Minggu: 08:00 - 22:00',
+        ];
+
+        // Replace placeholders
+        foreach ($sampleData as $key => $value) {
+            $html = str_replace('{{' . $key . '}}', $value, $html);
+        }
+
+        // Generate sample product cards
+        $sampleProducts = $this->generateSampleProductCards($templateId);
+
+        // Replace product section
+        if (preg_match('/<!-- PRODUCT_START -->(.*?)<!-- PRODUCT_END -->/s', $html)) {
+            $html = preg_replace(
+                '/<!-- PRODUCT_START -->(.*?)<!-- PRODUCT_END -->/s',
+                $sampleProducts,
+                $html
+            );
+        }
+
+        return response($html)->header('Content-Type', 'text/html');
+    }
+
+    /**
+     * Generate sample product cards for template preview
+     */
+    private function generateSampleProductCards($templateId)
+    {
+        $products = [
+            ['name' => 'Produk Unggulan 1', 'price' => 50000, 'image' => null],
+            ['name' => 'Produk Best Seller', 'price' => 75000, 'image' => null],
+            ['name' => 'Produk Premium', 'price' => 100000, 'image' => null],
+            ['name' => 'Produk Favorit', 'price' => 65000, 'image' => null],
+        ];
+
+        $cards = '';
+        foreach ($products as $product) {
+            $formattedPrice = 'Rp ' . number_format($product['price'], 0, ',', '.');
+
+            $cards .= '<div class="card" style="background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
+                <div style="height: 150px; background: linear-gradient(135deg, #f5f5f5, #e5e5e5); display: flex; align-items: center; justify-content: center; font-size: 2rem;">📦</div>
+                <div style="padding: 16px;">
+                    <h3 style="font-size: 1rem; margin-bottom: 8px;">' . htmlspecialchars($product['name']) . '</h3>
+                    <p style="color: #22c55e; font-weight: 700; margin-bottom: 12px;">' . $formattedPrice . '</p>
+                    <a href="#" style="display: block; text-align: center; padding: 10px; background: #22c55e; color: #fff; border-radius: 8px; text-decoration: none; font-weight: 600;">Pesan via WA</a>
+                </div>
+            </div>';
+        }
+
+        return $cards;
+    }
+
+    /**
      * Generate AI content for landing page
      */
     public function generateContent(Request $request)
@@ -304,12 +397,12 @@ Pastikan konten sesuai dengan kategori: {$request->category}. Jika kategori kuli
         $systemPrompt = "Kamu adalah copywriter profesional khusus UMKM Indonesia. Tugasmu adalah membuat konten landing page yang menarik, profesional, dan sesuai konteks lokal. Output HARUS dalam format JSON valid tanpa penjelasan tambahan.";
 
         $result = $this->aiService->chat($prompt, $systemPrompt);
-        
+
         try {
             // Clean JSON from markdown code blocks if any
             $cleanResult = preg_replace('/```json\s*|\s*```/', '', $result);
             $data = json_decode($cleanResult, true);
-            
+
             return response()->json([
                 'success' => true,
                 'tagline' => $data['tagline'] ?? '',
@@ -338,7 +431,7 @@ Pastikan konten sesuai dengan kategori: {$request->category}. Jika kategori kuli
         $html = str_replace('{{STORE_NAME}}', htmlspecialchars($store->name), $html);
         $html = str_replace('{{TAGLINE}}', htmlspecialchars($landingPage->tagline ?? 'Selamat Datang'), $html);
         $html = str_replace('{{DESCRIPTION}}', htmlspecialchars($landingPage->description ?? ''), $html);
-        
+
         // Hero image
         if ($landingPage->hero_image_path) {
             $heroUrl = asset('storage/' . $landingPage->hero_image_path);
@@ -346,7 +439,7 @@ Pastikan konten sesuai dengan kategori: {$request->category}. Jika kategori kuli
         } else {
             $html = str_replace('{{HERO_IMAGE}}', 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=800', $html);
         }
-        
+
         // WhatsApp link placeholder (use landing page phone if available)
         $waNumber = preg_replace('/[^0-9]/', '', $landingPage->business_phone ?: ($store->contact_number ?: ($store->phone ?: '')));
         if ($waNumber) {
@@ -358,28 +451,28 @@ Pastikan konten sesuai dengan kategori: {$request->category}. Jika kategori kuli
         } else {
             $html = str_replace('{{WA_LINK}}', '#', $html);
         }
-        
+
         // Address placeholder (prioritize landing page data)
         $address = $landingPage->business_address ?: ($store->address ?: ($store->location ?: ''));
         $html = str_replace('{{ADDRESS}}', htmlspecialchars($address ?: 'Alamat tidak tersedia'), $html);
-        
+
         // Phone placeholder (prioritize landing page data)
         $phone = $landingPage->business_phone ?: ($store->contact_number ?: ($store->phone ?: ''));
         $html = str_replace('{{PHONE}}', htmlspecialchars($phone ?: '-'), $html);
-        
+
         // Category placeholder (formatted with emoji)
         $categoryFormatted = $this->formatCategory($store->category ?? 'lainnya');
         $html = str_replace('{{CATEGORY}}', htmlspecialchars($categoryFormatted), $html);
-        
+
         // Operating hours placeholder (prioritize landing page data)
         $operatingHours = $landingPage->business_hours ?: $this->formatOperatingHours($store);
         $html = str_replace('{{OPERATING_HOURS}}', htmlspecialchars($operatingHours), $html);
-        
+
         // ... existing placeholders ...
 
         // ===== DYNAMIC CATEGORY TEXT GENERATION =====
         $cat = strtolower($store->category ?? 'lainnya');
-        
+
         // DEFAULT: Neutral / General (Safe for 'Lainnya')
         $terms = [
             'cta_title' => 'Temukan Pilihan Terbaik',
@@ -446,21 +539,31 @@ Pastikan konten sesuai dengan kategori: {$request->category}. Jika kategori kuli
         $html = str_replace('{{FEATURE3_TITLE}}', htmlspecialchars($landingPage->feature3_title ?? 'Keunggulan 3'), $html);
         $html = str_replace('{{FEATURE3_DESC}}', htmlspecialchars($landingPage->feature3_desc ?? 'Deskripsi keunggulan 3'), $html);
 
-        
+
         // ===== LEGACY: Template-specific replacements (backward compatibility) =====
         // 1. Replace page title
         $html = preg_replace('/<title>.*?<\/title>/s', '<title>' . htmlspecialchars($store->name) . ' | Landing Page</title>', $html);
-        
+
         // 2. Replace ALL known template store names with actual store name
         $templateNames = [
-            'CIMOLROYALE.', 'CimolCloud.', 'MONOGRAM.', 'KRIPIKU.', 'KLIN',
-            'Cimol Royale', 'Cimol Cloud', 'Monogram', 'Kripiku', 'KlinWash',
-            'Cimol Cloud Official', 'CIMOL ROYALE', 'cimolcloud'
+            'CIMOLROYALE.',
+            'CimolCloud.',
+            'MONOGRAM.',
+            'KRIPIKU.',
+            'KLIN',
+            'Cimol Royale',
+            'Cimol Cloud',
+            'Monogram',
+            'Kripiku',
+            'KlinWash',
+            'Cimol Cloud Official',
+            'CIMOL ROYALE',
+            'cimolcloud'
         ];
         foreach ($templateNames as $name) {
             $html = str_ireplace($name, $store->name, $html);
         }
-        
+
         // 3. Replace hero taglines with user's tagline
         if ($landingPage->tagline) {
             $taglinePatterns = [
@@ -486,7 +589,7 @@ Pastikan konten sesuai dengan kategori: {$request->category}. Jika kategori kuli
                 $html = str_replace($pattern, $landingPage->tagline, $html);
             }
         }
-        
+
         // 4. Replace hero descriptions with user's description
         if ($landingPage->description) {
             $descPatterns = [
@@ -500,7 +603,7 @@ Pastikan konten sesuai dengan kategori: {$request->category}. Jika kategori kuli
                 $html = str_replace($pattern, $landingPage->description, $html);
             }
         }
-        
+
         // 5. Replace WhatsApp links
         $waNumber = preg_replace('/[^0-9]/', '', $landingPage->business_phone ?? $store->contact_number ?? $store->phone ?? '');
         if ($waNumber) {
@@ -513,17 +616,17 @@ Pastikan konten sesuai dengan kategori: {$request->category}. Jika kategori kuli
         } else {
             $html = str_replace('{{WA_LINK}}', '#', $html);
         }
-        
+
         // Replace Instagram Link
         if (!empty($landingPage->instagram)) {
             $igLink = str_starts_with($landingPage->instagram, 'http') ? $landingPage->instagram : 'https://instagram.com/' . ltrim($landingPage->instagram, '@');
-             $html = str_replace('{{INSTAGRAM_LINK}}', $igLink, $html);
-             $html = str_replace('{{INSTAGRAM}}', $landingPage->instagram, $html);
+            $html = str_replace('{{INSTAGRAM_LINK}}', $igLink, $html);
+            $html = str_replace('{{INSTAGRAM}}', $landingPage->instagram, $html);
         } else {
-             $html = str_replace('{{INSTAGRAM_LINK}}', '#', $html);
-             $html = str_replace('{{INSTAGRAM}}', 'Instagram', $html);
+            $html = str_replace('{{INSTAGRAM_LINK}}', '#', $html);
+            $html = str_replace('{{INSTAGRAM}}', 'Instagram', $html);
         }
-        
+
         // Replace Email Link
         if (!empty($landingPage->email)) {
             $html = str_replace('{{EMAIL_LINK}}', 'mailto:' . $landingPage->email, $html);
@@ -532,7 +635,7 @@ Pastikan konten sesuai dengan kategori: {$request->category}. Jika kategori kuli
             $html = str_replace('{{EMAIL_LINK}}', '#', $html);
             $html = str_replace('{{EMAIL}}', 'Email', $html);
         }
-        
+
         // 6. Replace address
         if ($store->address) {
             $addressPatterns = [
@@ -544,7 +647,7 @@ Pastikan konten sesuai dengan kategori: {$request->category}. Jika kategori kuli
                 $html = str_replace($pattern, $store->address, $html);
             }
         }
-        
+
         // 7. Replace hero image if set
         if ($landingPage->hero_image_path) {
             $heroUrl = asset('storage/' . $landingPage->hero_image_path);
@@ -555,7 +658,7 @@ Pastikan konten sesuai dengan kategori: {$request->category}. Jika kategori kuli
                 1
             );
         }
-        
+
         // Replace 'Booking Pickup' button text if it exists (Tema 5)
         $html = str_replace('Booking Pickup', 'Hubungi Kami', $html);
 
@@ -569,39 +672,45 @@ Pastikan konten sesuai dengan kategori: {$request->category}. Jika kategori kuli
             $hours = "{$open} - {$close}";
             $html = str_replace('07.00 - 20.00', $hours, $html);
         }
-        
+
         // Replace specific laundry description if present
         $laundryDesc = 'Jasa laundry premium dengan teknologi pencucian modern. Kami jemput pakaian kotor Anda, dan kembalikan dalam keadaan wangi & rapi.';
         if ($landingPage->description) {
-           $html = str_replace($laundryDesc, $landingPage->description, $html);
+            $html = str_replace($laundryDesc, $landingPage->description, $html);
         }
-        
+
         // 8. Replace Feature Content (AI Generated)
         if ($landingPage->feature1_title) {
             // Patterns for Feature 1 (Title & Desc)
             $f1TitlePatterns = ['Gratis Jemput', 'Bahan Premium', 'Desain Elegan', 'Rasa Otentik'];
-            foreach ($f1TitlePatterns as $p) $html = str_replace($p, $landingPage->feature1_title, $html);
-            
+            foreach ($f1TitlePatterns as $p)
+                $html = str_replace($p, $landingPage->feature1_title, $html);
+
             $f1DescPatterns = ['Layanan penjemputan gratis.', 'Kualitas terbaik.', 'Dibuat oleh ahli.', 'Resep turun temurun.'];
-            foreach ($f1DescPatterns as $p) $html = str_replace($p, $landingPage->feature1_desc, $html);
+            foreach ($f1DescPatterns as $p)
+                $html = str_replace($p, $landingPage->feature1_desc, $html);
         }
-        
+
         if ($landingPage->feature2_title) {
             // Patterns for Feature 2
             $f2TitlePatterns = ['Deterjen Premium', 'Jahitan Rapi', 'Tekstur Renyah', 'Wangi Tahan Lama'];
-            foreach ($f2TitlePatterns as $p) $html = str_replace($p, $landingPage->feature2_title, $html);
-            
+            foreach ($f2TitlePatterns as $p)
+                $html = str_replace($p, $landingPage->feature2_title, $html);
+
             $f2DescPatterns = ['Menggunakan bahan pembersih terbaik.', 'Detail yang presisi.', 'Tanpa pengawet.', 'Harum sepanjang hari.'];
-            foreach ($f2DescPatterns as $p) $html = str_replace($p, $landingPage->feature2_desc, $html);
+            foreach ($f2DescPatterns as $p)
+                $html = str_replace($p, $landingPage->feature2_desc, $html);
         }
 
         if ($landingPage->feature3_title) {
             // Patterns for Feature 3
             $f3TitlePatterns = ['1 Hari Selesai', 'Garansi Kepuasan', 'Pengiriman Aman', 'Harga Terjangkau'];
-            foreach ($f3TitlePatterns as $p) $html = str_replace($p, $landingPage->feature3_title, $html);
-            
+            foreach ($f3TitlePatterns as $p)
+                $html = str_replace($p, $landingPage->feature3_title, $html);
+
             $f3DescPatterns = ['Proses pengerjaan cepat.', 'Jika tidak puas, uang kembali.', 'Packing aman sampai tujuan.', 'Ramah di kantong.'];
-            foreach ($f3DescPatterns as $p) $html = str_replace($p, $landingPage->feature3_desc, $html);
+            foreach ($f3DescPatterns as $p)
+                $html = str_replace($p, $landingPage->feature3_desc, $html);
         }
 
         // Special replacement for Tema 5 features (Checklist style)
@@ -610,15 +719,15 @@ Pastikan konten sesuai dengan kategori: {$request->category}. Jika kategori kuli
             $html = str_replace('Deterjen Premium', $landingPage->feature2_title ?? 'Keunggulan 2', $html);
             $html = str_replace('1 Hari Selesai', $landingPage->feature3_title ?? 'Keunggulan 3', $html);
         }
-        
+
         // 9. Generate and inject product cards if products selected
         if (!empty($products) && $products->count() > 0) {
             $productHtml = $this->generateProductCards($products, $landingPage->template, $waNumber);
-            
+
             // Replace {{PRODUCTS}} placeholder directly (new templates)
             $count = 0;
             $html = str_replace('{{PRODUCTS}}', $productHtml, $html, $count);
-            
+
             // Only use legacy method if placeholder NOT found
             if ($count === 0) {
                 $html = $this->replaceProductSection($html, $productHtml, $landingPage->template);
@@ -627,10 +736,10 @@ Pastikan konten sesuai dengan kategori: {$request->category}. Jika kategori kuli
             // No products selected, show empty message
             $html = str_replace('{{PRODUCTS}}', '<p style="text-align: center; color: #999; padding: 40px 0;">Belum ada produk yang dipilih.</p>', $html);
         }
-        
+
         return $html;
     }
-    
+
     /**
      * Generate product cards HTML based on template style
      */
@@ -638,13 +747,13 @@ Pastikan konten sesuai dengan kategori: {$request->category}. Jika kategori kuli
     {
         $cards = '';
         $index = 0;
-        
+
         foreach ($products as $product) {
             $price = 'Rp ' . number_format($product->price, 0, ',', '.');
             $imgUrl = $product->image_path ? asset('storage/' . $product->image_path) : 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=400&q=80';
             $waLink = 'https://wa.me/' . $waNumber . '?text=' . urlencode("Halo, saya tertarik dengan produk: {$product->name}");
             $description = $product->description ?? 'Produk berkualitas dari toko kami.';
-            
+
             if ($template === 'tema1') {
                 // Luxury Dark Style
                 $cards .= "
@@ -709,7 +818,7 @@ Pastikan konten sesuai dengan kategori: {$request->category}. Jika kategori kuli
                 } elseif ($index === 1) {
                     $badge = '<span class="product-badge new">✨ New</span>';
                 }
-                
+
                 $cards .= "
                 <div class=\"service-card\">
                     <div class=\"s-img-wrap\">
@@ -730,10 +839,10 @@ Pastikan konten sesuai dengan kategori: {$request->category}. Jika kategori kuli
             }
             $index++;
         }
-        
+
         return $cards;
     }
-    
+
     /**
      * Replace product section in template with generated cards
      */
@@ -741,9 +850,9 @@ Pastikan konten sesuai dengan kategori: {$request->category}. Jika kategori kuli
     {
         // Different templates have different product container structures
         // We'll inject our products into a wrapper div
-        
+
         // Helper to get container class
-        $containerClass = match($template) {
+        $containerClass = match ($template) {
             'tema1' => 'menu-grid',
             'tema2' => 'card-grid',
             'tema3' => 'product-grid',
@@ -762,14 +871,14 @@ Pastikan konten sesuai dengan kategori: {$request->category}. Jika kategori kuli
             $pattern = '/<div class="(menu-grid|card-grid|product-grid)"[^>]*>.*?<\/div>\s*<\/section>/s';
             $replacement = "<div class=\"{$containerClass}\">{$productHtml}</div></section>";
         }
-        
+
         // Try to replace
         $newHtml = preg_replace($pattern, $replacement, $html, 1);
-        
+
         // If no replacement was made, return original
         return $newHtml ?: $html;
     }
-    
+
     /**
      * Format category with emoji
      */
@@ -783,10 +892,10 @@ Pastikan konten sesuai dengan kategori: {$request->category}. Jika kategori kuli
             'pertanian' => '🌾 Pertanian / Agro',
             'lainnya' => '📦 Lainnya',
         ];
-        
+
         return $categories[$category] ?? '📦 Lainnya';
     }
-    
+
     /**
      * Format operating hours for display
      */
@@ -797,7 +906,7 @@ Pastikan konten sesuai dengan kategori: {$request->category}. Jika kategori kuli
             $close = \Carbon\Carbon::parse($store->close_time)->format('H:i');
             return "{$open} - {$close}";
         }
-        
+
         return 'Hubungi kami';
     }
 }

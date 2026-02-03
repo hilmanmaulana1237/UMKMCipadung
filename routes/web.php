@@ -24,6 +24,9 @@ use Laravel\Fortify\Features;
 // Public Landing Page (No Auth Required)
 Route::get('/toko/{slug}', [LandingPageController::class, 'show'])->name('landingpage.show');
 
+// Public Template Preview (for iframe in landing page builder)
+Route::get('/landing-page-templates/{templateId}', [LandingPageController::class, 'previewTemplate'])->name('landingpage.template-preview');
+
 // Landing Page Management (Auth Required)
 Route::middleware(['auth'])->prefix('umkm/landing-page')->group(function () {
     Route::post('/', [LandingPageController::class, 'store'])->name('landingpage.store');
@@ -35,7 +38,7 @@ Route::middleware(['auth'])->prefix('umkm/landing-page')->group(function () {
 Route::middleware(['auth'])->group(function () {
     Route::get('proofs/{filename}', function ($filename) {
         $path = 'proofs/' . $filename;
-        
+
         if (!\Illuminate\Support\Facades\Storage::disk('local')->exists($path)) {
             abort(404, 'File not found');
         }
@@ -53,9 +56,11 @@ Route::get('/', function () {
         ->withAvg('ratings', 'stars')
         ->withCount('ratings')
         ->withCount('products')
-        ->with(['products' => function($q) {
-            $q->take(4);
-        }])
+        ->with([
+            'products' => function ($q) {
+                $q->take(4);
+            }
+        ])
         ->inRandomOrder()
         ->take(3)
         ->get();
@@ -86,7 +91,7 @@ Route::get('/', function () {
             ->inRandomOrder()
             ->take(3 - $topRatedStores->count())
             ->get();
-        
+
         $topRatedStores = $topRatedStores->merge($randomStores);
     }
 
@@ -94,7 +99,7 @@ Route::get('/', function () {
     if ($topRatedStores->isEmpty()) {
         // Do nothing
     }
-    
+
     return Inertia::render('welcome', [
         'canRegister' => Features::enabled(Features::registration()),
         'featuredStores' => $featuredStores,
@@ -118,7 +123,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/search', [MarketplaceController::class, 'search'])->name('search');
         Route::get('/product/{product}', [MarketplaceController::class, 'show'])->name('product');
         Route::get('/store/{store}', [MarketplaceController::class, 'store'])->name('store');
-        
+
         // AI Shopping Assistant
         Route::get('/ai-assistant', [\App\Http\Controllers\ShoppingAssistantController::class, 'index'])->name('ai-assistant');
         Route::post('/ai-assistant/chat', [\App\Http\Controllers\ShoppingAssistantController::class, 'chat'])->name('ai-assistant.chat');
@@ -127,7 +132,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Universal Dashboard - redirects based on role
     Route::get('dashboard', function () {
         $user = auth()->user();
-        
+
         return match ($user->role) {
             'umkm' => redirect()->route('umkm.dashboard'),
             'courier' => redirect()->route('courier.radar'),
@@ -141,14 +146,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('profile', function () {
         $user = auth()->user();
         $totalRevenue = 0;
-        
+
         // Calculate total revenue for UMKM users
         if ($user->role === 'umkm' && $user->umkmStore) {
             $totalRevenue = $user->umkmStore->orders()
                 ->where('status', 'completed')
                 ->sum('total_amount');
         }
-        
+
         return Inertia::render('profile/index', [
             'totalRevenue' => $totalRevenue,
         ]);
@@ -160,12 +165,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
         // Redirect buyers to profile as they don't have wallet feature
         if ($user->role === 'buyer') {
             return redirect()->route('profile');
-        }        
-        
+        }
+
         // Get courier delivery history if user is a courier
         $courierDeliveries = [];
         $courierStats = null;
-        
+
         if ($user->role === 'courier') {
             $courierDeliveries = Order::with(['store', 'buyer'])
                 ->where('courier_id', $user->id)
@@ -173,7 +178,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
                 ->orderBy('updated_at', 'desc')
                 ->take(20)
                 ->get();
-                
+
             $courierStats = [
                 'totalDeliveries' => Order::where('courier_id', $user->id)
                     ->where('courier_status', 'delivered')
@@ -197,7 +202,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
                 ->take(10)
                 ->get();
         }
-        
+
         return Inertia::render('wallet/index', [
             'balance' => $user->wallet_balance,
             'courierDeliveries' => $courierDeliveries,
@@ -211,7 +216,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Withdrawal Request
     Route::post('wallet/withdraw', function () {
         $user = auth()->user();
-        
+
         if (!in_array($user->role, ['courier', 'affiliator'])) {
             return back()->with('error', 'Anda tidak dapat melakukan penarikan.');
         }
@@ -289,7 +294,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         // Review routes
         Route::post('orders/{order}/review', [\App\Http\Controllers\ReviewController::class, 'store'])->name('orders.review');
         Route::get('stores/{store}/reviews', [\App\Http\Controllers\ReviewController::class, 'index'])->name('stores.reviews');
-        
+
         // Star Rating routes
         Route::post('orders/{order}/rate', [\App\Http\Controllers\RatingController::class, 'store'])->name('orders.rate');
 
@@ -309,11 +314,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     */
     Route::middleware([RoleCheck::class . ':umkm'])->prefix('umkm')->name('umkm.')->group(function () {
         Route::get('dashboard', [UmkmController::class, 'dashboard'])->name('dashboard');
-        
+
         // Store Setup
         Route::get('setup-toko', [UmkmController::class, 'storeSetup'])->name('store.setup');
         Route::post('store', [UmkmController::class, 'storeUpdate'])->name('store.update');
-        
+
         // Orders
         Route::get('orders', [UmkmController::class, 'orders'])->name('orders');
         Route::get('orders/{order}', [UmkmController::class, 'orderDetail'])->name('orders.detail');
@@ -322,10 +327,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('orders/{order}/reject', [UmkmController::class, 'rejectOrder'])->name('orders.reject');
         Route::post('orders/{order}/complete-digital', [UmkmController::class, 'completeDigitalOrder'])->name('orders.complete-digital');
         Route::get('proofs/{filename}', [UmkmController::class, 'showProof'])->name('proofs.show');
-        
+
         // Analytics
         Route::get('analytics', [UmkmController::class, 'analytics'])->name('analytics');
-        
+
         // Store Open Toggle
         Route::post('store/toggle-open', [UmkmController::class, 'toggleOpen'])->name('store.toggle-open');
     });
@@ -346,24 +351,24 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('toggle', [CourierController::class, 'toggleActive'])->name('toggle');
         Route::post('location', [CourierController::class, 'updateLocation'])->name('update-location');
         Route::post('jobs/{order}/accept', [CourierController::class, 'acceptJob'])->name('jobs.accept');
-        
+
         Route::get('active', [CourierController::class, 'activeTrip'])->name('active');
         Route::get('history', [CourierController::class, 'history'])->name('history');
         Route::post('orders/{order}/pickup-otw', [CourierController::class, 'pickupOtw'])->name('orders.pickup-otw');
         Route::post('orders/{order}/picked-up', [CourierController::class, 'pickedUp'])->name('orders.picked-up');
         Route::post('orders/{order}/complete', [CourierController::class, 'complete'])->name('orders.complete');
         Route::post('orders/{order}/cancel', [CourierController::class, 'cancelOrder'])->name('orders.cancel');
-        
+
         // AI Insights
         Route::get('ai-insights', [\App\Http\Controllers\CourierAIController::class, 'insights'])->name('ai-insights');
-        
+
         // Check active order (for logout warning)
         Route::get('check-active-order', function () {
             $user = auth()->user();
             $activeOrder = \App\Models\Order::where('courier_id', $user->id)
                 ->whereIn('courier_status', ['driver_assigned', 'pickup_otw', 'delivery_otw'])
                 ->first();
-            
+
             return response()->json([
                 'has_active_order' => (bool) $activeOrder,
                 'order' => $activeOrder ? [
@@ -417,7 +422,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('ai-content/generate-video', [\App\Http\Controllers\AIContentController::class, 'generateVideo'])->name('ai-content.generate-video');
         Route::post('ai-content/check-video-status', [\App\Http\Controllers\AIContentController::class, 'checkVideoStatus'])->name('ai-content.check-video-status');
         Route::post('ai-content/poster', [\App\Http\Controllers\AIContentController::class, 'generatePoster'])->name('ai-content.poster');
-        
+
         // AI Poster Generator (New Template-Based)
         Route::get('ai-content/poster-templates', [\App\Http\Controllers\AIContentController::class, 'getPosterTemplates'])->name('ai-content.poster-templates');
         Route::post('ai-content/generate-poster-template', [\App\Http\Controllers\AIContentController::class, 'generatePosterFromTemplate'])->name('ai-content.generate-poster-template');
@@ -441,59 +446,59 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::middleware(['auth'])->prefix('admin')->group(function () {
         Route::get('proofs/{filename}', [AdminController::class, 'showPaymentProof'])->where('filename', '.*')->name('admin.proofs.show');
     });
-    
+
     Route::middleware([RoleCheck::class . ':admin'])->prefix('admin')->name('admin.')->group(function () {
         Route::get('dashboard', [AdminController::class, 'dashboard'])->name('dashboard');
-        
+
         // Users
         Route::get('users', [AdminController::class, 'users'])->name('users');
         Route::get('users/create', [AdminController::class, 'createUser'])->name('users.create');
         Route::post('users', [AdminController::class, 'storeUser'])->name('users.store');
         Route::get('users/{user}', [AdminController::class, 'userDetail'])->name('users.show');
-        
+
         // Stores
         Route::get('stores', [AdminController::class, 'stores'])->name('stores');
         Route::get('stores/{store}', [AdminController::class, 'storeDetail'])->name('stores.show');
-        
+
         // Orders
         Route::get('orders', [AdminController::class, 'orders'])->name('orders');
         Route::get('orders/{order}', [AdminController::class, 'orderDetail'])->name('orders.show');
         Route::post('orders/{order}/resolve', [AdminController::class, 'resolveOrder'])->name('orders.resolve');
-        
+
         // Couriers
         Route::get('couriers', [AdminController::class, 'couriers'])->name('couriers');
         Route::get('couriers/{courier}', [AdminController::class, 'courierDetail'])->name('couriers.show');
         Route::post('couriers/{courier}/toggle-status', [AdminController::class, 'toggleCourierStatus'])->name('couriers.toggle-status');
-        
+
         // Complaints
         Route::get('complaints', [AdminController::class, 'complaints'])->name('complaints');
         Route::post('complaints/{complaint}/respond', [AdminController::class, 'complaintRespond'])->name('complaints.respond');
-        
+
         // Promos
         Route::get('promos', [AdminController::class, 'promos'])->name('promos');
         Route::post('promos', [AdminController::class, 'storePromo'])->name('promos.store');
         Route::delete('promos/{promo}', [AdminController::class, 'destroyPromo'])->name('promos.destroy');
-        
+
         // Secure File Serving
         Route::get('proofs/{filename}', [AdminController::class, 'showProof'])->name('admin.proofs.show');
 
         // Affiliates
         Route::get('affiliates', [AdminController::class, 'affiliates'])->name('affiliates');
-        
+
         // Withdrawals
         Route::get('withdrawals', [AdminController::class, 'withdrawals'])->name('withdrawals');
         Route::post('withdrawals/{withdrawal}/approve', [AdminController::class, 'approveWithdrawal'])->name('withdrawals.approve');
         Route::post('withdrawals/{withdrawal}/reject', [AdminController::class, 'rejectWithdrawal'])->name('withdrawals.reject');
-        
+
         // API Settings
         Route::get('settings/api', [AdminController::class, 'apiSettings'])->name('settings.api');
         Route::post('settings/api', [AdminController::class, 'saveApiSettings'])->name('settings.api.save');
         Route::post('settings/api/test', [AdminController::class, 'testApi'])->name('settings.api.test');
-        
+
         // General Settings
         Route::get('settings', [AdminController::class, 'generalSettings'])->name('settings');
         Route::post('settings/maintenance/toggle', [AdminController::class, 'toggleMaintenance'])->name('settings.maintenance.toggle');
-        
+
         // Database Backups
         Route::get('database', [App\Http\Controllers\Admin\BackupController::class, 'index'])->name('database.index');
         Route::post('database', [App\Http\Controllers\Admin\BackupController::class, 'store'])->name('database.store');
@@ -519,4 +524,4 @@ Route::middleware(['auth', 'verified'])->group(function () {
     });
 });
 
-require __DIR__.'/settings.php';
+require __DIR__ . '/settings.php';
