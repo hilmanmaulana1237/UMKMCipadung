@@ -9,10 +9,55 @@ use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use Carbon\Carbon;
 
 class Umkm40Seeder extends Seeder
 {
+    /**
+     * Generate random phone number
+     */
+    private function generatePhone(): string
+    {
+        return '08' . rand(10, 99) . rand(1000, 9999) . rand(1000, 9999);
+    }
+
+    /**
+     * Generate random float
+     */
+    private function randomFloat(float $min, float $max): float
+    {
+        return $min + mt_rand() / mt_getrandmax() * ($max - $min);
+    }
+
+    /**
+     * Generate random bank account
+     */
+    private function generateBankAccount(): string
+    {
+        return rand(100, 999) . rand(1000, 9999) . rand(1000, 9999);
+    }
+
+    /**
+     * Generate random address
+     */
+    private function generateAddress(int $i): string
+    {
+        $streets = ['Jl. Cipadung Raya', 'Jl. Cibiru', 'Jl. Rancaekek', 'Jl. Bojongsoang', 'Jl. Gedebage', 'Jl. Ujungberung', 'Jl. Arcamanik', 'Jl. Antapani'];
+        $areas = ['Cipadung', 'Cibiru', 'Panyileukan', 'Ujungberung', 'Arcamanik'];
+
+        return $streets[array_rand($streets)] . ' No. ' . rand(1, 200) . ', Kel. ' . $areas[array_rand($areas)] . ', Bandung 40614';
+    }
+
+    /**
+     * Generate random word
+     */
+    private function randomWord(): string
+    {
+        $words = ['Spesial', 'Premium', 'Original', 'Enak', 'Murah', 'Favorit', 'Best', 'Top', 'Super', 'Deluxe'];
+        return $words[array_rand($words)];
+    }
+
     public function run(): void
     {
         try {
@@ -30,8 +75,6 @@ class Umkm40Seeder extends Seeder
 
             $jasaPrefixes = ['Laundry', 'Service', 'Bengkel', 'Cuci', 'Jahit', 'Desain', 'Foto', 'Pijat', 'Salon', 'Barber'];
             $jasaSuffixes = ['Kilat', 'Express', 'Bersih', 'Rapi', 'Maju', 'Sejahtera', 'Prima', 'Professional', 'Ahli', 'Mandiri'];
-
-            $faker = \Faker\Factory::create('id_ID');
 
             // Central Cipadung location
             $baseLat = -6.923700;
@@ -59,13 +102,15 @@ class Umkm40Seeder extends Seeder
                     $storeName = $jasaPrefixes[array_rand($jasaPrefixes)] . ' ' . $jasaSuffixes[array_rand($jasaSuffixes)] . ' Gmail' . $i;
                 }
 
+                $waNumber = $this->generatePhone();
+
                 // Create User Owner
                 $owner = User::create([
                     'name' => 'Owner ' . $storeName,
                     'email' => $email,
                     'password' => Hash::make('password'),
                     'role' => 'umkm',
-                    'wa_number' => '08' . $faker->numerify('##########'),
+                    'wa_number' => $waNumber,
                     'wallet_balance' => rand(100000, 5000000),
                 ]);
                 DB::table('users')->where('id', $owner->id)->update(['email_verified_at' => now()]);
@@ -95,13 +140,13 @@ class Umkm40Seeder extends Seeder
                     'user_id' => $owner->id,
                     'name' => $storeName,
                     'category' => $category,
-                    'description' => 'Kami menyediakan berbagai macam ' . $category . ' berkualitas terbaik di Bandung. ' . $faker->sentence(10),
-                    'address_pickup' => $faker->address,
-                    'latitude' => $baseLat + ($faker->randomFloat(6, -0.02, 0.02)),
-                    'longitude' => $baseLng + ($faker->randomFloat(6, -0.02, 0.02)),
-                    'contact_number' => $owner->wa_number,
+                    'description' => 'Kami menyediakan berbagai macam ' . $category . ' berkualitas terbaik di Bandung. Pelayanan ramah dan harga terjangkau.',
+                    'address_pickup' => $this->generateAddress($i),
+                    'latitude' => $baseLat + $this->randomFloat(-0.02, 0.02),
+                    'longitude' => $baseLng + $this->randomFloat(-0.02, 0.02),
+                    'contact_number' => $waNumber,
                     'bank_name' => 'BCA',
-                    'bank_account' => $faker->bankAccountNumber,
+                    'bank_account' => $this->generateBankAccount(),
                     'bank_holder' => $owner->name,
                     'is_open_today' => $isOpenToday,
                     'open_time' => $openTime,
@@ -119,13 +164,13 @@ class Umkm40Seeder extends Seeder
                     $productName = '';
                     if ($category === 'kuliner') {
                         $foodItems = ['Nasi Paket', 'Ayam Geprek', 'Es Teh Manis', 'Kopi Susu', 'Seblak Spesial', 'Baso Aci', 'Mie Goreng', 'Pisang Keju'];
-                        $productName = $foodItems[array_rand($foodItems)] . ' ' . $faker->word . ' ' . $j;
+                        $productName = $foodItems[array_rand($foodItems)] . ' ' . $this->randomWord() . ' ' . $j;
                     } elseif ($category === 'kriya') {
                         $kriyaItems = ['Tas Batik', 'Dompet Kulit', 'Gelang Etnik', 'Kalung Kayu', 'Topi Rajut', 'Syal Tenun', 'Hiasan Dinding'];
-                        $productName = $kriyaItems[array_rand($kriyaItems)] . ' ' . $faker->word . ' ' . $j;
+                        $productName = $kriyaItems[array_rand($kriyaItems)] . ' ' . $this->randomWord() . ' ' . $j;
                     } else {
                         $jasaItems = ['Cuci Kiloan', 'Service Ringan', 'Paket Hemat', 'Jasa Desain', 'Potong Rambut', 'Pijat Refleksi'];
-                        $productName = $jasaItems[array_rand($jasaItems)] . ' ' . $faker->word . ' ' . $j;
+                        $productName = $jasaItems[array_rand($jasaItems)] . ' ' . $this->randomWord() . ' ' . $j;
                     }
 
                     Product::create([
