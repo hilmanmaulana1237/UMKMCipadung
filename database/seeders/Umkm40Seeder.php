@@ -9,7 +9,6 @@ use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Str;
 use Carbon\Carbon;
 
 class Umkm40Seeder extends Seeder
@@ -22,177 +21,102 @@ class Umkm40Seeder extends Seeder
         return '08' . rand(10, 99) . rand(1000, 9999) . rand(1000, 9999);
     }
 
-    /**
-     * Generate random float
-     */
-    private function randomFloat(float $min, float $max): float
-    {
-        return $min + mt_rand() / mt_getrandmax() * ($max - $min);
-    }
-
-    /**
-     * Generate random bank account
-     */
-    private function generateBankAccount(): string
-    {
-        return rand(100, 999) . rand(1000, 9999) . rand(1000, 9999);
-    }
-
-    /**
-     * Generate random address
-     */
-    private function generateAddress(int $i): string
-    {
-        $streets = ['Jl. Cipadung Raya', 'Jl. Cibiru', 'Jl. Rancaekek', 'Jl. Bojongsoang', 'Jl. Gedebage', 'Jl. Ujungberung', 'Jl. Arcamanik', 'Jl. Antapani'];
-        $areas = ['Cipadung', 'Cibiru', 'Panyileukan', 'Ujungberung', 'Arcamanik'];
-
-        return $streets[array_rand($streets)] . ' No. ' . rand(1, 200) . ', Kel. ' . $areas[array_rand($areas)] . ', Bandung 40614';
-    }
-
-    /**
-     * Generate random word
-     */
-    private function randomWord(): string
-    {
-        $words = ['Spesial', 'Premium', 'Original', 'Enak', 'Murah', 'Favorit', 'Best', 'Top', 'Super', 'Deluxe'];
-        return $words[array_rand($words)];
-    }
-
     public function run(): void
     {
         try {
             $this->command->info('');
-            $this->command->info('🚀 Starting creation of 40 UMKM accounts...');
+            $this->command->info('🚀 Starting UMKM 40 Gmail Seeder...');
             $this->command->info('');
 
-            $categories = ['kuliner', 'kriya', 'jasa'];
+            // =====================================================
+            // STEP 1: DELETE EXISTING ACCOUNTS (umkm1-40@gmail.com)
+            // =====================================================
+            $this->command->info('🗑️  Deleting existing umkm1-40@gmail.com accounts...');
 
-            $kulinerPrefixes = ['Warung', 'Kedai', 'Dapur', 'Rumah Makan', 'Catering', 'Bakso', 'Seblak', 'Sate', 'Nasi Goreng'];
-            $kulinerSuffixes = ['Enak', 'Mantap', 'Berkah', 'Sari', 'Rasa', 'Ibu Juju', 'Pak Dedi', 'Keluarga', 'Nusantara', 'Pedas Gila'];
+            $deletedCount = 0;
+            for ($i = 1; $i <= 40; $i++) {
+                $email = 'umkm' . $i . '@gmail.com';
+                $user = User::where('email', $email)->first();
 
-            $kriyaPrefixes = ['Kerajinan', 'Souvenir', 'Batik', 'Tenun', 'Aksesoris', 'Galeri', 'Studio', 'Handmade', 'Craft', 'Art'];
-            $kriyaSuffixes = ['Cantik', 'Unik', 'Bandung', 'Kreatif', 'Jaya', 'Abadi', 'Lestari', 'Modern', 'Etnik', 'Indah'];
+                if ($user) {
+                    // Delete associated store and products
+                    $store = UmkmStore::where('user_id', $user->id)->first();
+                    if ($store) {
+                        // Delete products first
+                        Product::where('umkm_store_id', $store->id)->delete();
+                        // Delete store
+                        $store->delete();
+                    }
+                    // Delete user
+                    $user->delete();
+                    $deletedCount++;
+                    $this->command->info("   ❌ Deleted: $email");
+                }
+            }
 
-            $jasaPrefixes = ['Laundry', 'Service', 'Bengkel', 'Cuci', 'Jahit', 'Desain', 'Foto', 'Pijat', 'Salon', 'Barber'];
-            $jasaSuffixes = ['Kilat', 'Express', 'Bersih', 'Rapi', 'Maju', 'Sejahtera', 'Prima', 'Professional', 'Ahli', 'Mandiri'];
+            $this->command->info("   Total deleted: $deletedCount accounts");
+            $this->command->info('');
 
-            // Central Cipadung location
-            $baseLat = -6.923700;
-            $baseLng = 107.704200;
+            // =====================================================
+            // STEP 2: CREATE NEW ACCOUNTS (EMPTY STORES, NO PRODUCTS)
+            // =====================================================
+            $this->command->info('✨ Creating new 40 UMKM accounts with empty stores...');
+            $this->command->info('');
 
             $createdAccounts = [];
 
             for ($i = 1; $i <= 40; $i++) {
                 $email = 'umkm' . $i . '@gmail.com';
 
-                // Check if email already exists
+                // Check if email already exists (shouldn't happen after deletion)
                 if (User::where('email', $email)->exists()) {
                     $this->command->warn("⚠️  Account $email already exists, skipping...");
                     continue;
-                }
-
-                $category = $categories[array_rand($categories)];
-
-                // Generate Name based on category
-                if ($category === 'kuliner') {
-                    $storeName = $kulinerPrefixes[array_rand($kulinerPrefixes)] . ' ' . $kulinerSuffixes[array_rand($kulinerSuffixes)] . ' Gmail' . $i;
-                } elseif ($category === 'kriya') {
-                    $storeName = $kriyaPrefixes[array_rand($kriyaPrefixes)] . ' ' . $kriyaSuffixes[array_rand($kriyaSuffixes)] . ' Gmail' . $i;
-                } else {
-                    $storeName = $jasaPrefixes[array_rand($jasaPrefixes)] . ' ' . $jasaSuffixes[array_rand($jasaSuffixes)] . ' Gmail' . $i;
                 }
 
                 $waNumber = $this->generatePhone();
 
                 // Create User Owner
                 $owner = User::create([
-                    'name' => 'Owner ' . $storeName,
+                    'name' => 'UMKM ' . $i,
                     'email' => $email,
                     'password' => Hash::make('password'),
                     'role' => 'umkm',
                     'wa_number' => $waNumber,
-                    'wallet_balance' => rand(100000, 5000000),
+                    'wallet_balance' => 0,
                 ]);
                 DB::table('users')->where('id', $owner->id)->update(['email_verified_at' => now()]);
 
-                // Randomize Schedule
-                $openTime = sprintf("%02d:00", rand(7, 10));
-                $closeTime = sprintf("%02d:00", rand(16, 22));
-
-                // Randomize Operating Days
-                $days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
-                $scheduleType = rand(1, 3);
-                if ($scheduleType == 1) {
-                    $operatingDays = $days;
-                } elseif ($scheduleType == 2) {
-                    $operatingDays = array_slice($days, 0, 5);
-                } else {
-                    $operatingDays = array_slice($days, 0, 6);
-                }
-
-                $isOpenToday = in_array(strtolower(Carbon::now()->format('l')), $operatingDays);
-
-                if (rand(1, 4) == 1) {
-                    $isOpenToday = false;
-                }
-
+                // Create EMPTY store with placeholder name
                 $store = UmkmStore::create([
                     'user_id' => $owner->id,
-                    'name' => $storeName,
-                    'category' => $category,
-                    'description' => 'Kami menyediakan berbagai macam ' . $category . ' berkualitas terbaik di Bandung. Pelayanan ramah dan harga terjangkau.',
-                    'address_pickup' => $this->generateAddress($i),
-                    'latitude' => $baseLat + $this->randomFloat(-0.02, 0.02),
-                    'longitude' => $baseLng + $this->randomFloat(-0.02, 0.02),
+                    'name' => 'Masukkan Nama Warung',
+                    'slug' => 'umkm-' . $i, // Unique slug for each store
+                    'category' => 'kuliner',
+                    'description' => '',
+                    'address_pickup' => '',
+                    'latitude' => null,
+                    'longitude' => null,
                     'contact_number' => $waNumber,
-                    'bank_name' => 'BCA',
-                    'bank_account' => $this->generateBankAccount(),
-                    'bank_holder' => $owner->name,
-                    'is_open_today' => $isOpenToday,
-                    'open_time' => $openTime,
-                    'close_time' => $closeTime,
-                    'operating_days' => $operatingDays,
-                    'banner_path' => 'products/p5oJ8lpTgPAOnM6wkf9crBLuyQwFtJuHRoLjIATU.jpg',
-                    'store_photo_path' => 'products/p5oJ8lpTgPAOnM6wkf9crBLuyQwFtJuHRoLjIATU.jpg',
+                    'bank_name' => null,
+                    'bank_account' => null,
+                    'bank_holder' => null,
+                    'is_open_today' => false,
+                    'open_time' => null,
+                    'close_time' => null,
+                    'operating_days' => null,
+                    'banner_path' => null,
+                    'store_photo_path' => null,
                 ]);
 
-                // Generate Products (3-8 products per store)
-                $productCount = rand(3, 8);
-                for ($j = 1; $j <= $productCount; $j++) {
-                    $price = ($category === 'kuliner') ? rand(10000, 50000) : (($category === 'jasa') ? rand(25000, 150000) : rand(50000, 300000));
-
-                    $productName = '';
-                    if ($category === 'kuliner') {
-                        $foodItems = ['Nasi Paket', 'Ayam Geprek', 'Es Teh Manis', 'Kopi Susu', 'Seblak Spesial', 'Baso Aci', 'Mie Goreng', 'Pisang Keju'];
-                        $productName = $foodItems[array_rand($foodItems)] . ' ' . $this->randomWord() . ' ' . $j;
-                    } elseif ($category === 'kriya') {
-                        $kriyaItems = ['Tas Batik', 'Dompet Kulit', 'Gelang Etnik', 'Kalung Kayu', 'Topi Rajut', 'Syal Tenun', 'Hiasan Dinding'];
-                        $productName = $kriyaItems[array_rand($kriyaItems)] . ' ' . $this->randomWord() . ' ' . $j;
-                    } else {
-                        $jasaItems = ['Cuci Kiloan', 'Service Ringan', 'Paket Hemat', 'Jasa Desain', 'Potong Rambut', 'Pijat Refleksi'];
-                        $productName = $jasaItems[array_rand($jasaItems)] . ' ' . $this->randomWord() . ' ' . $j;
-                    }
-
-                    Product::create([
-                        'umkm_store_id' => $store->id,
-                        'name' => $productName,
-                        'price' => $price,
-                        'stock' => rand(10, 100),
-                        'is_physical' => ($category !== 'jasa'),
-                        'category' => $category,
-                        'description' => 'Deskripsi untuk produk ' . $productName . '. Kualitas terjamin dan harga terjangkau.',
-                        'is_active' => true,
-                    ]);
-                }
+                // NO PRODUCTS CREATED - store is empty
 
                 $createdAccounts[] = [
                     'email' => $email,
-                    'store' => $storeName,
-                    'category' => $category,
-                    'products' => $productCount,
+                    'store_id' => $store->id,
                 ];
 
-                $this->command->info("✅ Created: $email -> $storeName ($category) with $productCount products");
+                $this->command->info("✅ Created: $email -> Empty store (ID: {$store->id})");
             }
 
             // Summary
@@ -206,9 +130,10 @@ class Umkm40Seeder extends Seeder
             $this->command->info('   Password: password');
             $this->command->info('');
             $this->command->info('📊 Summary:');
-            $this->command->info('   Total accounts created: ' . count($createdAccounts));
-            $this->command->info('   Total UMKM stores: ' . UmkmStore::count());
-            $this->command->info('   Total products: ' . Product::count());
+            $this->command->info('   Accounts deleted: ' . $deletedCount);
+            $this->command->info('   Accounts created: ' . count($createdAccounts));
+            $this->command->info('   Store name: "Masukkan Nama Warung" (empty)');
+            $this->command->info('   Products: 0 (empty)');
             $this->command->info('');
 
         } catch (\Throwable $e) {
