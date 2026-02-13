@@ -380,8 +380,8 @@ function LandingPagePanel({ store, landingPage, products, templates }: {
                                     key={id}
                                     onClick={() => handleTemplateSelect(id)}
                                     className={`border rounded-xl overflow-hidden cursor-pointer transition-all ${selectedTemplate === id
-                                            ? 'border-violet-500 ring-2 ring-violet-200 bg-violet-50'
-                                            : 'border-gray-200 hover:border-violet-300 hover:shadow-md'
+                                        ? 'border-violet-500 ring-2 ring-violet-200 bg-violet-50'
+                                        : 'border-gray-200 hover:border-violet-300 hover:shadow-md'
                                         }`}
                                 >
                                     <div className="flex items-stretch">
@@ -751,8 +751,8 @@ interface PosterTemplate {
 }
 
 function PosterGeneratorPanel({ store, contents, quota }: { store: Props['store']; contents: VideoContent[]; quota: VideoQuota }) {
-    const [posterType, setPosterType] = useState<'makanan' | 'jasa'>('makanan');
-    const [templates, setTemplates] = useState<{ makanan: PosterTemplate[]; jasa: PosterTemplate[] }>({ makanan: [], jasa: [] });
+    const [posterType, setPosterType] = useState<'makanan' | 'enhance'>('makanan');
+    const [templates, setTemplates] = useState<{ makanan: PosterTemplate[] }>({ makanan: [] });
     const [selectedTemplate, setSelectedTemplate] = useState<string>('');
     const [loadingTemplates, setLoadingTemplates] = useState(true);
 
@@ -769,9 +769,7 @@ function PosterGeneratorPanel({ store, contents, quota }: { store: Props['store'
     const [productImagePreview, setProductImagePreview] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    // Service poster specific
-    const [serviceName, setServiceName] = useState('');
-    const [services, setServices] = useState<string[]>(['', '', '', '']);
+
 
     // Generation states
     const [generating, setGenerating] = useState(false);
@@ -903,12 +901,17 @@ function PosterGeneratorPanel({ store, contents, quota }: { store: Props['store'
     }, [taskId, contentId]);
 
     // Handle type change and auto-select first template
-    const handleTypeChange = (type: 'makanan' | 'jasa') => {
+    const handleTypeChange = (type: 'makanan' | 'enhance') => {
         setPosterType(type);
-        const typeTemplates = type === 'makanan' ? templates.makanan : templates.jasa;
-        if (typeTemplates.length > 0) {
-            setSelectedTemplate(typeTemplates[0].path);
+        if (type === 'makanan') {
+            const typeTemplates = templates.makanan;
+            if (typeTemplates.length > 0) {
+                setSelectedTemplate(typeTemplates[0].path);
+            } else {
+                setSelectedTemplate('');
+            }
         } else {
+            // enhance mode doesn't need templates
             setSelectedTemplate('');
         }
     };
@@ -927,19 +930,8 @@ function PosterGeneratorPanel({ store, contents, quota }: { store: Props['store'
         if (fileInputRef.current) fileInputRef.current.value = '';
     };
 
-    const updateService = (index: number, value: string) => {
-        const newServices = [...services];
-        newServices[index] = value;
-        setServices(newServices);
-    };
 
-    const addService = () => {
-        if (services.length < 6) {
-            setServices([...services, '']);
-        }
-    };
-
-    // NEW: Download image using fetch + blob (cross-origin safe)
+    // Download image using fetch + blob (cross-origin safe)
     const handleDownload = async (url: string, filename = 'poster.jpg') => {
         try {
             const response = await fetch(url);
@@ -1039,15 +1031,14 @@ function PosterGeneratorPanel({ store, contents, quota }: { store: Props['store'
         }
     };
 
-    const removeService = (index: number) => {
-        if (services.length > 1) {
-            setServices(services.filter((_, i) => i !== index));
-        }
-    };
-
     const handleGenerate = async () => {
-        if (!selectedTemplate) {
+        if (posterType === 'makanan' && !selectedTemplate) {
             setError('Pilih template terlebih dahulu');
+            return;
+        }
+
+        if (posterType === 'enhance' && !productImage) {
+            setError('Upload foto produk terlebih dahulu');
             return;
         }
 
@@ -1057,26 +1048,22 @@ function PosterGeneratorPanel({ store, contents, quota }: { store: Props['store'
 
         try {
             const formData = new FormData();
-            formData.append('template_path', selectedTemplate);
             formData.append('poster_type', posterType);
-            formData.append('store_name', storeName);
-            formData.append('slogan', slogan);
-            formData.append('phone', phone);
-            formData.append('address', address);
 
             if (posterType === 'makanan') {
+                formData.append('template_path', selectedTemplate);
+                formData.append('store_name', storeName);
+                formData.append('slogan', slogan);
+                formData.append('phone', phone);
+                formData.append('address', address);
                 formData.append('product_name', productName);
-                // Prepend Rp if not already present (simplistic check)
                 const finalPrice = price.toLowerCase().startsWith('rp') ? price : `Rp ${price}`;
                 formData.append('price', finalPrice);
                 if (productImage) {
                     formData.append('product_image', productImage);
                 }
             } else {
-                formData.append('service_name', serviceName);
-                services.filter(s => s.trim()).forEach((s, i) => {
-                    formData.append(`services[${i}]`, s);
-                });
+                // enhance mode - only product image
                 if (productImage) {
                     formData.append('product_image', productImage);
                 }
@@ -1090,7 +1077,7 @@ function PosterGeneratorPanel({ store, contents, quota }: { store: Props['store'
                 setTaskId(response.data.task_id);
                 setContentId(response.data.content_id);
             } else {
-                setError(response.data.error || 'Gagal memulai generate poster');
+                setError(response.data.error || 'Gagal memulai generate');
                 setGenerating(false);
             }
         } catch (err: any) {
@@ -1099,7 +1086,7 @@ function PosterGeneratorPanel({ store, contents, quota }: { store: Props['store'
         }
     };
 
-    const currentTemplates = posterType === 'makanan' ? templates.makanan : templates.jasa;
+    const currentTemplates = templates.makanan;
 
     return (
         <>
@@ -1153,271 +1140,228 @@ function PosterGeneratorPanel({ store, contents, quota }: { store: Props['store'
                             <p className="text-xs text-gray-500">Fokus 1 produk dengan foto</p>
                         </button>
                         <button
-                            onClick={() => handleTypeChange('jasa')}
-                            className={`p-4 rounded-xl border-2 transition-all text-left ${posterType === 'jasa'
+                            onClick={() => handleTypeChange('enhance')}
+                            className={`p-4 rounded-xl border-2 transition-all text-left ${posterType === 'enhance'
                                 ? 'border-violet-500 bg-violet-50'
                                 : 'border-gray-200 hover:border-gray-300'
                                 }`}
                         >
-                            <div className="text-2xl mb-1">🔧</div>
-                            <div className="font-semibold text-gray-800">Jasa / List</div>
-                            <p className="text-xs text-gray-500">Tampilkan daftar layanan</p>
+                            <div className="text-2xl mb-1">✨</div>
+                            <div className="font-semibold text-gray-800">Percantik Produk</div>
+                            <p className="text-xs text-gray-500">Foto produk jadi profesional</p>
                         </button>
                     </div>
                 </div>
 
-                {/* Template Selection */}
-                <div className="bg-white rounded-2xl p-5 shadow-lg border border-gray-100">
-                    <h2 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
-                        <Layout className="w-5 h-5 text-violet-500" />
-                        Pilih Template
-                    </h2>
-                    {loadingTemplates ? (
-                        <div className="flex items-center justify-center py-8">
-                            <Loader2 className="w-6 h-6 animate-spin text-violet-500" />
-                        </div>
-                    ) : currentTemplates.length === 0 ? (
-                        <p className="text-gray-500 text-sm text-center py-4">Tidak ada template tersedia</p>
-                    ) : (
-                        <div className="grid grid-cols-2 gap-3">
-                            {currentTemplates.map((template) => (
-                                <button
-                                    key={template.path}
-                                    onClick={() => setSelectedTemplate(template.path)}
-                                    className={`rounded-xl overflow-hidden border-2 transition-all ${selectedTemplate === template.path
-                                        ? 'border-violet-500 ring-2 ring-violet-200'
-                                        : 'border-gray-200 hover:border-gray-300'
-                                        }`}
-                                >
-                                    <img
-                                        src={template.url}
-                                        alt={template.name}
-                                        className="w-full aspect-[3/4] object-cover"
-                                    />
-                                    {selectedTemplate === template.path && (
-                                        <div className="bg-violet-500 text-white text-xs py-1 text-center font-medium">
-                                            ✓ Dipilih
-                                        </div>
-                                    )}
-                                </button>
-                            ))}
-                        </div>
-                    )}
-                </div>
-
-                {/* Form Inputs */}
-                <div className="bg-white rounded-2xl p-5 shadow-lg border border-gray-100">
-                    <h2 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
-                        <Store className="w-5 h-5 text-violet-500" />
-                        Isi Data Poster
-                    </h2>
-                    <div className="space-y-4">
-                        {/* Common fields */}
-                        <div>
-                            <label className="block text-xs font-semibold text-gray-500 mb-1 uppercase">Nama Toko/Warung</label>
-                            <input
-                                type="text"
-                                value={storeName}
-                                onChange={(e) => setStoreName(e.target.value)}
-                                className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white transition-colors"
-                                placeholder="Contoh: Warung Bu Siti"
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-xs font-semibold text-gray-500 mb-1 uppercase">Slogan (Opsional)</label>
-                            <input
-                                type="text"
-                                value={slogan}
-                                onChange={(e) => setSlogan(e.target.value)}
-                                className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white transition-colors"
-                                placeholder="Contoh: Enak, Murah, Nagih!"
-                            />
-                        </div>
-
-                        {/* Food Poster Fields */}
-                        {posterType === 'makanan' && (
-                            <>
-                                <div className="grid grid-cols-2 gap-3">
-                                    <div>
-                                        <label className="block text-xs font-semibold text-gray-500 mb-1 uppercase">Nama Produk</label>
-                                        <input
-                                            type="text"
-                                            value={productName}
-                                            onChange={(e) => setProductName(e.target.value)}
-                                            className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white transition-colors"
-                                            placeholder="Nasi Goreng"
+                {/* Template Selection - Only for makanan type */}
+                {posterType === 'makanan' && (
+                    <div className="bg-white rounded-2xl p-5 shadow-lg border border-gray-100">
+                        <h2 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
+                            <Layout className="w-5 h-5 text-violet-500" />
+                            Pilih Template
+                        </h2>
+                        {loadingTemplates ? (
+                            <div className="flex items-center justify-center py-8">
+                                <Loader2 className="w-6 h-6 animate-spin text-violet-500" />
+                            </div>
+                        ) : currentTemplates.length === 0 ? (
+                            <p className="text-gray-500 text-sm text-center py-4">Tidak ada template tersedia</p>
+                        ) : (
+                            <div className="grid grid-cols-2 gap-3">
+                                {currentTemplates.map((template) => (
+                                    <button
+                                        key={template.path}
+                                        onClick={() => setSelectedTemplate(template.path)}
+                                        className={`rounded-xl overflow-hidden border-2 transition-all ${selectedTemplate === template.path
+                                            ? 'border-violet-500 ring-2 ring-violet-200'
+                                            : 'border-gray-200 hover:border-gray-300'
+                                            }`}
+                                    >
+                                        <img
+                                            src={template.url}
+                                            alt={template.name}
+                                            className="w-full aspect-[3/4] object-cover"
                                         />
-                                    </div>
-                                    <div>
-                                        <label className="block text-xs font-semibold text-gray-500 mb-1 uppercase">Harga</label>
-                                        <div className="relative">
-                                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                                <span className="text-gray-500 font-medium">Rp</span>
+                                        {selectedTemplate === template.path && (
+                                            <div className="bg-violet-500 text-white text-xs py-1 text-center font-medium">
+                                                ✓ Dipilih
                                             </div>
-                                            <input
-                                                type="text"
-                                                value={price}
-                                                onChange={(e) => {
-                                                    // Remove non-digits
-                                                    const rawValue = e.target.value.replace(/\D/g, '');
-                                                    // Format with thousand separator
-                                                    const formatted = rawValue.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-                                                    setPrice(formatted);
-                                                }}
-                                                className="w-full pl-10 px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white transition-colors font-medium"
-                                                placeholder="15.000"
-                                            />
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Product Image Upload */}
-                                <div>
-                                    <label className="block text-xs font-semibold text-gray-500 mb-1 uppercase">Foto Produk (Opsional)</label>
-                                    <input
-                                        ref={fileInputRef}
-                                        type="file"
-                                        accept="image/png, image/jpeg, image/jpg, image/webp"
-                                        onChange={handleImageChange}
-                                        className="hidden"
-                                    />
-                                    {productImagePreview ? (
-                                        <div className="relative">
-                                            <img
-                                                src={productImagePreview}
-                                                alt="Preview"
-                                                className="w-full h-40 object-cover rounded-xl"
-                                            />
-                                            <button
-                                                onClick={removeImage}
-                                                className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full"
-                                            >
-                                                <X className="w-4 h-4" />
-                                            </button>
-                                        </div>
-                                    ) : (
-                                        <button
-                                            onClick={() => fileInputRef.current?.click()}
-                                            className="w-full py-8 border-2 border-dashed border-gray-300 rounded-xl flex flex-col items-center gap-2 text-gray-500 hover:border-violet-400 hover:text-violet-500 transition-colors"
-                                        >
-                                            <Upload className="w-6 h-6" />
-                                            <span className="text-sm">Tap untuk upload foto</span>
-                                        </button>
-                                    )}
-                                </div>
-                            </>
-                        )}
-
-                        {/* Service Poster Fields */}
-                        {posterType === 'jasa' && (
-                            <>
-                                <div>
-                                    <label className="block text-xs font-semibold text-gray-500 mb-1 uppercase">Nama Jasa/Kategori</label>
-                                    <input
-                                        type="text"
-                                        value={serviceName}
-                                        onChange={(e) => setServiceName(e.target.value)}
-                                        className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white transition-colors"
-                                        placeholder="Contoh: Laundry Express"
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-xs font-semibold text-gray-500 mb-1 uppercase">Daftar Layanan (Max 6)</label>
-                                    <div className="space-y-2">
-                                        {services.map((service, index) => (
-                                            <div key={index} className="flex gap-2">
-                                                <input
-                                                    type="text"
-                                                    value={service}
-                                                    onChange={(e) => updateService(index, e.target.value)}
-                                                    className="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white transition-colors text-sm"
-                                                    placeholder={`Layanan ${index + 1}`}
-                                                />
-                                                {services.length > 1 && (
-                                                    <button
-                                                        onClick={() => removeService(index)}
-                                                        className="p-2.5 text-red-500 hover:bg-red-50 rounded-xl"
-                                                    >
-                                                        <Trash2 className="w-4 h-4" />
-                                                    </button>
-                                                )}
-                                            </div>
-                                        ))}
-                                        {services.length < 6 && (
-                                            <button
-                                                onClick={addService}
-                                                className="w-full py-2 border border-dashed border-gray-300 rounded-xl text-sm text-gray-500 hover:border-violet-400 hover:text-violet-500 transition-colors"
-                                            >
-                                                + Tambah Layanan
-                                            </button>
                                         )}
-                                    </div>
-                                </div>
-
-                                {/* Illustration Image Upload */}
-                                <div>
-                                    <label className="block text-xs font-semibold text-gray-500 mb-1 uppercase">Foto Ilustrasi / Logo (Opsional)</label>
-                                    <input
-                                        ref={fileInputRef}
-                                        type="file"
-                                        accept="image/png, image/jpeg, image/jpg, image/webp"
-                                        onChange={handleImageChange}
-                                        className="hidden"
-                                    />
-                                    {productImagePreview ? (
-                                        <div className="relative">
-                                            <img
-                                                src={productImagePreview}
-                                                alt="Preview"
-                                                className="w-full h-40 object-cover rounded-xl"
-                                            />
-                                            <button
-                                                onClick={removeImage}
-                                                className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full"
-                                            >
-                                                <X className="w-4 h-4" />
-                                            </button>
-                                        </div>
-                                    ) : (
-                                        <button
-                                            onClick={() => fileInputRef.current?.click()}
-                                            className="w-full py-8 border-2 border-dashed border-gray-300 rounded-xl flex flex-col items-center gap-2 text-gray-500 hover:border-violet-400 hover:text-violet-500 transition-colors"
-                                        >
-                                            <Upload className="w-6 h-6" />
-                                            <span className="text-sm">Tap untuk upload foto</span>
-                                        </button>
-                                    )}
-                                </div>
-                            </>
+                                    </button>
+                                ))}
+                            </div>
                         )}
+                    </div>
+                )}
 
-                        {/* Contact fields */}
-                        <div className="grid grid-cols-2 gap-3">
+                {/* Form Inputs - Only for makanan type */}
+                {posterType === 'makanan' && (
+                    <div className="bg-white rounded-2xl p-5 shadow-lg border border-gray-100">
+                        <h2 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
+                            <Store className="w-5 h-5 text-violet-500" />
+                            Isi Data Poster
+                        </h2>
+                        <div className="space-y-4">
+                            {/* Common fields */}
                             <div>
-                                <label className="block text-xs font-semibold text-gray-500 mb-1 uppercase">No. Telepon</label>
+                                <label className="block text-xs font-semibold text-gray-500 mb-1 uppercase">Nama Toko/Warung</label>
                                 <input
                                     type="text"
-                                    value={phone}
-                                    onChange={(e) => setPhone(e.target.value)}
+                                    value={storeName}
+                                    onChange={(e) => setStoreName(e.target.value)}
                                     className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white transition-colors"
-                                    placeholder="08xxxxxxxxxx"
+                                    placeholder="Contoh: Warung Bu Siti"
                                 />
                             </div>
+
                             <div>
-                                <label className="block text-xs font-semibold text-gray-500 mb-1 uppercase">Alamat</label>
+                                <label className="block text-xs font-semibold text-gray-500 mb-1 uppercase">Slogan (Opsional)</label>
                                 <input
                                     type="text"
-                                    value={address}
-                                    onChange={(e) => setAddress(e.target.value)}
+                                    value={slogan}
+                                    onChange={(e) => setSlogan(e.target.value)}
                                     className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white transition-colors"
-                                    placeholder="Jl. Cipadung"
+                                    placeholder="Contoh: Enak, Murah, Nagih!"
                                 />
+                            </div>
+
+                            {/* Food Poster Fields */}
+                            <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label className="block text-xs font-semibold text-gray-500 mb-1 uppercase">Nama Produk</label>
+                                    <input
+                                        type="text"
+                                        value={productName}
+                                        onChange={(e) => setProductName(e.target.value)}
+                                        className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white transition-colors"
+                                        placeholder="Nasi Goreng"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-semibold text-gray-500 mb-1 uppercase">Harga</label>
+                                    <div className="relative">
+                                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                            <span className="text-gray-500 font-medium">Rp</span>
+                                        </div>
+                                        <input
+                                            type="text"
+                                            value={price}
+                                            onChange={(e) => {
+                                                const rawValue = e.target.value.replace(/\D/g, '');
+                                                const formatted = rawValue.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+                                                setPrice(formatted);
+                                            }}
+                                            className="w-full pl-10 px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white transition-colors font-medium"
+                                            placeholder="15.000"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Product Image Upload */}
+                            <div>
+                                <label className="block text-xs font-semibold text-gray-500 mb-1 uppercase">Foto Produk (Opsional)</label>
+                                <input
+                                    ref={fileInputRef}
+                                    type="file"
+                                    accept="image/png, image/jpeg, image/jpg, image/webp"
+                                    onChange={handleImageChange}
+                                    className="hidden"
+                                />
+                                {productImagePreview ? (
+                                    <div className="relative">
+                                        <img
+                                            src={productImagePreview}
+                                            alt="Preview"
+                                            className="w-full h-40 object-cover rounded-xl"
+                                        />
+                                        <button
+                                            onClick={removeImage}
+                                            className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full"
+                                        >
+                                            <X className="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <button
+                                        onClick={() => fileInputRef.current?.click()}
+                                        className="w-full py-8 border-2 border-dashed border-gray-300 rounded-xl flex flex-col items-center gap-2 text-gray-500 hover:border-violet-400 hover:text-violet-500 transition-colors"
+                                    >
+                                        <Upload className="w-6 h-6" />
+                                        <span className="text-sm">Tap untuk upload foto</span>
+                                    </button>
+                                )}
+                            </div>
+
+                            {/* Contact fields */}
+                            <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label className="block text-xs font-semibold text-gray-500 mb-1 uppercase">No. Telepon</label>
+                                    <input
+                                        type="text"
+                                        value={phone}
+                                        onChange={(e) => setPhone(e.target.value)}
+                                        className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white transition-colors"
+                                        placeholder="08xxxxxxxxxx"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-semibold text-gray-500 mb-1 uppercase">Alamat</label>
+                                    <input
+                                        type="text"
+                                        value={address}
+                                        onChange={(e) => setAddress(e.target.value)}
+                                        className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white transition-colors"
+                                        placeholder="Jl. Cipadung"
+                                    />
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
+                )}
+
+                {/* Enhance Product Photo - Only for enhance type */}
+                {posterType === 'enhance' && (
+                    <div className="bg-white rounded-2xl p-5 shadow-lg border border-gray-100">
+                        <h2 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
+                            ✨ Upload Foto Produk
+                        </h2>
+                        <p className="text-sm text-gray-500 mb-4">
+                            Upload foto produk Anda dan AI akan mempercantiknya menjadi foto berkualitas studio profesional.
+                        </p>
+                        <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept="image/png, image/jpeg, image/jpg, image/webp"
+                            onChange={handleImageChange}
+                            className="hidden"
+                        />
+                        {productImagePreview ? (
+                            <div className="relative">
+                                <img
+                                    src={productImagePreview}
+                                    alt="Preview"
+                                    className="w-full h-48 object-cover rounded-xl"
+                                />
+                                <button
+                                    onClick={removeImage}
+                                    className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full"
+                                >
+                                    <X className="w-4 h-4" />
+                                </button>
+                            </div>
+                        ) : (
+                            <button
+                                onClick={() => fileInputRef.current?.click()}
+                                className="w-full py-12 border-2 border-dashed border-violet-300 rounded-xl flex flex-col items-center gap-3 text-gray-500 hover:border-violet-500 hover:text-violet-600 hover:bg-violet-50 transition-all"
+                            >
+                                <Upload className="w-8 h-8" />
+                                <span className="text-sm font-medium">Tap untuk upload foto produk</span>
+                                <span className="text-xs text-gray-400">JPG, PNG, WEBP (Max 5MB)</span>
+                            </button>
+                        )}
+                    </div>
+                )}
 
 
                 {/* Quota Info */}
@@ -1439,18 +1383,18 @@ function PosterGeneratorPanel({ store, contents, quota }: { store: Props['store'
                 {/* Generate Button */}
                 <button
                     onClick={handleGenerate}
-                    disabled={generating || !selectedTemplate || !storeName || quota.remaining <= 0}
+                    disabled={generating || quota.remaining <= 0 || (posterType === 'makanan' ? (!selectedTemplate || !storeName) : !productImage)}
                     className="w-full py-4 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-2xl font-bold text-lg shadow-lg shadow-violet-500/30 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                     {generating ? (
                         <>
                             <Loader2 className="w-5 h-5 animate-spin" />
-                            Sedang Membuat Poster...
+                            {posterType === 'enhance' ? 'Sedang Mempercantik...' : 'Sedang Membuat Poster...'}
                         </>
                     ) : (
                         <>
                             <Wand2 className="w-5 h-5" />
-                            🎨 Generate Poster AI
+                            {posterType === 'enhance' ? '✨ Percantik Foto Produk' : '🎨 Generate Poster AI'}
                         </>
                     )}
                 </button>

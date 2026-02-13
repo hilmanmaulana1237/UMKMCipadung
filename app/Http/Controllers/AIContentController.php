@@ -51,7 +51,7 @@ class AIContentController extends Controller
             ]);
 
         $store = $user->umkmStore;
-        
+
         // Count generated videos for quota
         $videoCount = AIGeneratedContent::where('user_id', $user->id)
             ->where('type', 'video_generation')
@@ -73,7 +73,7 @@ class AIContentController extends Controller
         $landingPage = null;
         $products = [];
         $templates = [];
-        
+
         if ($store) {
             $landingPage = \App\Models\UmkmLandingPage::where('umkm_store_id', $store->id)->first();
             $products = Product::where('umkm_store_id', $store->id)
@@ -119,33 +119,33 @@ class AIContentController extends Controller
                 'photo' => 'required|image|max:10240',
                 'duration' => 'nullable|in:10,15',
             ]);
-    
+
             $user = Auth::user();
-    
+
             // Check quota
             $videoCount = AIGeneratedContent::where('user_id', $user->id)
                 ->where('type', 'video_generation')
                 ->whereIn('status', ['completed', 'generating', 'queuing'])
                 ->count();
-    
+
             if ($videoCount >= self::MAX_VIDEOS_PER_UMKM) {
                 return response()->json([
                     'success' => false,
                     'error' => 'Kuota video habis. Maksimal ' . self::MAX_VIDEOS_PER_UMKM . ' video per UMKM.',
                 ], 403);
             }
-    
+
             // 1. Upload photo and get public URL
             $photoPath = $request->file('photo')->store('ai-video-refs', 'public');
             $photoUrl = url('storage/' . $photoPath);
-    
+
             // HANDLE LOCALHOST/DEV ENVIRONMENT
             // Kie AI cannot access localhost URLs. Use provided placeholder for testing.
             if (str_contains($photoUrl, 'localhost') || str_contains($photoUrl, '127.0.0.1') || str_contains($photoUrl, '.test')) {
                 \Illuminate\Support\Facades\Log::warning('Localhost detected. Using placeholder image.', ['original' => $photoUrl]);
                 $photoUrl = 'https://github.com/hilman1237050020/AplikasiPenjadwalan-UAS-PBO/blob/main/Dimsum1260-700.jpeg?raw=true';
             }
-    
+
             // 2. Construct base prompt
             $rawPrompt = $this->promptService->constructVideoPrompt(
                 $validated['store_name'],
@@ -155,33 +155,33 @@ class AIContentController extends Controller
                 $validated['contact'] ?? '-',
                 $validated['mode']
             );
-    
+
             // 3. Enhance prompt with AI
             $enhancedPrompt = $this->promptService->enhancePromptWithAI($rawPrompt);
-    
+
             // 4. Create video task in Kie AI
             $duration = $validated['duration'] ?? '15';
-            
+
             \Illuminate\Support\Facades\Log::info('Starting Kie AI Video Generation', [
                 'user_id' => $user->id,
                 'photo_url' => $photoUrl,
                 'prompt_length' => strlen($enhancedPrompt),
             ]);
-    
+
             $result = $this->kieAIService->createVideoTask($enhancedPrompt, $photoUrl, 'landscape', $duration);
-    
+
             if (!$result['success']) {
                 \Illuminate\Support\Facades\Log::error('Kie AI Generation Failed', [
                     'error' => $result['error'] ?? 'Unknown',
                     'photo_url' => $photoUrl
                 ]);
-                
+
                 return response()->json([
                     'success' => false,
                     'error' => 'Gagal memulai generate video: ' . ($result['error'] ?? 'Unknown error'),
                 ], 500);
             }
-    
+
             // 5. Save to database
             $content = AIGeneratedContent::create([
                 'user_id' => $user->id,
@@ -195,7 +195,7 @@ class AIContentController extends Controller
                 ]),
                 'status' => 'queuing',
             ]);
-    
+
             return response()->json([
                 'success' => true,
                 'task_id' => $result['task_id'],
@@ -240,7 +240,7 @@ class AIContentController extends Controller
         $content = AIGeneratedContent::find($validated['content_id']);
         if ($content && $content->user_id == Auth::id()) { // Use == for type coercion
             $existingData = json_decode($content->generated_result, true) ?? [];
-            
+
             if ($result['state'] === 'success' && !empty($result['video_urls'])) {
                 $existingData['video_urls'] = $result['video_urls'];
                 $content->update([
@@ -348,21 +348,21 @@ class AIContentController extends Controller
                 'category' => 'required|string',
                 'product_name' => 'required|string',
             ]);
-    
+
             $productName = $request->product_name;
 
             // Fetch random products from store to enhance context
             $store = \App\Models\UmkmStore::where('user_id', auth()->id())->first();
             $additionalProducts = '';
-            
+
             if ($store) {
-                 $randomProducts = \App\Models\Product::where('store_id', $store->id)
+                $randomProducts = \App\Models\Product::where('store_id', $store->id)
                     ->where('name', '!=', $productName) // Exclude main product
                     ->inRandomOrder()
                     ->take(3)
                     ->pluck('name')
                     ->toArray();
-                
+
                 if (!empty($randomProducts)) {
                     $additionalProducts = implode(', ', $randomProducts);
                 }
@@ -374,7 +374,7 @@ class AIContentController extends Controller
                 $productName,
                 $additionalProducts
             );
-    
+
             return response()->json([
                 'success' => true,
                 'description' => $description,
@@ -394,22 +394,14 @@ class AIContentController extends Controller
     public function getPosterTemplates()
     {
         $templates = \App\Models\PosterTemplate::active()->get();
-        
+
         $data = [
-            'makanan' => $templates->where('type', 'makanan')->map(function($t) {
+            'makanan' => $templates->where('type', 'makanan')->map(function ($t) {
                 return [
                     'id' => $t->id,
                     'path' => $t->thumbnail_url, // Used for display
                     'name' => $t->name,
                     'url' => $t->thumbnail_url, // Used for generation
-                ];
-            })->values(),
-            'jasa' => $templates->where('type', 'jasa')->map(function($t) {
-                return [
-                    'id' => $t->id,
-                    'path' => $t->thumbnail_url,
-                    'name' => $t->name,
-                    'url' => $t->thumbnail_url,
                 ];
             })->values(),
         ];
@@ -421,27 +413,32 @@ class AIContentController extends Controller
     }
 
     /**
-     * Generate poster from template using AI
+     * Generate poster from template using AI (makanan) or enhance product photo
      */
     public function generatePosterFromTemplate(Request $request)
     {
         try {
-            $request->validate([
-                'template_path' => 'required|string',
-                'poster_type' => 'required|in:makanan,jasa',
-                'store_name' => 'required|string|max:100',
-                'slogan' => 'nullable|string|max:150',
-                'phone' => 'required|string|max:20',
-                'address' => 'required|string|max:200',
-                // Food poster specific
-                'product_name' => 'required_if:poster_type,makanan|nullable|string|max:100',
-                'price' => 'required_if:poster_type,makanan|nullable|string|max:50',
-                'product_image' => 'nullable|file|mimes:jpeg,png,jpg,webp|max:5120', // Relaxed validation, increased to 5MB
-                // Service poster specific
-                'service_name' => 'required_if:poster_type,jasa|nullable|string|max:100',
-                'services' => 'required_if:poster_type,jasa|nullable|array|max:6',
-                'services.*' => 'string|max:50',
-            ]);
+            $posterType = $request->poster_type;
+
+            // Different validation rules per type
+            if ($posterType === 'enhance') {
+                $request->validate([
+                    'poster_type' => 'required|in:makanan,enhance',
+                    'product_image' => 'required|file|mimes:jpeg,png,jpg,webp|max:5120',
+                ]);
+            } else {
+                $request->validate([
+                    'template_path' => 'required|string',
+                    'poster_type' => 'required|in:makanan,enhance',
+                    'store_name' => 'required|string|max:100',
+                    'slogan' => 'nullable|string|max:150',
+                    'phone' => 'required|string|max:20',
+                    'address' => 'required|string|max:200',
+                    'product_name' => 'required|string|max:100',
+                    'price' => 'required|string|max:50',
+                    'product_image' => 'nullable|file|mimes:jpeg,png,jpg,webp|max:5120',
+                ]);
+            }
 
             $user = Auth::user();
 
@@ -467,28 +464,30 @@ class AIContentController extends Controller
                 $physicalPath = storage_path('app/public/' . $path);
             }
 
-            // Build replacements array
-            $replacements = [
-                'store_name' => $request->store_name,
-                'slogan' => $request->slogan ?? '',
-                'phone' => $request->phone,
-                'address' => $request->address,
-            ];
-
-            if ($request->poster_type === 'makanan') {
-                $replacements['product_name'] = $request->product_name;
-                $replacements['price'] = $request->price;
+            // Build replacements array based on type
+            $replacements = [];
+            if ($posterType === 'makanan') {
+                $replacements = [
+                    'store_name' => $request->store_name,
+                    'slogan' => $request->slogan ?? '',
+                    'phone' => $request->phone,
+                    'address' => $request->address,
+                    'product_name' => $request->product_name,
+                    'price' => $request->price,
+                ];
             } else {
-                $replacements['service_name'] = $request->service_name;
-                $replacements['services'] = $request->services ?? [];
+                // enhance type - minimal replacements, just for record keeping
+                $replacements = [
+                    'type' => 'enhance',
+                ];
             }
 
             // Generate poster using AI
             $result = $this->posterService->generatePoster(
-                $request->template_path,
+                $request->template_path ?? '',
                 $replacements,
                 $productImageUrl,
-                $request->poster_type,
+                $posterType,
                 $physicalPath
             );
 
@@ -505,7 +504,6 @@ class AIContentController extends Controller
                 'type' => 'poster',
                 'prompt' => json_encode($replacements),
                 'status' => 'generating',
-                // 'external_task_id' => $result['task_id'], // Column removed in migration
                 'generated_result' => json_encode(['task_id' => $result['task_id']]),
             ]);
 
@@ -513,7 +511,9 @@ class AIContentController extends Controller
                 'success' => true,
                 'task_id' => $result['task_id'],
                 'content_id' => $content->id,
-                'message' => 'Poster sedang digenerate, silakan tunggu...',
+                'message' => $posterType === 'enhance'
+                    ? 'Foto produk sedang dipercantik, silakan tunggu...'
+                    : 'Poster sedang digenerate, silakan tunggu...',
             ]);
         } catch (\Exception $e) {
             return response()->json([
@@ -563,7 +563,7 @@ class AIContentController extends Controller
                     'status' => 'failed',
                     'generated_result' => json_encode(['error' => $result['error'] ?? 'Gagal mengecek status'])
                 ]);
-                
+
                 return response()->json([
                     'success' => true,
                     'status' => 'failed',
@@ -592,7 +592,7 @@ class AIContentController extends Controller
                         'poster_url' => asset('storage/' . $savedPath),
                     ]);
                 } else {
-                     // Download failed
+                    // Download failed
                     $content->update([
                         'status' => 'failed',
                         'generated_result' => json_encode(['error' => 'Gagal mendownload hasil poster'])

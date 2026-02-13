@@ -44,6 +44,11 @@ class PosterAIService
             ];
         }
 
+        // Route to enhance product method if type is enhance
+        if ($posterType === 'enhance') {
+            return $this->generateEnhancedProduct($productImageUrl, $localFilePath);
+        }
+
         try {
             // Prepare input array for Seedream 4.5-edit
             $input = [
@@ -62,65 +67,15 @@ class PosterAIService
 
             // Add product image if provided
             if ($productImageUrl) {
-                // If the URL is local (localhost/127.0.0.1), try to upload to temp host
-                if (str_contains($productImageUrl, 'localhost') || str_contains($productImageUrl, '127.0.0.1') || str_contains($productImageUrl, ':8000')) {
-                    $publicUrl = null;
-                    if ($localFilePath && file_exists($localFilePath)) {
-                        Log::info('PosterAIService: Uploading local image to temp host...', ['path' => $localFilePath]);
-                        $publicUrl = $this->uploadToTempHost($localFilePath);
-                    }
-
-                    if ($publicUrl) {
-                        $input['image_urls'][] = $publicUrl;
-                    } else {
-                        Log::warning('PosterAIService: Upload failed or no local path. Using placeholder image.', ['original' => $productImageUrl]);
-                        // Use the specific Dimsum image URL provided/used by user that is known to work
-                        $fallbackUrl = 'https://tempfileb.aiquickdraw.com/kieai/market/1768682951963_k0D05XBN.jpeg';
-                        $input['image_urls'][] = $fallbackUrl;
-                    }
-                } else {
-                    // Public URL (Production)
-                    $input['image_urls'][] = $productImageUrl;
-                }
+                $input['image_urls'][] = $this->resolveImageUrl($productImageUrl, $localFilePath);
             }
-
 
             Log::info('PosterAIService: Creating task payload', [
                 'model' => $this->model,
                 'input' => $input
             ]);
 
-            $response = Http::withHeaders([
-                'Authorization' => 'Bearer ' . $this->apiKey,
-                'Content-Type' => 'application/json',
-            ])->timeout(60)->post($this->baseUrl . '/createTask', [
-                        'model' => $this->model,
-                        'input' => $input,
-                    ]);
-
-            if ($response->successful()) {
-                $data = $response->json();
-                if ($data['code'] === 200) {
-                    return [
-                        'success' => true,
-                        'task_id' => $data['data']['taskId'],
-                    ];
-                }
-                Log::error('PosterAI API Error', ['response' => $data]);
-                return [
-                    'success' => false,
-                    'error' => $data['msg'] ?? $data['message'] ?? 'Unknown error',
-                ];
-            }
-
-            Log::error('PosterAI HTTP Error', [
-                'status' => $response->status(),
-                'body' => $response->body()
-            ]);
-            return [
-                'success' => false,
-                'error' => 'HTTP Error: ' . $response->status(),
-            ];
+            return $this->submitTask($input);
         } catch (\Exception $e) {
             Log::error('PosterAIService Exception: ' . $e->getMessage());
             return [
@@ -128,6 +83,104 @@ class PosterAIService
                 'error' => $e->getMessage(),
             ];
         }
+    }
+
+    /**
+     * Generate enhanced product photo using AI
+     */
+    public function generateEnhancedProduct(?string $productImageUrl, ?string $localFilePath = null): array
+    {
+        if (empty($productImageUrl)) {
+            return [
+                'success' => false,
+                'error' => 'Foto produk wajib diupload untuk fitur percantik produk.',
+            ];
+        }
+
+        try {
+            $resolvedUrl = $this->resolveImageUrl($productImageUrl, $localFilePath);
+
+            $input = [
+                'prompt' => 'A high-end professional commercial studio photograph based exactly on the specific product shown in image. The product, including its exact label and branding, is rendered with premium materials and flawless execution, removing any imperfections from the original photo. It is placed in an appropriate, contextual professional environment with complementary props that naturally suit the product type shown (e.g., fresh ingredients for food, luxurious surfaces for cosmetics, clean tech setting for gadgets). Cinematic studio lighting that perfectly highlights textures and form. 8k resolution, photorealistic, sharp focus, masterpiece',
+                'aspect_ratio' => '1:1', // Square format for product photos
+                'quality' => 'high',
+                'image_urls' => [$resolvedUrl],
+            ];
+
+            Log::info('PosterAIService: Creating enhance product task', [
+                'model' => $this->model,
+                'input' => $input
+            ]);
+
+            return $this->submitTask($input);
+        } catch (\Exception $e) {
+            Log::error('PosterAIService Enhanced Product Exception: ' . $e->getMessage());
+            return [
+                'success' => false,
+                'error' => $e->getMessage(),
+            ];
+        }
+    }
+
+    /**
+     * Resolve image URL - handle local URLs by uploading to temp host
+     */
+    private function resolveImageUrl(string $imageUrl, ?string $localFilePath = null): string
+    {
+        if (str_contains($imageUrl, 'localhost') || str_contains($imageUrl, '127.0.0.1') || str_contains($imageUrl, ':8000')) {
+            $publicUrl = null;
+            if ($localFilePath && file_exists($localFilePath)) {
+                Log::info('PosterAIService: Uploading local image to temp host...', ['path' => $localFilePath]);
+                $publicUrl = $this->uploadToTempHost($localFilePath);
+            }
+
+            if ($publicUrl) {
+                return $publicUrl;
+            }
+
+            Log::warning('PosterAIService: Upload failed or no local path. Using placeholder image.', ['original' => $imageUrl]);
+            return 'https://tempfileb.aiquickdraw.com/kieai/market/1768682951963_k0D05XBN.jpeg';
+        }
+
+        return $imageUrl;
+    }
+
+    /**
+     * Submit task to Kie AI API
+     */
+    private function submitTask(array $input): array
+    {
+        $response = Http::withHeaders([
+            'Authorization' => 'Bearer ' . $this->apiKey,
+            'Content-Type' => 'application/json',
+        ])->timeout(60)->post($this->baseUrl . '/createTask', [
+                    'model' => $this->model,
+                    'input' => $input,
+                ]);
+
+        if ($response->successful()) {
+            $data = $response->json();
+            if ($data['code'] === 200) {
+                return [
+                    'success' => true,
+                    'task_id' => $data['data']['taskId'],
+                ];
+            }
+            Log::error('PosterAI API Error', ['response' => $data]);
+            return [
+                'success' => false,
+                'error' => $data['msg'] ?? $data['message'] ?? 'Unknown error',
+            ];
+        }
+
+        Log::error('PosterAI HTTP Error', [
+            'status' => $response->status(),
+            'body' => $response->body()
+        ]);
+        return [
+            'success' => false,
+            'error' => 'HTTP Error: ' . $response->status(),
+        ];
     }
 
     /**
@@ -210,7 +263,7 @@ class PosterAIService
     }
 
     /**
-     * Build comprehensive prompt for poster generation
+     * Build comprehensive prompt for poster generation (makanan only now)
      */
     private function buildPrompt(array $replacements, ?string $productImageUrl, string $posterType): string
     {
@@ -227,25 +280,10 @@ class PosterAIService
             $prompt .= "2. PRODUCT REPLACEMENT:\n";
             $prompt .= "- Replace the product image in template with the provided product image (second image)\n";
             $prompt .= "- Match lighting with background\n\n";
-        } elseif ($posterType === 'jasa') {
-            $prompt .= "2. SERVICE POSTER TYPE:\n";
-            $prompt .= "- Display the list of services\n";
-            $prompt .= "- Keep the layout from template\n";
-
-            if ($productImageUrl) {
-                $prompt .= "- Replace main illustration with provided image\n";
-            }
-            $prompt .= "\n";
         }
 
         $prompt .= "3. TEXT REPLACEMENTS (SPELL EXACTLY AS SHOWN):\n\n";
-
-        // Map replacements based on poster type
-        if ($posterType === 'makanan') {
-            $prompt .= $this->buildFoodPosterReplacements($replacements);
-        } else {
-            $prompt .= $this->buildServicePosterReplacements($replacements);
-        }
+        $prompt .= $this->buildFoodPosterReplacements($replacements);
 
         $prompt .= "\n4. CRITICAL TEXT RULES:\n";
         $prompt .= "- VERIFY every letter of every word is correct\n";
@@ -306,53 +344,7 @@ class PosterAIService
         return $text;
     }
 
-    /**
-     * Build replacement instructions for service list poster
-     */
-    private function buildServicePosterReplacements(array $r): string
-    {
-        $text = "";
 
-        if (!empty($r['store_name'])) {
-            $text .= "- Teks header 'Nama Toko' atau 'NAMA TOKO' atau 'NAMA USAHA': Ubah menjadi \"{$r['store_name']}\".\n";
-        }
-
-        if (!empty($r['service_name'])) {
-            $text .= "- GANTI SEPENUHNYA teks 'Nama Jasa' atau 'NAMA JASA' dengan \"{$r['service_name']}\" (HAPUS kata 'Nama Jasa' dari poster).\n";
-        }
-
-        if (!empty($r['slogan'])) {
-            $text .= "- Teks tagline/slogan atau 'SLOGAN': Ubah menjadi \"{$r['slogan']}\".\n";
-        }
-
-        // Handle services list - THE KEY PART
-        if (!empty($r['services']) && is_array($r['services'])) {
-            $serviceCount = count($r['services']);
-            $text .= "\n- DAFTAR LAYANAN (List Services):\n";
-            $text .= "  Ganti seluruh daftar layanan/jasa pada template dengan daftar berikut:\n";
-
-            foreach ($r['services'] as $index => $service) {
-                $num = $index + 1;
-                $text .= "  {$num}. {$service}\n";
-            }
-
-            $text .= "  \n";
-            $text .= "  PENTING: Tampilkan SEMUA {$serviceCount} layanan di atas dalam format daftar bernomor atau bullet point.\n";
-            $text .= "  Jika template memiliki lebih sedikit item, tambahkan item baru dengan styling yang sama.\n";
-            $text .= "  Jika template memiliki lebih banyak item, hilangkan item yang tidak diperlukan.\n";
-            $text .= "  Pertahankan gaya visual, font, dan warna dari item daftar asli.\n\n";
-        }
-
-        if (!empty($r['phone'])) {
-            $text .= "- Di area kontak / 'Nomor Telpon' / 'HUBUNGI KAMI' / 'CONTACT': Ubah menjadi \"{$r['phone']}\".\n";
-        }
-
-        if (!empty($r['address'])) {
-            $text .= "- Di area alamat / 'Alamat Toko' / 'ALAMAT' / 'LOKASI': Ubah menjadi \"{$r['address']}\".\n";
-        }
-
-        return $text;
-    }
 
     /**
      * Get template URL from storage path
@@ -399,18 +391,7 @@ class PosterAIService
                     'url' => $githubBase . '4.png?raw=true',
                 ],
             ],
-            'jasa' => [
-                [
-                    'path' => $githubBase . '5.png?raw=true',
-                    'name' => 'Template Jasa 1',
-                    'url' => $githubBase . '5.png?raw=true',
-                ],
-                [
-                    'path' => $githubBase . '6.png?raw=true',
-                    'name' => 'Template Jasa 2',
-                    'url' => $githubBase . '6.png?raw=true',
-                ],
-            ],
+
         ];
     }
 
