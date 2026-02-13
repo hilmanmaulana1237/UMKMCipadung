@@ -224,10 +224,23 @@ class LandingPageController extends Controller
             ->select('id', 'name', 'price', 'image_path', 'description')
             ->get();
 
-        $templatePath = resource_path('views/landing-page-templates/' . $landingPage->template . '.html');
+        // Use same template map as show() method
+        $templateMap = [
+            'tema1' => 'dynamic-tema1-luxury-dark.html',
+            'tema2' => 'dynamic-tema2-cute-pastel.html',
+            'tema3' => 'dynamic-tema3-minimalist-catalog.html',
+            'tema4' => 'dynamic-tema4-traditional-warm.html',
+            'tema5' => 'dynamic-tema5-professional-blue.html',
+        ];
+
+        $templateFile = $templateMap[$landingPage->template] ?? 'dynamic-tema1-luxury-dark.html';
+        $templatePath = resource_path('views/landing-page-templates/' . $templateFile);
 
         if (!file_exists($templatePath)) {
-            abort(404, 'Template tidak ditemukan.');
+            $templatePath = resource_path('views/landing-page-templates/dynamic-tema1-luxury-dark.html');
+            if (!file_exists($templatePath)) {
+                abort(404, 'Template tidak ditemukan.');
+            }
         }
 
         $html = file_get_contents($templatePath);
@@ -753,65 +766,75 @@ Pastikan konten sesuai dengan kategori: {$request->category}. Jika kategori kuli
             $imgUrl = $product->image_path ? asset('storage/' . $product->image_path) : 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=400&q=80';
             $waLink = 'https://wa.me/' . $waNumber . '?text=' . urlencode("Halo, saya tertarik dengan produk: {$product->name}");
             $description = $product->description ?? 'Produk berkualitas dari toko kami.';
+            $safeName = htmlspecialchars($product->name);
+            $safeDesc = htmlspecialchars($description);
 
             if ($template === 'tema1') {
-                // Luxury Dark Style
+                // Luxury Dark Style — matches product-card + p-img + p-info CSS
                 $cards .= "
-                <div class=\"menu-card fade-up\">
-                    <img src=\"{$imgUrl}\" alt=\"{$product->name}\">
-                    <div class=\"card-content\">
-                        <h3>{$product->name}</h3>
-                        <p>{$description}</p>
-                        <div class=\"price\">{$price}</div>
-                        <a href=\"{$waLink}\" class=\"btn-order\" target=\"_blank\">Pesan Sekarang</a>
+                <div class=\"product-card reveal\">
+                    <div class=\"p-img\">
+                        <img src=\"{$imgUrl}\" alt=\"{$safeName}\">
+                    </div>
+                    <div class=\"p-info\">
+                        <h3>{$safeName}</h3>
+                        <span class=\"p-price\">{$price}</span>
+                        <p class=\"p-desc\">{$safeDesc}</p>
+                        <a href=\"{$waLink}\" class=\"btn\" target=\"_blank\">Pesan Sekarang</a>
                     </div>
                 </div>";
             } elseif ($template === 'tema2') {
-                // Cute Pastel Style
+                // Cute Pastel Style — matches menu-card + img-container + card-info CSS
                 $badge = $index === 0 ? '<span class="badge">Best Seller</span>' : ($index === 1 ? '<span class="badge new">New</span>' : '');
                 $cards .= "
                 <div class=\"menu-card fade-up\">
                     <div class=\"img-container\">
                         {$badge}
-                        <img src=\"{$imgUrl}\" alt=\"{$product->name}\">
+                        <img src=\"{$imgUrl}\" alt=\"{$safeName}\">
                     </div>
                     <div class=\"card-info\">
                         <div>
-                            <h3>{$product->name}</h3>
-                            <p>{$description}</p>
+                            <h3>{$safeName}</h3>
+                            <p>{$safeDesc}</p>
                         </div>
                         <div class=\"card-footer\">
-                            <div class=\"price\">{$price}</div>
+                            <span class=\"price\">{$price}</span>
                             <a href=\"{$waLink}\" class=\"btn-order\" target=\"_blank\">Pesan Sekarang</a>
                         </div>
                     </div>
                 </div>";
             } elseif ($template === 'tema3') {
-                // Minimalist Catalog Style
+                // Minimalist Catalog Style — matches product-item + img-wrap + p-meta CSS
                 $cards .= "
-                <div class=\"product-card fade-up\">
-                    <div class=\"product-img\">
-                        <img src=\"{$imgUrl}\" alt=\"{$product->name}\">
+                <div class=\"product-item\">
+                    <div class=\"img-wrap\">
+                        <img src=\"{$imgUrl}\" alt=\"{$safeName}\">
                     </div>
-                    <div class=\"product-info\">
-                        <h3>{$product->name}</h3>
-                        <p class=\"price\">{$price}</p>
+                    <div class=\"p-meta\">
+                        <div>
+                            <span class=\"p-title\">{$safeName}</span>
+                            <span class=\"p-cat\">{$safeDesc}</span>
+                        </div>
+                        <span class=\"p-price\">{$price}</span>
                     </div>
+                    <a href=\"{$waLink}\" class=\"btn\" style=\"margin-top: 12px; display: block; text-align: center; font-size: 0.8rem; padding: 10px 20px;\" target=\"_blank\">Pesan</a>
                 </div>";
             } elseif ($template === 'tema4') {
-                // Traditional Warm Style
+                // Traditional Warm Style — matches product-card + img-box + p-info CSS
                 $cards .= "
-                <div class=\"product-card fade-up\">
-                    <img src=\"{$imgUrl}\" alt=\"{$product->name}\">
-                    <div class=\"product-info\">
-                        <h3>{$product->name}</h3>
-                        <p>{$description}</p>
-                        <span class=\"price\">{$price}</span>
-                        <a href=\"{$waLink}\" class=\"btn\" target=\"_blank\">Pesan</a>
+                <div class=\"product-card\">
+                    <div class=\"img-box\">
+                        <img src=\"{$imgUrl}\" alt=\"{$safeName}\">
+                    </div>
+                    <div class=\"p-info\">
+                        <span class=\"p-name\">{$safeName}</span>
+                        <span class=\"p-flavor\">{$safeDesc}</span>
+                        <span class=\"p-price\">{$price}</span>
+                        <a href=\"{$waLink}\" class=\"btn\" style=\"display: inline-block; margin-top: 10px; font-size: 0.85rem; padding: 8px 20px;\" target=\"_blank\">Pesan</a>
                     </div>
                 </div>";
             } else {
-                // tema5 - Professional Blue Style (Premium Design)
+                // tema5 - Professional Blue Style — matches service-card + s-img-wrap + s-content CSS
                 $badge = '';
                 if ($index === 0) {
                     $badge = '<span class="product-badge bestseller">⭐ Best Seller</span>';
@@ -823,11 +846,11 @@ Pastikan konten sesuai dengan kategori: {$request->category}. Jika kategori kuli
                 <div class=\"service-card\">
                     <div class=\"s-img-wrap\">
                         {$badge}
-                        <img src=\"{$imgUrl}\" alt=\"{$product->name}\">
+                        <img src=\"{$imgUrl}\" alt=\"{$safeName}\">
                     </div>
                     <div class=\"s-content\">
-                        <div class=\"s-title\">{$product->name}</div>
-                        <div class=\"s-desc\">{$description}</div>
+                        <div class=\"s-title\">{$safeName}</div>
+                        <div class=\"s-desc\">{$safeDesc}</div>
                         <div class=\"s-footer\">
                             <div>
                                 <span class=\"price-tag\">{$price}</span>
