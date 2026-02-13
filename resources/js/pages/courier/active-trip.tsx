@@ -214,7 +214,7 @@ export default function CourierActiveTrip({ order }: Props) {
                     <div className="flex gap-2 mt-4">
                         {isPickupPhase && (
                             <button
-                                onClick={() => openMaps(order.store?.address_pickup || '')}
+                                onClick={() => openMaps(order.store?.address_pickup || '', order.store?.latitude ? parseFloat(order.store.latitude) : undefined, order.store?.longitude ? parseFloat(order.store.longitude) : undefined)}
                                 className="flex-1 py-3 bg-gradient-to-r from-primary to-blue-600 text-white rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg shadow-primary/30 transition-all hover:shadow-xl hover:scale-[1.02] active:scale-[0.98]"
                             >
                                 <Navigation className="w-5 h-5" />

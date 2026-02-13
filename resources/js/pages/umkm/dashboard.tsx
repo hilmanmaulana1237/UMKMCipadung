@@ -1,7 +1,7 @@
 import AppLayout from '@/layouts/app-layout';
 import { Head, Link, router } from '@inertiajs/react';
 import { UmkmStore, Order } from '@/types';
-import { Settings, ChevronRight, Brain, Loader2, Flame, MessageSquare, ThumbsUp, ThumbsDown, ShoppingBag, Clock, CheckCircle, Star } from 'lucide-react';
+import { Settings, ChevronRight, Brain, Loader2, Flame, MessageSquare, ThumbsUp, ThumbsDown, ShoppingBag, Clock, CheckCircle, Star, AlertTriangle, MapPin } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
 interface Stats {
@@ -46,6 +46,15 @@ export default function UmkmDashboard({ store, stats, reviewStats, recentOrders 
     const [isLoadingTrends, setIsLoadingTrends] = useState(true);
     const [showOpenModal, setShowOpenModal] = useState(false);
     const [showCloseModal, setShowCloseModal] = useState(false);
+
+    // Check for incomplete store setup
+    const missingFields: { label: string; icon: string }[] = [];
+    if (!store.address_pickup) missingFields.push({ label: 'Alamat Lengkap', icon: '📍' });
+    if (!store.latitude || !store.longitude) missingFields.push({ label: 'Koordinat Lokasi (GPS)', icon: '🗺️' });
+    if (!store.contact_number) missingFields.push({ label: 'Nomor WhatsApp / HP', icon: '📱' });
+    if (!store.bank_name || !store.bank_account || !store.bank_holder) missingFields.push({ label: 'Informasi Rekening Bank', icon: '🏦' });
+
+    const [showSetupModal, setShowSetupModal] = useState(missingFields.length > 0);
 
     useEffect(() => {
         fetchInsights();
@@ -454,6 +463,56 @@ export default function UmkmDashboard({ store, stats, reviewStats, recentOrders 
                                 >
                                     Tutup Toko
                                 </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Incomplete Store Setup Reminder Modal */}
+            {showSetupModal && (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
+                    <div className="bg-white rounded-3xl w-full max-w-sm p-6 relative shadow-2xl animate-in zoom-in-95 duration-200">
+                        {/* Decorative background */}
+                        <div className="absolute top-0 left-0 w-full h-24 bg-gradient-to-br from-amber-400 to-orange-500 rounded-t-3xl opacity-20" />
+
+                        <div className="relative">
+                            <div className="w-16 h-16 bg-gradient-to-br from-amber-400 to-orange-500 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-amber-500/30">
+                                <AlertTriangle className="w-8 h-8 text-white" />
+                            </div>
+
+                            <h3 className="text-xl font-bold text-center text-gray-900 mb-2">
+                                Data Toko Belum Lengkap
+                            </h3>
+
+                            <p className="text-center text-gray-600 mb-5 leading-relaxed text-sm">
+                                Lengkapi data berikut agar toko Anda bisa beroperasi dengan optimal dan kurir dapat menemukan lokasi Anda.
+                            </p>
+
+                            {/* Missing Fields Checklist */}
+                            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6 space-y-3">
+                                {missingFields.map((field, index) => (
+                                    <div key={index} className="flex items-center gap-3">
+                                        <span className="text-lg">{field.icon}</span>
+                                        <span className="text-sm font-medium text-gray-700">{field.label}</span>
+                                        <span className="ml-auto text-xs font-bold text-amber-600 bg-amber-100 px-2 py-0.5 rounded-full">Belum diisi</span>
+                                    </div>
+                                ))}
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-3">
+                                <button
+                                    onClick={() => setShowSetupModal(false)}
+                                    className="px-4 py-3 rounded-xl font-medium text-gray-500 hover:bg-gray-100 transition-colors"
+                                >
+                                    Nanti Saja
+                                </button>
+                                <Link
+                                    href="/umkm/setup-toko"
+                                    className="px-4 py-3 rounded-xl font-bold text-white bg-gradient-to-r from-amber-500 to-orange-500 shadow-lg shadow-amber-500/30 hover:scale-105 transition-transform text-center"
+                                >
+                                    Lengkapi Sekarang
+                                </Link>
                             </div>
                         </div>
                     </div>
