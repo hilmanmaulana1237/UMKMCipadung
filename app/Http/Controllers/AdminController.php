@@ -76,10 +76,10 @@ class AdminController extends Controller
 
         // Orders chart data (last 30 days)
         $ordersChart = Order::select(
-                DB::raw('DATE(created_at) as date'),
-                DB::raw('count(*) as count'),
-                DB::raw('sum(total_amount) as revenue')
-            )
+            DB::raw('DATE(created_at) as date'),
+            DB::raw('count(*) as count'),
+            DB::raw('sum(total_amount) as revenue')
+        )
             ->where('created_at', '>=', now()->subDays(30))
             ->groupBy('date')
             ->orderBy('date')
@@ -112,7 +112,7 @@ class AdminController extends Controller
         if ($request->search) {
             $query->where(function ($q) use ($request) {
                 $q->where('name', 'like', "%{$request->search}%")
-                  ->orWhere('email', 'like', "%{$request->search}%");
+                    ->orWhere('email', 'like', "%{$request->search}%");
             });
         }
 
@@ -197,11 +197,122 @@ class AdminController extends Controller
      */
     public function userDetail(User $user)
     {
-        $user->load(['umkmStore', 'orders.store', 'deliveries.store']);
+        $user->load(['umkmStore.products', 'umkmStore.orders']);
+
+        // Build stats based on role
+        $stats = [
+            'totalOrders' => $user->orders()->count(),
+            'totalSpent' => $user->orders()->where('status', 'completed')->sum('total_amount'),
+            'totalDeliveries' => $user->deliveries()->count(),
+            'totalEarnings' => $user->deliveries()->where('courier_status', 'delivered')->sum('courier_fee'),
+            'affiliateRewards' => $user->affiliateRewards()->sum('amount'),
+        ];
+
+        // Recent orders (as buyer)
+        $recentOrders = $user->orders()
+            ->with(['store'])
+            ->latest()
+            ->take(10)
+            ->get();
+
+        // Recent deliveries (as courier)
+        $recentDeliveries = $user->deliveries()
+            ->with(['store', 'buyer'])
+            ->latest()
+            ->take(10)
+            ->get();
 
         return Inertia::render('admin/users/show', [
             'user' => $user,
+            'stats' => $stats,
+            'recentOrders' => $recentOrders,
+            'recentDeliveries' => $recentDeliveries,
         ]);
+    }
+
+    /**
+     * Delete a user's store and all associated data.
+     */
+    public function deleteStore(User $user)
+    {
+        $store = $user->umkmStore;
+
+        if (!$store) {
+            return back()->withErrors(['error' => 'User ini tidak memiliki toko.']);
+        }
+
+        DB::transaction(function () use ($store) {
+            // Delete related store data
+            $store->reviews()->delete();
+            $store->ratings()->delete();
+            $store->orders()->update(['umkm_store_id' => null]); // Preserve order history
+            $store->products()->delete();
+
+            // Delete store files
+            if ($store->banner_path) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($store->banner_path);
+            }
+            if ($store->profile_photo_path) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($store->profile_photo_path);
+            }
+            if ($store->store_photo_path) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($store->store_photo_path);
+            }
+            if ($store->qris_path) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($store->qris_path);
+            }
+
+            // Delete landing pages
+            UmkmLandingPage::where('umkm_store_id', $store->id)->delete();
+
+            $store->delete();
+        });
+
+        return back()->with('success', 'Toko dan semua data terkait berhasil dihapus.');
+    }
+
+    /**
+     * Delete a user account and all associated data.
+     */
+    public function deleteUser(User $user)
+    {
+        if ($user->role === 'admin') {
+            return back()->withErrors(['error' => 'Tidak dapat menghapus akun admin.']);
+        }
+
+        DB::transaction(function () use ($user) {
+            // Delete store if exists
+            $store = $user->umkmStore;
+            if ($store) {
+                $store->reviews()->delete();
+                $store->ratings()->delete();
+                $store->orders()->update(['umkm_store_id' => null]);
+                $store->products()->delete();
+                UmkmLandingPage::where('umkm_store_id', $store->id)->delete();
+                $store->delete();
+            }
+
+            // Clean up orders (as buyer)
+            $user->orders()->update(['buyer_id' => null]);
+
+            // Clean up deliveries (as courier)
+            $user->deliveries()->update(['courier_id' => null]);
+
+            // Delete affiliate rewards
+            $user->affiliateRewards()->delete();
+
+            // Delete complaints
+            Complaint::where('user_id', $user->id)->delete();
+
+            // Delete avatar
+            if ($user->avatar_path) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($user->avatar_path);
+            }
+
+            $user->delete();
+        });
+
+        return redirect()->route('admin.users')->with('success', 'Akun pengguna dan semua data terkait berhasil dihapus.');
     }
 
     /**
@@ -243,7 +354,7 @@ class AdminController extends Controller
         // Revenue Chart (Last 6 Months)
         // Check driver for date formatting compatibility
         $driver = config('database.default');
-        $dateFormat = $driver === 'sqlite' ? '%Y-%m' : '%Y-%m'; 
+        $dateFormat = $driver === 'sqlite' ? '%Y-%m' : '%Y-%m';
 
         // Generate last 6 months keys
         $res = [];
@@ -277,11 +388,13 @@ class AdminController extends Controller
 
         // Top Selling Products
         $topProducts = $store->products()
-            ->withCount(['orderItems as sold_count' => function ($query) {
-                $query->whereHas('order', function ($q) {
-                    $q->where('status', 'completed');
-                });
-            }])
+            ->withCount([
+                'orderItems as sold_count' => function ($query) {
+                    $query->whereHas('order', function ($q) {
+                        $q->where('status', 'completed');
+                    });
+                }
+            ])
             ->orderByDesc('sold_count')
             ->take(5)
             ->get();
@@ -292,7 +405,7 @@ class AdminController extends Controller
             ->latest()
             ->take(10)
             ->get();
-            
+
         // Recent Reviews (if relationship exists, assuming via products or direct)
         // Corrected to use store_reviews table
         $reviews = DB::table('store_reviews')
@@ -482,9 +595,9 @@ class AdminController extends Controller
     public function generalSettings()
     {
         $settings = \Illuminate\Support\Facades\DB::table('settings')->pluck('value', 'key');
-        
+
         $activeOrdersQuery = Order::whereIn('status', ['waiting_verification', 'processing', 'ready_to_ship', 'on_delivery']);
-        
+
         return Inertia::render('admin/settings/index', [
             'settings' => $settings,
             'maintenanceMode' => Setting::isMaintenanceMode(),
@@ -644,7 +757,7 @@ class AdminController extends Controller
                 // Clear cache
                 \Illuminate\Support\Facades\Cache::forget('setting.whatsapp_notifications_enabled');
             }
-            
+
             return back()->with('success', 'Pengaturan berhasil disimpan!');
         }
 
@@ -701,12 +814,12 @@ class AdminController extends Controller
                 'Authorization' => 'Bearer ' . $config['api_key'],
                 'Content-Type' => 'application/json',
             ])->timeout(15)->post($config['base_url'], [
-                'model' => $config['model'],
-                'messages' => [
-                    ['role' => 'user', 'content' => 'Jawab singkat: 1+1=?']
-                ],
-                'max_tokens' => 10,
-            ]);
+                        'model' => $config['model'],
+                        'messages' => [
+                            ['role' => 'user', 'content' => 'Jawab singkat: 1+1=?']
+                        ],
+                        'max_tokens' => 10,
+                    ]);
 
             if ($response->successful()) {
                 $content = $response->json()['choices'][0]['message']['content'] ?? 'OK';
@@ -814,10 +927,10 @@ GAYA BAHASA:
 INGAT: Kamu membantu perangkat desa yang mungkin tidak familiar dengan teknologi. Sabar dan jelaskan dengan detail.";
 
         $config = ApiSetting::getConfig('primary');
-        
+
         try {
             $messages = [['role' => 'system', 'content' => $systemPrompt]];
-            
+
             // Add history
             foreach ($validated['history'] ?? [] as $msg) {
                 $messages[] = [
@@ -825,7 +938,7 @@ INGAT: Kamu membantu perangkat desa yang mungkin tidak familiar dengan teknologi
                     'content' => $msg['content'],
                 ];
             }
-            
+
             $messages[] = ['role' => 'user', 'content' => $validated['message']];
 
             $response = Http::withHeaders([
@@ -834,21 +947,21 @@ INGAT: Kamu membantu perangkat desa yang mungkin tidak familiar dengan teknologi
                 'X-Title' => 'Admin Assistant - Marketplace Cipadung',
                 'Content-Type' => 'application/json',
             ])->timeout(45)->post($config['base_url'], [
-                'model' => $config['model'],
-                'messages' => $messages,
-                'temperature' => 0.7,
-                'max_tokens' => 1500,
-            ]);
+                        'model' => $config['model'],
+                        'messages' => $messages,
+                        'temperature' => 0.7,
+                        'max_tokens' => 1500,
+                    ]);
 
             if ($response->successful()) {
                 $content = $response->json()['choices'][0]['message']['content'] ?? null;
-                
+
                 // Cleanup
                 $content = preg_replace('/<think>.*?<\/think>/s', '', $content);
                 $content = preg_replace('/\*\*([^*]+)\*\*/', '$1', $content);
                 $content = preg_replace('/\*([^*]+)\*/', '$1', $content);
                 $content = preg_replace('/^#{1,6}\s+/m', '', $content);
-                
+
                 return response()->json([
                     'success' => true,
                     'message' => trim($content),
@@ -882,10 +995,11 @@ INGAT: Kamu membantu perangkat desa yang mungkin tidak familiar dengan teknologi
     {
         $newStatus = Setting::toggleMaintenanceMode();
 
-        return back()->with('success', 
-            $newStatus 
-                ? 'Mode maintenance AKTIF. Pemesanan baru diblokir.' 
-                : 'Mode maintenance NONAKTIF. Pemesanan kembali normal.'
+        return back()->with(
+            'success',
+            $newStatus
+            ? 'Mode maintenance AKTIF. Pemesanan baru diblokir.'
+            : 'Mode maintenance NONAKTIF. Pemesanan kembali normal.'
         );
     }
 
@@ -901,14 +1015,16 @@ INGAT: Kamu membantu perangkat desa yang mungkin tidak familiar dengan teknologi
     public function couriers(Request $request)
     {
         $query = User::where('role', 'courier')
-            ->withCount(['deliveries' => function ($q) {
-                $q->where('status', 'completed');
-            }]);
+            ->withCount([
+                'deliveries' => function ($q) {
+                    $q->where('status', 'completed');
+                }
+            ]);
 
         if ($request->search) {
             $query->where(function ($q) use ($request) {
                 $q->where('name', 'like', "%{$request->search}%")
-                  ->orWhere('email', 'like', "%{$request->search}%");
+                    ->orWhere('email', 'like', "%{$request->search}%");
             });
         }
 
@@ -961,8 +1077,8 @@ INGAT: Kamu membantu perangkat desa yang mungkin tidak familiar dengan teknologi
         // Find complaints where the order was handled by this courier
         // AND the complaint type is 'courier' OR 'delivery'
         $complaints = Complaint::whereHas('order', function ($q) use ($courier) {
-                $q->where('courier_id', $courier->id);
-            })
+            $q->where('courier_id', $courier->id);
+        })
             ->whereIn('type', ['courier', 'delivery'])
             ->with('order')
             ->latest()
@@ -993,8 +1109,8 @@ INGAT: Kamu membantu perangkat desa yang mungkin tidak familiar dengan teknologi
         $courier->is_suspended = !$courier->is_suspended;
         $courier->save();
 
-        return back()->with('success', $courier->is_suspended 
-            ? 'Kurir berhasil di-suspend (dinonaktifkan sementara).' 
+        return back()->with('success', $courier->is_suspended
+            ? 'Kurir berhasil di-suspend (dinonaktifkan sementara).'
             : 'Suspensi kurir dicabut. Kurir dapat aktif kembali.');
     }
 
@@ -1006,7 +1122,7 @@ INGAT: Kamu membantu perangkat desa yang mungkin tidak familiar dengan teknologi
         $order->load([
             'buyer',
             'store',
-            'courier.courierRatings' => function($q) {
+            'courier.courierRatings' => function ($q) {
                 // Determine if we want to show all ratings or just this order's
                 // For "Courier Profile Card", we probably want their general repute
             },
@@ -1058,11 +1174,11 @@ INGAT: Kamu membantu perangkat desa yang mungkin tidak familiar dengan teknologi
                         'cancelled_at' => now(),
                         'admin_fee_status' => 'void', // Void admin fee
                     ]);
-                    
+
                     // Consider returning funds to wallet if balance system exists
-                     if ($order->buyer && $order->payment_method !== 'cod') { // Example condition
-                         $order->buyer->increment('wallet_balance', $order->total_amount);
-                     }
+                    if ($order->buyer && $order->payment_method !== 'cod') { // Example condition
+                        $order->buyer->increment('wallet_balance', $order->total_amount);
+                    }
                     break;
 
                 case 'force_complete':
@@ -1088,7 +1204,7 @@ INGAT: Kamu membantu perangkat desa yang mungkin tidak familiar dengan teknologi
             }
 
             // Log this admin action (could be in a separate table, but for now we rely on status/cancellation fields)
-             // Maybe add a complaint resolved note?
+            // Maybe add a complaint resolved note?
         });
 
         return back()->with('success', 'Tindakan berhasil dilakukan: ' . $request->action);
@@ -1203,7 +1319,7 @@ INGAT: Kamu membantu perangkat desa yang mungkin tidak familiar dengan teknologi
                 ->whereMonth('created_at', now()->month)
                 ->whereYear('created_at', now()->year)
                 ->sum('total_amount'),
-            'avg_order_value' => Order::where('status', 'completed')->count() > 0 
+            'avg_order_value' => Order::where('status', 'completed')->count() > 0
                 ? round(Order::where('status', 'completed')->sum('total_amount') / Order::where('status', 'completed')->count(), 0)
                 : 0,
         ];
@@ -1298,18 +1414,18 @@ INGAT: Kamu membantu perangkat desa yang mungkin tidak familiar dengan teknologi
     public function showPaymentProof($filename)
     {
         $path = 'proofs/' . $filename;
-        
+
         // Debug: Log to see what's happening
         $diskRoot = \Illuminate\Support\Facades\Storage::disk('local')->path('');
         $exists = \Illuminate\Support\Facades\Storage::disk('local')->exists($path);
-        
+
         \Log::info('Admin showPaymentProof debug', [
             'filename' => $filename,
             'path' => $path,
             'disk_root' => $diskRoot,
             'exists' => $exists,
         ]);
-        
+
         if (!$exists) {
             abort(404, 'File not found: ' . $path);
         }

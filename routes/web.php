@@ -455,6 +455,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('users/create', [AdminController::class, 'createUser'])->name('users.create');
         Route::post('users', [AdminController::class, 'storeUser'])->name('users.store');
         Route::get('users/{user}', [AdminController::class, 'userDetail'])->name('users.show');
+        Route::delete('users/{user}/store', [AdminController::class, 'deleteStore'])->name('users.delete-store');
+        Route::delete('users/{user}', [AdminController::class, 'deleteUser'])->name('users.destroy');
 
         // Stores
         Route::get('stores', [AdminController::class, 'stores'])->name('stores');
