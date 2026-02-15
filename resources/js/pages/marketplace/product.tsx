@@ -25,9 +25,7 @@ export default function ProductDetail({ product, relatedProducts }: Props) {
     const [added, setAdded] = useState(false);
     const { addToCart, getItemCount, cart } = useCart();
 
-    // Derived store ID for robust checkout link
-    const storeId = cart.length > 0 ? cart[0].storeId : null;
-    const checkoutUrl = storeId ? `/checkout?store_id=${storeId}` : '/checkout';
+    const checkoutUrl = `/checkout?store_id=${product.store.id}`;
 
     const { auth } = usePage<any>().props;
     const isBuyer = auth.user.role === 'buyer';
@@ -237,7 +235,7 @@ export default function ProductDetail({ product, relatedProducts }: Props) {
 
                         {/* Add to Cart Button */}
                         <button
-                            onClick={goToCheckout}
+                            onClick={handleAddToCart}
                             disabled={added}
                             className={`flex-1 py-4 font-semibold rounded-2xl flex items-center justify-center gap-2 transition-all ${added
                                 ? 'bg-success text-white'
