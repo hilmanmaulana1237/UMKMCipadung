@@ -54,7 +54,7 @@ export default function ProductDetail({ product, relatedProducts }: Props) {
 
     const goToCheckout = () => {
         handleAddToCart();
-        router.visit('/checkout');
+        router.visit(`/checkout?store_id=${product.store.id}`);
     };
 
     const schema = {
