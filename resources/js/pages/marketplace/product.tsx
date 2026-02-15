@@ -237,7 +237,7 @@ export default function ProductDetail({ product, relatedProducts }: Props) {
 
                         {/* Add to Cart Button */}
                         <button
-                            onClick={handleAddToCart}
+                            onClick={goToCheckout}
                             disabled={added}
                             className={`flex-1 py-4 font-semibold rounded-2xl flex items-center justify-center gap-2 transition-all ${added
                                 ? 'bg-success text-white'
