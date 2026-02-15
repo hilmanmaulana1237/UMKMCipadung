@@ -187,21 +187,33 @@ class MarketplaceController extends Controller
      */
     public function store(UmkmStore $store)
     {
-        $products = $store->products()
-            ->with('productCategory')
-            ->active()
-            ->inStock()
-            ->orderByRaw('ISNULL(product_category_id), product_category_id ASC')
-            ->orderBy('name')
-            ->paginate(50);
+        // Try to load with categories; if migration not run yet, fallback gracefully
+        try {
+            $products = $store->products()
+                ->with('productCategory')
+                ->active()
+                ->inStock()
+                ->orderByRaw('CASE WHEN product_category_id IS NULL THEN 1 ELSE 0 END, product_category_id ASC')
+                ->orderBy('name')
+                ->paginate(50);
+
+            $productCategories = $store->productCategories()->withCount('products')->get();
+        } catch (\Exception $e) {
+            // Fallback: categories table/column might not exist yet
+            $products = $store->products()
+                ->active()
+                ->inStock()
+                ->orderBy('name')
+                ->paginate(50);
+
+            $productCategories = collect();
+        }
 
         // Get review statistics (sentiment-based)
         $reviewStats = [
             'positive_count' => $store->reviews()->where('sentiment', 'positive')->count(),
             'negative_count' => $store->reviews()->where('sentiment', 'negative')->count(),
         ];
-
-        $productCategories = $store->productCategories()->withCount('products')->get();
 
         return Inertia::render('marketplace/store', [
             'store' => array_merge($store->toArray(), [

@@ -30,24 +30,31 @@ class ProductController extends Controller
             return redirect()->route('umkm.store.setup');
         }
 
-        $query = $store->products()->with('productCategory')->latest();
+        try {
+            $query = $store->products()->with('productCategory')->latest();
 
-        if ($request->has('search')) {
-            $query->where('name', 'like', '%' . $request->search . '%');
-        }
-
-        if ($request->has('category_id') && $request->category_id !== 'all') {
-            if ($request->category_id === 'uncategorized') {
-                $query->whereNull('product_category_id');
-            } else {
-                $query->where('product_category_id', $request->category_id);
+            if ($request->has('search')) {
+                $query->where('name', 'like', '%' . $request->search . '%');
             }
+
+            if ($request->has('category_id') && $request->category_id !== 'all') {
+                if ($request->category_id === 'uncategorized') {
+                    $query->whereNull('product_category_id');
+                } else {
+                    $query->where('product_category_id', $request->category_id);
+                }
+            }
+
+            $products = $query->paginate(20)->withQueryString();
+            $productCategories = $store->productCategories()->withCount('products')->get();
+        } catch (\Exception $e) {
+            $query = $store->products()->latest();
+            if ($request->has('search')) {
+                $query->where('name', 'like', '%' . $request->search . '%');
+            }
+            $products = $query->paginate(20)->withQueryString();
+            $productCategories = collect();
         }
-
-        $products = $query->paginate(20)
-            ->withQueryString();
-
-        $productCategories = $store->productCategories()->withCount('products')->get();
 
         return Inertia::render('umkm/products/index', [
             'products' => $products,
@@ -62,7 +69,11 @@ class ProductController extends Controller
     public function create()
     {
         $store = auth()->user()->umkmStore;
-        $productCategories = $store ? $store->productCategories()->get() : collect();
+        try {
+            $productCategories = $store ? $store->productCategories()->get() : collect();
+        } catch (\Exception $e) {
+            $productCategories = collect();
+        }
 
         return Inertia::render('umkm/products/create', [
             'categories' => $this->getCategories(),
@@ -80,7 +91,7 @@ class ProductController extends Controller
             'price' => 'required|numeric|min:0',
             'stock' => 'required|integer|min:0',
             'category' => 'required|in:kuliner,kriya,jasa',
-            'product_category_id' => 'nullable|exists:product_categories,id',
+            'product_category_id' => 'nullable|integer',
             'description' => 'nullable|string',
             'image' => 'nullable|image|max:10240',
             'is_physical' => 'boolean',
@@ -112,10 +123,15 @@ class ProductController extends Controller
         $this->authorizeProduct($product);
 
         $store = auth()->user()->umkmStore;
-        $productCategories = $store ? $store->productCategories()->get() : collect();
+        try {
+            $productCategories = $store ? $store->productCategories()->get() : collect();
+            $product->load('productCategory');
+        } catch (\Exception $e) {
+            $productCategories = collect();
+        }
 
         return Inertia::render('umkm/products/edit', [
-            'product' => $product->load('productCategory'),
+            'product' => $product,
             'categories' => $this->getCategories(),
             'productCategories' => $productCategories,
         ]);
@@ -133,7 +149,7 @@ class ProductController extends Controller
             'price' => 'required|numeric|min:0',
             'stock' => 'required|integer|min:0',
             'category' => 'required|in:kuliner,kriya,jasa',
-            'product_category_id' => 'nullable|exists:product_categories,id',
+            'product_category_id' => 'nullable|integer',
             'description' => 'nullable|string',
             'image' => 'nullable|image|max:10240',
             'is_active' => 'boolean',
