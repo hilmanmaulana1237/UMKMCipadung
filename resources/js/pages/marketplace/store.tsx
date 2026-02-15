@@ -36,21 +36,23 @@ export default function StorePage({ store, products, productCategories = [] }: P
     const groupedProducts = useMemo(() => {
         const groups: { id: string; name: string; products: Product[] }[] = [];
 
-        // Debug logging
-        console.log('[Store Page Debug]', {
-            totalProducts: products.data.length,
-            productCategories: productCategories,
-            productsWithCategoryId: products.data.filter(p => p.product_category_id).length,
-            productsData: products.data.map(p => ({
-                name: p.name,
-                category_id: p.product_category_id,
-                category: p.product_category
-            }))
+        // Debug logging - initial state
+        console.log('[Store Page Debug] ===== STARTING PRODUCT GROUPING =====');
+        console.log('Total products:', products.data.length);
+        console.log('Product categories:', productCategories.map(c => `${c.name} (ID: ${c.id})`));
+
+        // Log each product in detail
+        products.data.forEach((p, idx) => {
+            console.log(`[Product ${idx + 1}] "${p.name}":`, {
+                id: p.id,
+                product_category_id: p.product_category_id,
+                type: typeof p.product_category_id,
+                product_category_object: p.product_category,
+            });
         });
 
         if (productCategories.length === 0) {
-            // No categories defined — show all products in a single list
-            console.log('[Store Page] No categories, showing all products together');
+            console.log('[Result] No categories defined, showing all products together');
             return [{ id: 'all', name: 'Semua Produk', products: products.data }];
         }
 
@@ -59,28 +61,48 @@ export default function StorePage({ store, products, productCategories = [] }: P
 
         // Group products by their custom categories
         for (const cat of productCategories) {
+            console.log(`\n[Category "${cat.name}"] Looking for products with category_id = ${cat.id}...`);
+
             const catProducts = products.data.filter(p => {
-                // Match by ID, handle both string and number types
                 const productCatId = p.product_category_id ? Number(p.product_category_id) : null;
                 const categoryId = Number(cat.id);
-                return productCatId === categoryId;
+                const matches = productCatId === categoryId;
+
+                console.log(`  - "${p.name}": ${p.product_category_id} (${typeof p.product_category_id}) → ${productCatId} === ${categoryId}? ${matches ? '✓ YES' : '✗ NO'}`);
+
+                return matches;
             });
 
+            console.log(`[Category "${cat.name}"] Found ${catProducts.length} products`);
+
             if (catProducts.length > 0) {
-                console.log(`[Store Page] Category "${cat.name}" has ${catProducts.length} products`);
                 groups.push({ id: String(cat.id), name: cat.name, products: catProducts });
                 catProducts.forEach(p => assignedProductIds.add(p.id));
             }
         }
 
-        // Uncategorized products (products not assigned to any category)
+        console.log(`\n[Assigned] Total ${assignedProductIds.size} products assigned to categories`);
+        console.log('[Assigned] Product IDs:', Array.from(assignedProductIds));
+
+        // Uncategorized products
         const uncategorized = products.data.filter(p => !assignedProductIds.has(p.id));
+        console.log(`\n[Uncategorized] Found ${uncategorized.length} products without categories:`);
+        uncategorized.forEach(p => console.log(`  - ${p.name} (ID: ${p.id})`));
+
         if (uncategorized.length > 0) {
-            console.log(`[Store Page] Uncategorized: ${uncategorized.length} products`);
             groups.push({ id: 'uncategorized', name: 'Lainnya', products: uncategorized });
         }
 
-        console.log('[Store Page] Final groups:', groups.map(g => ({ name: g.name, count: g.products.length })));
+        // Final verification
+        const totalInGroups = groups.reduce((sum, g) => sum + g.products.length, 0);
+        console.log('\n[FINAL RESULT]', {
+            totalProducts: products.data.length,
+            totalInGroups: totalInGroups,
+            groups: groups.map(g => `${g.name}: ${g.products.length}`).join(', '),
+            allAccountedFor: products.data.length === totalInGroups ? '✓ YES - ALL PRODUCTS PRESENT' : `✗ NO - ${products.data.length - totalInGroups} PRODUCTS MISSING!`
+        });
+        console.log('[Store Page Debug] ===== END =====\n');
+
         return groups;
     }, [products.data, productCategories]);
 
