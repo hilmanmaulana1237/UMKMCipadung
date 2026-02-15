@@ -13,6 +13,14 @@ interface Props {
 }
 
 export default function ProductDetail({ product, relatedProducts }: Props) {
+    const formatPrice = (price: number) => {
+        return new Intl.NumberFormat('id-ID', {
+            style: 'currency',
+            currency: 'IDR',
+            minimumFractionDigits: 0,
+        }).format(price);
+    };
+
     const [quantity, setQuantity] = useState(1);
     const [added, setAdded] = useState(false);
     const { addToCart, getItemCount, cart } = useCart();
@@ -73,7 +81,7 @@ export default function ProductDetail({ product, relatedProducts }: Props) {
         <AppLayout activeTab="marketplace" showBottomNav={false}>
             <SeoHead
                 title={`${product.name} - Jual Murah Cipadung`}
-                description={`Jual ${product.name} termurah di Cipadung. Harga Rp ${Number(product.price).toLocaleString('id-ID')}. Stok ${product.stock > 0 ? 'Tersedia' : 'Habis'}. Pesan sekarang via Marketplace Cipadung.`}
+                description={`Jual ${product.name} termurah di Cipadung. Harga ${formatPrice(Number(product.price))}. Stok ${product.stock > 0 ? 'Tersedia' : 'Habis'}. Pesan sekarang via Marketplace Cipadung.`}
                 image={product.image_path ? `https://umkmcipadung.com/storage/${product.image_path}` : undefined}
                 type="product"
                 url={`https://umkmcipadung.com/marketplace/product/${product.id}`}
@@ -123,7 +131,7 @@ export default function ProductDetail({ product, relatedProducts }: Props) {
                 </span>
                 <h2 className="text-xl font-bold text-foreground mt-2">{product.name}</h2>
                 <p className="text-2xl font-bold text-primary mt-2">
-                    Rp {Number(product.price).toLocaleString('id-ID')}
+                    {formatPrice(Number(product.price))}
                 </p>
                 <p className="text-sm text-muted-foreground mt-1">
                     Stok: {product.stock} tersedia
@@ -197,7 +205,7 @@ export default function ProductDetail({ product, relatedProducts }: Props) {
                                 <div className="p-2">
                                     <p className="text-xs font-medium line-clamp-2">{related.name}</p>
                                     <p className="text-xs font-bold text-primary mt-1">
-                                        Rp {Number(related.price).toLocaleString('id-ID')}
+                                        {formatPrice(Number(related.price))}
                                     </p>
                                 </div>
                             </Link>

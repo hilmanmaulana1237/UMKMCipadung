@@ -87,10 +87,11 @@ class UmkmController extends Controller
         // Simplest: remove non-numeric chars logic matching frontend.
         if ($request->has('admin_fee') && is_string($request->admin_fee)) {
             $fee = (int) preg_replace('/[^0-9]/', '', $request->admin_fee);
-            if ($fee > 500) $fee = 500; // Cap at 500
+            if ($fee > 500)
+                $fee = 500; // Cap at 500
             $request->merge(['admin_fee' => $fee]);
         }
-        
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'required|string',
@@ -156,6 +157,26 @@ class UmkmController extends Controller
     }
 
     /**
+     * Delete QRIS image from store.
+     */
+    public function deleteQris()
+    {
+        $user = auth()->user();
+        $store = $user->umkmStore;
+
+        if (!$store || !$store->qris_path) {
+            return redirect()->back()->with('error', 'Tidak ada QRIS untuk dihapus.');
+        }
+
+        Storage::disk('public')->delete($store->qris_path);
+        $store->qris_path = null;
+        $store->qris_handle = null;
+        $store->save();
+
+        return redirect()->back()->with('success', 'Foto QRIS berhasil dihapus!');
+    }
+
+    /**
      * List pending orders for verification.
      */
     public function orders(Request $request)
@@ -215,7 +236,7 @@ class UmkmController extends Controller
     public function showProof($filename)
     {
         $path = 'proofs/' . $filename;
-        
+
         if (!\Illuminate\Support\Facades\Storage::disk('local')->exists($path)) {
             abort(404);
         }
@@ -402,7 +423,7 @@ class UmkmController extends Controller
 
         // AI Usage Statistics
         $aiChatSessions = \App\Models\AIChatSession::where('user_id', auth()->id())->count();
-        $aiMessages = \App\Models\AIChatMessage::whereHas('session', function($q) {
+        $aiMessages = \App\Models\AIChatMessage::whereHas('session', function ($q) {
             $q->where('user_id', auth()->id());
         })->where('role', 'user')->count();
 

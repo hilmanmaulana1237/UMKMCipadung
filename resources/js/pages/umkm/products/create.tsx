@@ -3,6 +3,7 @@ import { Head, useForm, Link } from '@inertiajs/react';
 import { ArrowLeft, Upload, Save, Sparkles, Loader2, Lightbulb, Camera, Wand2 } from 'lucide-react';
 import { FormEvent, useState, useEffect, useMemo } from 'react';
 import { toast } from 'sonner';
+import axios from 'axios';
 
 interface Category {
     id: string;
@@ -78,19 +79,12 @@ export default function CreateProduct({ categories }: Props) {
 
         setIsLoadingPrice(true);
         try {
-            const response = await fetch('/ai/suggest-price', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
-                },
-                body: JSON.stringify({
-                    name: data.name,
-                    category: data.category,
-                }),
+            const response = await axios.post('/ai/suggest-price', {
+                name: data.name,
+                category: data.category,
             });
 
-            const result = await response.json();
+            const result = response.data;
             if (result.success) {
                 setPriceSuggestion({
                     min: result.min_price,
@@ -114,20 +108,13 @@ export default function CreateProduct({ categories }: Props) {
 
         setIsGeneratingDescription(true);
         try {
-            const response = await fetch('/ai/generate-description', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
-                },
-                body: JSON.stringify({
-                    name: data.name,
-                    category: data.category,
-                    price: data.price ? parseFloat(data.price) : null,
-                }),
+            const response = await axios.post('/ai/generate-description', {
+                name: data.name,
+                category: data.category,
+                price: data.price ? parseFloat(data.price) : null,
             });
 
-            const result = await response.json();
+            const result = response.data;
             if (result.success && result.description) {
                 setData('description', result.description);
                 toast.success('Deskripsi berhasil dibuat oleh AI! ✨');

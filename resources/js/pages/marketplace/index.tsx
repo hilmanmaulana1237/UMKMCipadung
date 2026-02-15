@@ -379,7 +379,7 @@ export default function MarketplaceIndex({ products, stores, categories, filters
                                                 {product.name}
                                             </h4>
                                             <p className="text-primary font-bold text-sm mt-1">
-                                                Rp {Number(product.price).toLocaleString('id-ID')}
+                                                {formatPrice(Number(product.price))}
                                             </p>
                                         </Link>
                                     ))}
@@ -432,7 +432,7 @@ export default function MarketplaceIndex({ products, stores, categories, filters
                                             {product.name}
                                         </h3>
                                         <p className="text-primary font-bold mt-1">
-                                            Rp {Number(product.price).toLocaleString('id-ID')}
+                                            {formatPrice(Number(product.price))}
                                         </p>
                                         {product.store && (
                                             <p className="text-xs text-slate-500 mt-1">

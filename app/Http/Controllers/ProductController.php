@@ -144,6 +144,17 @@ class ProductController extends Controller
     {
         $this->authorizeProduct($product);
 
+        // Check if product has associated orders
+        if ($product->orderItems()->exists()) {
+            // Soft-delete: deactivate instead of hard delete to preserve transaction history
+            $product->is_active = false;
+            $product->name = '[Dihapus] ' . $product->name;
+            $product->save();
+
+            return redirect()->route('products.index')
+                ->with('success', 'Produk dinonaktifkan karena masih terkait dengan transaksi yang ada.');
+        }
+
         if ($product->image_path) {
             Storage::disk('public')->delete($product->image_path);
         }
@@ -163,8 +174,8 @@ class ProductController extends Controller
 
         $product->update(['is_active' => !$product->is_active]);
 
-        return back()->with('success', $product->is_active 
-            ? 'Produk diaktifkan.' 
+        return back()->with('success', $product->is_active
+            ? 'Produk diaktifkan.'
             : 'Produk dinonaktifkan.');
     }
 
@@ -174,7 +185,7 @@ class ProductController extends Controller
     private function authorizeProduct(Product $product): void
     {
         $store = auth()->user()->umkmStore;
-        
+
         if (!$store || $product->umkm_store_id !== $store->id) {
             abort(403);
         }

@@ -318,6 +318,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         // Store Setup
         Route::get('setup-toko', [UmkmController::class, 'storeSetup'])->name('store.setup');
         Route::post('store', [UmkmController::class, 'storeUpdate'])->name('store.update');
+        Route::delete('store/qris', [UmkmController::class, 'deleteQris'])->name('store.delete-qris');
 
         // Orders
         Route::get('orders', [UmkmController::class, 'orders'])->name('orders');

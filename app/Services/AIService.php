@@ -137,7 +137,11 @@ class AIService
             "Kategori: {$category}\n" .
             ($price ? "Harga: {$priceText}\n" : "") .
             "\n" .
-            "Langsung tulis deskripsi tanpa penjelasan tambahan. Maksimal 3 paragraf pendek. Gunakan emotikon yang sesuai.";
+            "ATURAN KETAT:\n" .
+            "- Langsung tulis deskripsi tanpa penjelasan tambahan.\n" .
+            "- Tulis dalam 1 paragraf (3-5 kalimat, sekitar 50-100 kata).\n" .
+            "- Gunakan 1-2 emotikon yang sesuai.\n" .
+            "- Singkat padat dan menjual, tidak perlu terlalu panjang.";
 
         // Use configured secondary model
         $response = $this->chat($prompt);
@@ -340,13 +344,12 @@ class AIService
     protected function getFallbackDescription(string $name, string $category): string
     {
         $templates = [
-            'kuliner' => "🍽️ {$name} - Nikmat dan menggugah selera! Dibuat dengan bahan berkualitas dan resep rahasia. Pesan sekarang! ✨",
-            'kriya' => "🎨 {$name} - Karya handmade dengan detail memukau! Setiap produk dibuat oleh pengrajin berpengalaman. 💝",
-            'jasa' => "⚡ {$name} - Layanan profesional dengan hasil terjamin! Tim kami siap melayani kebutuhan Anda. ✅",
+            'kuliner' => "🍽️ {$name} hadir untuk memanjakan lidah Anda! Dibuat dengan bahan-bahan pilihan berkualitas tinggi dan diolah menggunakan resep rahasia turun-temurun khas Cipadung. Setiap sajian disiapkan dengan penuh kehati-hatian untuk menjaga cita rasa autentik yang tak terlupakan. Cocok untuk dinikmati bersama keluarga maupun sebagai teman santai di segala suasana. Pesan sekarang dan rasakan kelezatannya! ✨",
+            'kriya' => "🎨 {$name} adalah karya handmade eksklusif yang dibuat dengan penuh dedikasi oleh pengrajin berpengalaman dari Cipadung. Setiap detail dikerjakan secara teliti menggunakan bahan pilihan, menghasilkan produk yang unik dan memiliki nilai seni tinggi. Sempurna sebagai koleksi pribadi maupun hadiah istimewa untuk orang tersayang. Miliki keindahan karya tangan asli Indonesia ini sekarang! 💝",
+            'jasa' => "⚡ {$name} menyediakan layanan profesional dan terpercaya untuk memenuhi kebutuhan Anda. Dikerjakan oleh tim yang berpengalaman dengan standar kualitas tinggi dan komitmen terhadap kepuasan pelanggan. Kami mengutamakan hasil yang rapi, tepat waktu, dan sesuai dengan harapan Anda. Hubungi kami sekarang untuk konsultasi gratis dan dapatkan pelayanan terbaik! ✅",
         ];
 
-        $template = $templates[$category] ?? $templates['kuliner'];
-        return str_replace('{$name}', $name, $template);
+        return $templates[$category] ?? $templates['kuliner'];
     }
 
     /**

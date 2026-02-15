@@ -38,96 +38,100 @@ class MarketplaceController extends Controller
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('description', 'like', "%{$search}%")
-                  ->orWhereHas('store', function($sq) use ($search) {
-                      $sq->where('name', 'like', "%{$search}%");
-                  });
+                    ->orWhere('description', 'like', "%{$search}%")
+                    ->orWhereHas('store', function ($sq) use ($search) {
+                        $sq->where('name', 'like', "%{$search}%");
+                    });
             });
-            
-            
+
+
             // Search for stores matching the name (limit to 1 as requested)
-            $stores = UmkmStore::with(['products' => function ($q) {
-                $q->active()->inStock()->latest()->take(4);
-            }])
-            ->where('name', 'like', "%{$search}%")
-            ->take(1)
-            ->get()
-            ->map(function ($store) use ($userLat, $userLng) {
-                $distance = null;
-                if ($userLat && $userLng && $store->latitude && $store->longitude) {
-                    $distance = $this->calculateDistance($userLat, $userLng, $store->latitude, $store->longitude);
+            $stores = UmkmStore::with([
+                'products' => function ($q) {
+                    $q->active()->inStock()->latest()->take(4);
                 }
-                return [
-                    'id' => $store->id,
-                    'name' => $store->name,
-                    'description' => $store->description,
-                    'products' => $store->products,
-                    'product_count' => $store->products()->active()->inStock()->count(),
-                    'average_rating' => $store->average_rating,
-                    'total_ratings' => $store->total_ratings,
-                    'is_open' => $store->isOpen(),
-                    'is_open_today' => $store->is_open_today,
-                    'open_time' => $store->open_time?->format('H:i'),
-                    'close_time' => $store->close_time?->format('H:i'),
-                    'distance_km' => $distance,
-                    'orders_count' => $store->orders()->where('status', 'completed')->count(),
-                ];
-            });
+            ])
+                ->where('name', 'like', "%{$search}%")
+                ->take(1)
+                ->get()
+                ->map(function ($store) use ($userLat, $userLng) {
+                    $distance = null;
+                    if ($userLat && $userLng && $store->latitude && $store->longitude) {
+                        $distance = $this->calculateDistance($userLat, $userLng, $store->latitude, $store->longitude);
+                    }
+                    return [
+                        'id' => $store->id,
+                        'name' => $store->name,
+                        'description' => $store->description,
+                        'products' => $store->products,
+                        'product_count' => $store->products()->active()->inStock()->count(),
+                        'average_rating' => $store->average_rating,
+                        'total_ratings' => $store->total_ratings,
+                        'is_open' => $store->isOpen(),
+                        'is_open_today' => $store->is_open_today,
+                        'open_time' => $store->open_time?->format('H:i'),
+                        'close_time' => $store->close_time?->format('H:i'),
+                        'distance_km' => $distance,
+                        'orders_count' => $store->orders()->where('status', 'completed')->count(),
+                    ];
+                });
         } else {
             // Fetch stores with their products for per-store layout (only if not searching)
-            $stores = UmkmStore::with(['products' => function ($q) use ($request) {
-                $q->active()->inStock()->latest();
-                
-                if ($request->has('category')) {
-                    $q->where('category', $request->category);
-                }
-                
-                $q->take(4);
-            }])
-            ->where(function($query) use ($request) {
-                // Filter by products having the category
-                $query->whereHas('products', function ($q) use ($request) {
-                    $q->active()->inStock();
-                    
+            $stores = UmkmStore::with([
+                'products' => function ($q) use ($request) {
+                    $q->active()->inStock()->latest();
+
                     if ($request->has('category')) {
                         $q->where('category', $request->category);
                     }
-                });
 
-                // OR if the store itself has the category (new feature)
-                if ($request->has('category')) {
-                    $query->orWhere('category', $request->category);
+                    $q->take(4);
                 }
-            })
-            ->get()
-            ->map(function ($store) use ($userLat, $userLng) {
-                $distance = null;
-                if ($userLat && $userLng && $store->latitude && $store->longitude) {
-                    $distance = $this->calculateDistance($userLat, $userLng, $store->latitude, $store->longitude);
-                }
-                return [
-                    'id' => $store->id,
-                    'name' => $store->name,
-                    'description' => $store->description,
-                    'products' => $store->products,
-                    'product_count' => $store->products()->active()->inStock()->count(),
-                    'average_rating' => $store->average_rating,
-                    'total_ratings' => $store->total_ratings,
-                    'is_open' => $store->isOpen(),
-                    'is_open_today' => $store->is_open_today,
-                    'open_time' => $store->open_time?->format('H:i'),
-                    'close_time' => $store->close_time?->format('H:i'),
-                    'distance_km' => $distance,
-                    'orders_count' => $store->orders()->where('status', 'completed')->count(),
-                ];
-            });
+            ])
+                ->where(function ($query) use ($request) {
+                    // Filter by products having the category
+                    $query->whereHas('products', function ($q) use ($request) {
+                        $q->active()->inStock();
+
+                        if ($request->has('category')) {
+                            $q->where('category', $request->category);
+                        }
+                    });
+
+                    // OR if the store itself has the category (new feature)
+                    if ($request->has('category')) {
+                        $query->orWhere('category', $request->category);
+                    }
+                })
+                ->get()
+                ->map(function ($store) use ($userLat, $userLng) {
+                    $distance = null;
+                    if ($userLat && $userLng && $store->latitude && $store->longitude) {
+                        $distance = $this->calculateDistance($userLat, $userLng, $store->latitude, $store->longitude);
+                    }
+                    return [
+                        'id' => $store->id,
+                        'name' => $store->name,
+                        'description' => $store->description,
+                        'products' => $store->products,
+                        'product_count' => $store->products()->active()->inStock()->count(),
+                        'average_rating' => $store->average_rating,
+                        'total_ratings' => $store->total_ratings,
+                        'is_open' => $store->isOpen(),
+                        'is_open_today' => $store->is_open_today,
+                        'open_time' => $store->open_time?->format('H:i'),
+                        'close_time' => $store->close_time?->format('H:i'),
+                        'distance_km' => $distance,
+                        'orders_count' => $store->orders()->where('status', 'completed')->count(),
+                    ];
+                });
 
             // Apply sorting based on sort parameter
             $stores = match ($sortBy) {
                 'nearest' => $stores->sortBy(function ($store) {
-                    // Put stores without distance at the end
-                    return $store['distance_km'] ?? 9999;
-                })->values(),
+                        // Put stores without distance at the end
+                        return $store['distance_km'] ?? 9999;
+                    })->values(),
                 'popular' => $stores->sortByDesc('orders_count')->values(),
                 default => $stores->shuffle()->sortByDesc('is_open')->values(), // latest: open stores first, but randomized
             };
@@ -186,7 +190,8 @@ class MarketplaceController extends Controller
         $products = $store->products()
             ->active()
             ->inStock()
-            ->paginate(12);
+            ->inRandomOrder()
+            ->paginate(50);
 
         // Get review statistics (sentiment-based)
         $reviewStats = [
@@ -216,7 +221,7 @@ class MarketplaceController extends Controller
             ->inStock()
             ->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('description', 'like', "%{$search}%");
+                    ->orWhere('description', 'like', "%{$search}%");
             })
             ->take(10)
             ->get();

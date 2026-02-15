@@ -18,6 +18,14 @@ interface Props {
 export default function StorePage({ store, products }: Props) {
     const { getItemCount } = useCart();
 
+    const formatPrice = (price: number) => {
+        return new Intl.NumberFormat('id-ID', {
+            style: 'currency',
+            currency: 'IDR',
+            minimumFractionDigits: 0,
+        }).format(price);
+    };
+
     const schema = {
         "@context": "https://schema.org",
         "@type": "LocalBusiness",
@@ -216,7 +224,7 @@ export default function StorePage({ store, products }: Props) {
                                         {product.name}
                                     </h4>
                                     <p className="text-primary font-bold mt-1">
-                                        Rp {Number(product.price).toLocaleString('id-ID')}
+                                        {formatPrice(Number(product.price))}
                                     </p>
                                     <p className="text-xs text-slate-500 mt-1">
                                         Stok: {product.stock}

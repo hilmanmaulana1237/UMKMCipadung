@@ -40,6 +40,8 @@ export default function Welcome({
     }>;
 }) {
     const { auth } = usePage<SharedData>().props;
+    const isUmkm = auth.user?.role === 'umkm';
+    const marketplaceUrl = isUmkm ? '/umkm/dashboard' : '/marketplace';
 
     const features = [
         {
@@ -138,7 +140,7 @@ export default function Welcome({
                             <div className="flex items-center gap-2 sm:gap-3">
                                 {auth.user ? (
                                     <Link
-                                        href="/marketplace"
+                                        href={marketplaceUrl}
                                         className="px-3 sm:px-5 py-2 sm:py-2.5 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-lg sm:rounded-xl font-semibold text-xs sm:text-sm hover:shadow-lg hover:shadow-blue-500/25 transition-all"
                                     >
                                         <span className="sm:hidden">Marketplace</span>
@@ -191,7 +193,7 @@ export default function Welcome({
                                 </p>
                                 <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
                                     <Link
-                                        href={auth.user ? "/marketplace" : "/register"}
+                                        href={auth.user ? marketplaceUrl : "/register"}
                                         className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-2xl font-bold text-lg hover:shadow-xl hover:shadow-blue-500/25 transition-all transform hover:-translate-y-0.5"
                                     >
                                         Mulai Belanja
@@ -475,7 +477,7 @@ export default function Welcome({
                         </p>
                         <div className="flex flex-col sm:flex-row gap-4 justify-center">
                             <Link
-                                href={auth.user ? "/marketplace" : "/register"}
+                                href={auth.user ? marketplaceUrl : "/register"}
                                 className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-white text-blue-600 rounded-2xl font-bold text-lg hover:shadow-xl transition-all transform hover:-translate-y-0.5"
                             >
                                 <ShoppingBag className="w-5 h-5" />

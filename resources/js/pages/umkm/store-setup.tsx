@@ -1,7 +1,7 @@
 import AppLayout from '@/layouts/app-layout';
 import { Head, router, useForm } from '@inertiajs/react';
 import { UmkmStore } from '@/types';
-import { Save, Store, Upload, ArrowLeft, MapPin, Phone, Clock, Image as ImageIcon } from 'lucide-react';
+import { Save, Store, Upload, ArrowLeft, MapPin, Phone, Clock, Image as ImageIcon, Trash2 } from 'lucide-react';
 import { Link } from '@inertiajs/react';
 import { FormEvent, useState } from 'react';
 import { toast } from 'sonner';
@@ -417,6 +417,47 @@ export default function StoreSetup({ store }: Props) {
 
                         <label className="block">
                             <span className="text-sm font-medium text-foreground">QRIS Toko (Opsional)</span>
+
+                            {/* Show existing QRIS preview */}
+                            {!data.qris && store?.qris_path && (
+                                <div className="mt-2 mb-3">
+                                    <p className="text-xs text-muted-foreground mb-2">📷 QRIS saat ini:</p>
+                                    <div className="relative inline-block">
+                                        <img
+                                            src={`/storage/${store.qris_path}`}
+                                            alt="QRIS Preview"
+                                            className="w-48 h-auto rounded-xl border-2 border-border shadow-sm"
+                                        />
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            if (confirm('Yakin ingin menghapus foto QRIS?')) {
+                                                router.delete('/umkm/store/qris', {
+                                                    onSuccess: () => toast.success('Foto QRIS berhasil dihapus!'),
+                                                });
+                                            }
+                                        }}
+                                        className="mt-2 flex items-center gap-1.5 px-3 py-2 bg-red-50 text-red-600 border border-red-200 rounded-lg text-xs font-medium hover:bg-red-100 transition-colors"
+                                    >
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                        Hapus Foto QRIS
+                                    </button>
+                                </div>
+                            )}
+
+                            {/* Show preview of newly selected file */}
+                            {data.qris && (
+                                <div className="mt-2 mb-3">
+                                    <p className="text-xs text-muted-foreground mb-2">📷 Preview QRIS baru:</p>
+                                    <img
+                                        src={URL.createObjectURL(data.qris)}
+                                        alt="QRIS Preview"
+                                        className="w-48 h-auto rounded-xl border-2 border-primary/30 shadow-sm"
+                                    />
+                                </div>
+                            )}
+
                             <div className="mt-1 border-2 border-dashed border-border rounded-xl p-6 text-center hover:border-primary/50 transition-colors cursor-pointer relative">
                                 <input
                                     type="file"
