@@ -4,6 +4,7 @@ import { ArrowLeft, Minus, Plus, Trash2, Upload, Tag, CheckCircle, X, Store, Map
 import { useState, FormEvent, useEffect } from 'react';
 import { useCart } from '@/hooks/useLocalStorage';
 import { UmkmStore } from '@/types';
+import axios from 'axios';
 
 // Cipadung area center and radius (approximately 2km)
 const CIPADUNG_CENTER = { lat: -6.9213, lng: 107.7101 };
@@ -71,16 +72,8 @@ export default function CheckoutIndex() {
     // --- RESTORED LOGIC ---
     const checkStoreStatus = () => {
         if (storeIds.length === 0) return;
-        fetch('/checkout/check-status', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
-            },
-            body: JSON.stringify({ store_ids: storeIds }),
-        })
-            .then((res) => res.json())
-            .then((data) => setStoreStatuses(data))
+        axios.post('/checkout/check-status', { store_ids: storeIds })
+            .then((response) => setStoreStatuses(response.data))
             .catch((err) => console.error('Error fetching store status:', err));
     };
 
@@ -176,37 +169,9 @@ export default function CheckoutIndex() {
     const validatePromo = async () => {
         if (!promoCode.trim()) return;
 
-        // Helper to get cookie
-        const getCookie = (name: string) => {
-            const value = `; ${document.cookie}`;
-            const parts = value.split(`; ${name}=`);
-            if (parts.length === 2) return parts.pop()?.split(';').shift();
-        };
-
         try {
-            const xsrfToken = decodeURIComponent(getCookie('XSRF-TOKEN') || '');
-
-            const response = await fetch('/promo/validate', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                    'X-XSRF-TOKEN': xsrfToken,
-                },
-                body: JSON.stringify({ code: promoCode }),
-            });
-
-            if (!response.ok) {
-                if (response.status === 403) {
-                    throw new Error('Akses ditolak (403). Pastikan Anda login sebagai Pembeli.');
-                }
-                if (response.status === 419) {
-                    throw new Error('Sesi kadaluarsa (419). Silakan refresh halaman.');
-                }
-                throw new Error(`Error ${response.status}: ${response.statusText}`);
-            }
-
-            const result = await response.json();
+            const response = await axios.post('/promo/validate', { code: promoCode });
+            const result = response.data;
 
             if (result.valid) {
                 setPromoStatus('valid');
@@ -223,7 +188,12 @@ export default function CheckoutIndex() {
         } catch (e: any) {
             console.error('Promo validation error:', e);
             setPromoStatus('invalid');
-            setPromoMessage(e.message || 'Gagal memvalidasi kode. Coba lagi.');
+            const message = e.response?.status === 403
+                ? 'Akses ditolak (403). Pastikan Anda login sebagai Pembeli.'
+                : e.response?.status === 419
+                    ? 'Sesi kadaluarsa (419). Silakan refresh halaman.'
+                    : e.message || 'Gagal memvalidasi kode. Coba lagi.';
+            setPromoMessage(message);
         }
     };
 

@@ -1,5 +1,6 @@
 import { Head, router } from '@inertiajs/react';
 import { useState } from 'react';
+import axios from 'axios';
 import {
     Settings, Key, Zap, Video, CheckCircle, XCircle,
     Loader2, Eye, EyeOff, ArrowLeft, Shield, Cpu,
@@ -98,16 +99,8 @@ export default function ApiSettings({ settings }: Props) {
         setTestResults({ ...testResults, [tier]: null });
 
         try {
-            const response = await fetch('/admin/settings/api/test', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
-                },
-                body: JSON.stringify({ tier }),
-            });
-            const data = await response.json();
-            setTestResults({ ...testResults, [tier]: data });
+            const response = await axios.post('/admin/settings/api/test', { tier });
+            setTestResults({ ...testResults, [tier]: response.data });
         } catch {
             setTestResults({ ...testResults, [tier]: { success: false, message: 'Network error' } });
         } finally {

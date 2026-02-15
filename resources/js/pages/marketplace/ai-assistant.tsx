@@ -1,6 +1,7 @@
 import AppLayout from '@/layouts/app-layout';
 import { Head, Link, router } from '@inertiajs/react';
 import { Product } from '@/types';
+import axios from 'axios';
 import {
     Bot,
     Send,
@@ -68,23 +69,14 @@ export default function AIShoppingAssistant({ suggestedQueries = [
         setIsLoading(true);
 
         try {
-            const response = await fetch('/marketplace/ai-assistant/chat', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
-                },
-                body: JSON.stringify({ message: text }),
-            });
-
-            const data = await response.json();
+            const response = await axios.post('/marketplace/ai-assistant/chat', { message: text });
 
             // Add AI response
             const aiMessage: Message = {
                 id: Date.now() + 1,
                 type: 'ai',
-                content: data.response,
-                products: data.products,
+                content: response.data.response,
+                products: response.data.products,
                 timestamp: new Date(),
             };
             setMessages(prev => [...prev, aiMessage]);

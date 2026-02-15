@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { Head, router } from '@inertiajs/react';
 import AppLayout from '@/layouts/app-layout';
+import axios from 'axios';
 
 interface Product {
     id: number;
@@ -144,22 +145,14 @@ export default function LandingPageBuilder({ store, landingPage, products, templ
     const generateAIContent = async () => {
         setGeneratingAI(true);
         try {
-            const response = await fetch('/umkm/landing-page/generate-content', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
-                },
-                body: JSON.stringify({
-                    store_name: store.name,
-                    category: store.category,
-                    description: store.description,
-                }),
+            const response = await axios.post('/umkm/landing-page/generate-content', {
+                store_name: store.name,
+                category: store.category,
+                description: store.description,
             });
-            const data = await response.json();
-            if (data.success) {
-                setTagline(data.tagline);
-                setDescription(data.description);
+            if (response.data.success) {
+                setTagline(response.data.tagline);
+                setDescription(response.data.description);
             }
         } catch (error) {
             console.error('AI generation failed:', error);

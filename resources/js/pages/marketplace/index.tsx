@@ -4,6 +4,7 @@ import { Product } from '@/types';
 import { Search, Store, ChevronRight, ShoppingBag, Bot, Sparkles, Send, X, Loader2, ShoppingCart, MapPin, Flame, Clock, SlidersHorizontal, Check } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { useCart } from '@/hooks/useLocalStorage';
+import axios from 'axios';
 
 import StarDisplay from '@/components/StarDisplay';
 
@@ -173,22 +174,13 @@ export default function MarketplaceIndex({ products, stores, categories, filters
         setIsLoading(true);
 
         try {
-            const response = await fetch('/marketplace/ai-assistant/chat', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
-                },
-                body: JSON.stringify({ message: text }),
-            });
-
-            const data = await response.json();
+            const response = await axios.post('/marketplace/ai-assistant/chat', { message: text });
 
             const aiMessage: Message = {
                 id: Date.now() + 1,
                 type: 'ai',
-                content: data.response,
-                products: data.products,
+                content: response.data.response,
+                products: response.data.products,
             };
             setMessages(prev => [...prev, aiMessage]);
         } catch (error) {

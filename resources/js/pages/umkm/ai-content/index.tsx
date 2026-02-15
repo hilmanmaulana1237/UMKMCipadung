@@ -164,13 +164,10 @@ function LandingPagePanel({ store, landingPage, products, templates }: {
         setGeneratingAI(true);
         setErrorMsg(null);
         try {
-            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
             const response = await axios.post('/umkm/landing-page/generate-content', {
                 store_name: store?.name || '',
                 category: store?.category || 'lainnya',
                 description: store?.description || '',
-            }, {
-                headers: { 'X-CSRF-TOKEN': csrfToken || '' }
             });
             if (response.data.success) {
                 setTagline(response.data.tagline);
@@ -229,11 +226,9 @@ function LandingPagePanel({ store, landingPage, products, templates }: {
         }
 
         try {
-            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
             await axios.post('/umkm/landing-page', formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
-                    'X-CSRF-TOKEN': csrfToken || ''
                 }
             });
 
@@ -260,10 +255,7 @@ function LandingPagePanel({ store, landingPage, products, templates }: {
         if (!landingPage) return;
         setDeleting(true);
         try {
-            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-            await axios.delete(`/umkm/landing-page/${landingPage.id}`, {
-                headers: { 'X-CSRF-TOKEN': csrfToken || '' }
-            });
+            await axios.delete(`/umkm/landing-page/${landingPage.id}`);
             setShowDeleteModal(false);
             window.location.reload();
         } catch (error: any) {

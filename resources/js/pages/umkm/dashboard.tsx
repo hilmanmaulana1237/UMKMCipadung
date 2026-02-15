@@ -3,6 +3,7 @@ import { Head, Link, router } from '@inertiajs/react';
 import { UmkmStore, Order } from '@/types';
 import { Settings, ChevronRight, Brain, Loader2, Flame, MessageSquare, ThumbsUp, ThumbsDown, ShoppingBag, Clock, CheckCircle, Star, AlertTriangle, MapPin } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import axios from 'axios';
 
 interface Stats {
     totalProducts: number;
@@ -63,15 +64,9 @@ export default function UmkmDashboard({ store, stats, reviewStats, recentOrders 
 
     const fetchInsights = async () => {
         try {
-            const response = await fetch('/ai/insights', {
-                headers: {
-                    'Accept': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
-                },
-            });
-            const result = await response.json();
-            if (result.success) {
-                setInsights(result.insights);
+            const response = await axios.get('/ai/insights');
+            if (response.data.success) {
+                setInsights(response.data.insights);
             }
         } catch (error) {
             console.error('Failed to fetch insights:', error);
@@ -82,15 +77,9 @@ export default function UmkmDashboard({ store, stats, reviewStats, recentOrders 
 
     const fetchTrends = async () => {
         try {
-            const response = await fetch('/ai/trending', {
-                headers: {
-                    'Accept': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
-                },
-            });
-            const result = await response.json();
-            if (result.success) {
-                setTrends(result.trends.slice(0, 4));
+            const response = await axios.get('/ai/trending');
+            if (response.data.success) {
+                setTrends(response.data.trends.slice(0, 4));
             }
         } catch (error) {
             console.error('Failed to fetch trends:', error);

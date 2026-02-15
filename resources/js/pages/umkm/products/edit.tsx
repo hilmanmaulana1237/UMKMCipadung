@@ -4,6 +4,7 @@ import { ArrowLeft, Save, Sparkles, Loader2, Lightbulb, Camera, Wand2, Trash2 } 
 import { FormEvent, useState, useEffect, useMemo } from 'react';
 import { toast } from 'sonner';
 import { Product } from '@/types';
+import axios from 'axios';
 
 interface Category {
     id: string;
@@ -71,25 +72,17 @@ export default function EditProduct({ product, categories }: Props) {
 
         setIsLoadingPrice(true);
         try {
-            const response = await fetch('/ai/suggest-price', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
-                },
-                body: JSON.stringify({
-                    name: data.name,
-                    category: data.category,
-                }),
+            const response = await axios.post('/ai/suggest-price', {
+                name: data.name,
+                category: data.category,
             });
 
-            const result = await response.json();
-            if (result.success) {
+            if (response.data.success) {
                 setPriceSuggestion({
-                    min: result.min_price,
-                    max: result.max_price,
-                    suggested: result.suggested,
-                    message: result.message,
+                    min: response.data.min_price,
+                    max: response.data.max_price,
+                    suggested: response.data.suggested,
+                    message: response.data.message,
                 });
             }
         } catch (error) {
@@ -107,22 +100,14 @@ export default function EditProduct({ product, categories }: Props) {
 
         setIsGeneratingDescription(true);
         try {
-            const response = await fetch('/ai/generate-description', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
-                },
-                body: JSON.stringify({
-                    name: data.name,
-                    category: data.category,
-                    price: data.price ? parseFloat(data.price) : null,
-                }),
+            const response = await axios.post('/ai/generate-description', {
+                name: data.name,
+                category: data.category,
+                price: data.price ? parseFloat(data.price) : null,
             });
 
-            const result = await response.json();
-            if (result.success && result.description) {
-                setData('description', result.description);
+            if (response.data.success && response.data.description) {
+                setData('description', response.data.description);
                 toast.success('Deskripsi berhasil dibuat oleh AI! ✨');
             } else {
                 toast.error('Gagal membuat deskripsi');
