@@ -41,16 +41,17 @@ export default function StorePage({ store, products, productCategories = [] }: P
             return [{ id: 'all', name: 'Semua Produk', products: products.data }];
         }
 
-        // Products grouped by their category
+        // Products grouped by their category (use Number() to avoid string/number mismatch)
         for (const cat of productCategories) {
-            const catProducts = products.data.filter(p => p.product_category_id === cat.id);
+            const catProducts = products.data.filter(p => Number(p.product_category_id) === Number(cat.id));
             if (catProducts.length > 0) {
                 groups.push({ id: String(cat.id), name: cat.name, products: catProducts });
             }
         }
 
-        // Uncategorized products
-        const uncategorized = products.data.filter(p => !p.product_category_id);
+        // Uncategorized products (null or undefined or 0)
+        const categorizedIds = new Set(productCategories.map(c => Number(c.id)));
+        const uncategorized = products.data.filter(p => !p.product_category_id || !categorizedIds.has(Number(p.product_category_id)));
         if (uncategorized.length > 0) {
             groups.push({ id: 'uncategorized', name: 'Lainnya', products: uncategorized });
         }
@@ -250,8 +251,8 @@ export default function StorePage({ store, products, productCategories = [] }: P
                             data-cat="all"
                             onClick={() => scrollToCategory('all')}
                             className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${activeCategory === 'all'
-                                    ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-md shadow-green-500/25'
-                                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                                ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-md shadow-green-500/25'
+                                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                                 }`}
                         >
                             🍽️ Semua
@@ -262,8 +263,8 @@ export default function StorePage({ store, products, productCategories = [] }: P
                                 data-cat={group.id}
                                 onClick={() => scrollToCategory(group.id)}
                                 className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${activeCategory === group.id
-                                        ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-md shadow-green-500/25'
-                                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                                    ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-md shadow-green-500/25'
+                                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                                     }`}
                             >
                                 {group.name}

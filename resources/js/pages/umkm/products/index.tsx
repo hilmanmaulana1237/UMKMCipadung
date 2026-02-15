@@ -322,8 +322,8 @@ export default function UmkmProductsIndex({
                         <button
                             onClick={() => handleCategoryFilter('all')}
                             className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all ${activeCategory === 'all'
-                                    ? 'bg-primary text-white shadow-md shadow-primary/30'
-                                    : 'bg-card text-muted-foreground border border-border hover:border-primary/50'
+                                ? 'bg-primary text-white shadow-md shadow-primary/30'
+                                : 'bg-card text-muted-foreground border border-border hover:border-primary/50'
                                 }`}
                         >
                             Semua
@@ -333,8 +333,8 @@ export default function UmkmProductsIndex({
                                 key={cat.id}
                                 onClick={() => handleCategoryFilter(String(cat.id))}
                                 className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all ${activeCategory === String(cat.id)
-                                        ? 'bg-primary text-white shadow-md shadow-primary/30'
-                                        : 'bg-card text-muted-foreground border border-border hover:border-primary/50'
+                                    ? 'bg-primary text-white shadow-md shadow-primary/30'
+                                    : 'bg-card text-muted-foreground border border-border hover:border-primary/50'
                                     }`}
                             >
                                 {cat.name}
@@ -344,8 +344,8 @@ export default function UmkmProductsIndex({
                         <button
                             onClick={() => handleCategoryFilter('uncategorized')}
                             className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all ${activeCategory === 'uncategorized'
-                                    ? 'bg-gray-700 text-white shadow-md'
-                                    : 'bg-card text-muted-foreground border border-border hover:border-gray-400'
+                                ? 'bg-gray-700 text-white shadow-md'
+                                : 'bg-card text-muted-foreground border border-border hover:border-gray-400'
                                 }`}
                         >
                             Tanpa Kategori
@@ -429,7 +429,10 @@ export default function UmkmProductsIndex({
                                                 Stok: {product.stock}
                                             </span>
                                             {product.product_category ? (
-                                                <span className="text-xs px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 flex items-center gap-1">
+                                                <span
+                                                    className="text-xs px-2 py-0.5 rounded-full flex items-center gap-1"
+                                                    style={{ backgroundColor: '#dbeafe', color: '#1d4ed8' }}
+                                                >
                                                     <Tag className="w-3 h-3" />
                                                     {product.product_category.name}
                                                 </span>
