@@ -94,7 +94,17 @@ export interface UmkmStore {
 }
 
 // Product
-export type ProductCategory = 'kuliner' | 'kriya' | 'jasa';
+export type ProductTypeCategory = 'kuliner' | 'kriya' | 'jasa';
+
+export interface ProductMenuCategory {
+    id: number;
+    umkm_store_id: number;
+    name: string;
+    sort_order: number;
+    products_count?: number;
+    created_at: string;
+    updated_at: string;
+}
 
 export interface Product {
     id: number;
@@ -104,7 +114,9 @@ export interface Product {
     price: number;
     stock: number;
     is_physical: boolean;
-    category: ProductCategory;
+    category: ProductTypeCategory;
+    product_category_id?: number;
+    product_category?: ProductMenuCategory;
     image_path?: string;
     description?: string;
     is_active: boolean;

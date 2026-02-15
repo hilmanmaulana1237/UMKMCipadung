@@ -20,6 +20,7 @@ class Product extends Model
         'stock',
         'is_physical',
         'category',
+        'product_category_id',
         'image_path',
         'description',
         'is_active',
@@ -51,6 +52,14 @@ class Product extends Model
     public function store(): BelongsTo
     {
         return $this->belongsTo(UmkmStore::class, 'umkm_store_id');
+    }
+
+    /**
+     * Get the menu category this product belongs to.
+     */
+    public function productCategory(): BelongsTo
+    {
+        return $this->belongsTo(ProductCategory::class);
     }
 
     /**

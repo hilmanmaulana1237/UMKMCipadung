@@ -340,6 +340,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::middleware([RoleCheck::class . ':umkm'])->group(function () {
         Route::resource('products', ProductController::class);
         Route::post('products/{product}/toggle', [ProductController::class, 'toggleActive'])->name('products.toggle');
+
+        // Product Menu Categories
+        Route::post('products/categories', [ProductController::class, 'storeCategory'])->name('products.categories.store');
+        Route::put('products/categories/{category}', [ProductController::class, 'updateCategory'])->name('products.categories.update');
+        Route::delete('products/categories/{category}', [ProductController::class, 'destroyCategory'])->name('products.categories.destroy');
+        Route::post('products/categories/reorder', [ProductController::class, 'reorderCategories'])->name('products.categories.reorder');
     });
 
     /*

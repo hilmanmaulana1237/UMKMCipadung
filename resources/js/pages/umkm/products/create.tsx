@@ -10,8 +10,15 @@ interface Category {
     name: string;
 }
 
+interface MenuCategory {
+    id: number;
+    name: string;
+    sort_order: number;
+}
+
 interface Props {
     categories: Category[];
+    productCategories: MenuCategory[];
 }
 
 interface PriceSuggestion {
@@ -21,12 +28,13 @@ interface PriceSuggestion {
     message: string;
 }
 
-export default function CreateProduct({ categories }: Props) {
+export default function CreateProduct({ categories, productCategories = [] }: Props) {
     const { data, setData, post, processing, errors, transform } = useForm({
         name: '',
         price: '',
         stock: '',
         category: 'kuliner',
+        product_category_id: '' as string | number,
         description: '',
         image: null as File | null,
         is_physical: true,
@@ -249,9 +257,9 @@ export default function CreateProduct({ categories }: Props) {
                     {errors.name && <p className="mt-1 text-sm text-destructive">{errors.name}</p>}
                 </label>
 
-                {/* Category */}
+                {/* Store Type Category */}
                 <label className="block">
-                    <span className="text-sm font-medium text-foreground">Kategori *</span>
+                    <span className="text-sm font-medium text-foreground">Tipe Usaha *</span>
                     <select
                         value={data.category}
                         onChange={(e) => setData('category', e.target.value as any)}
@@ -262,6 +270,24 @@ export default function CreateProduct({ categories }: Props) {
                         ))}
                     </select>
                 </label>
+
+                {/* Product Menu Category */}
+                {productCategories.length > 0 && (
+                    <label className="block">
+                        <span className="text-sm font-medium text-foreground">Kategori Menu</span>
+                        <p className="text-xs text-muted-foreground mt-0.5 mb-1">Kelompokkan produk di menu toko Anda</p>
+                        <select
+                            value={data.product_category_id}
+                            onChange={(e) => setData('product_category_id', e.target.value ? Number(e.target.value) : '')}
+                            className="mt-1 w-full px-4 py-3 bg-card border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500"
+                        >
+                            <option value="">Tanpa Kategori</option>
+                            {productCategories.map((cat) => (
+                                <option key={cat.id} value={cat.id}>{cat.name}</option>
+                            ))}
+                        </select>
+                    </label>
+                )}
 
                 {/* Price & Stock */}
                 <div className="grid grid-cols-2 gap-3">

@@ -1,8 +1,14 @@
 import AppLayout from '@/layouts/app-layout';
 import { Head, Link, router, usePage } from '@inertiajs/react';
-import { Product } from '@/types';
-import { Plus, Package, ToggleLeft, ToggleRight, Pencil, ShoppingCart, AlertTriangle, Settings, Sparkles, Box, Search } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { Product, ProductMenuCategory } from '@/types';
+import {
+    Plus, Package, ToggleLeft, ToggleRight, Pencil, ShoppingCart,
+    AlertTriangle, Settings, Sparkles, Box, Search, Tag, X, Check,
+    Trash2, GripVertical, FolderPlus, Layers
+} from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { toast } from 'sonner';
+import axios from 'axios';
 
 interface Stats {
     totalProducts: number;
@@ -23,17 +29,39 @@ interface PageProps {
         data: Product[];
         links: any[];
     };
+    productCategories: ProductMenuCategory[];
     stats?: Stats;
     filters?: {
         search?: string;
+        category_id?: string;
     };
     [key: string]: unknown;
 }
 
-export default function UmkmProductsIndex({ products, stats, filters }: { products: PageProps['products']; stats?: Stats; filters?: { search?: string } }) {
+export default function UmkmProductsIndex({
+    products,
+    productCategories = [],
+    stats,
+    filters,
+}: {
+    products: PageProps['products'];
+    productCategories?: ProductMenuCategory[];
+    stats?: Stats;
+    filters?: { search?: string; category_id?: string };
+}) {
     const { auth } = usePage<PageProps>().props;
     const storeName = auth?.user?.store?.name || 'Toko Saya';
     const [search, setSearch] = useState(filters?.search || '');
+    const [activeCategory, setActiveCategory] = useState<string>(filters?.category_id || 'all');
+
+    // Category management states
+    const [showCategoryManager, setShowCategoryManager] = useState(false);
+    const [newCategoryName, setNewCategoryName] = useState('');
+    const [editingCategoryId, setEditingCategoryId] = useState<number | null>(null);
+    const [editingCategoryName, setEditingCategoryName] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const categoryScrollRef = useRef<HTMLDivElement>(null);
 
     const toggleProduct = (productId: number) => {
         router.post(`/products/${productId}/toggle`, {}, { preserveScroll: true });
@@ -43,7 +71,7 @@ export default function UmkmProductsIndex({ products, stats, filters }: { produc
     useEffect(() => {
         const timer = setTimeout(() => {
             if (search !== (filters?.search || '')) {
-                router.get('/products', { search }, {
+                router.get('/products', { search, category_id: activeCategory }, {
                     preserveState: true,
                     preserveScroll: true,
                     replace: true,
@@ -53,6 +81,54 @@ export default function UmkmProductsIndex({ products, stats, filters }: { produc
         return () => clearTimeout(timer);
     }, [search]);
 
+    // Filter by category
+    const handleCategoryFilter = (categoryId: string) => {
+        setActiveCategory(categoryId);
+        router.get('/products', { search, category_id: categoryId }, {
+            preserveState: true,
+            preserveScroll: true,
+            replace: true,
+        });
+    };
+
+    // Category CRUD
+    const handleAddCategory = async () => {
+        if (!newCategoryName.trim() || isSubmitting) return;
+        setIsSubmitting(true);
+        router.post('/products/categories', { name: newCategoryName.trim() }, {
+            preserveScroll: true,
+            onSuccess: () => {
+                setNewCategoryName('');
+                toast.success('Kategori berhasil ditambahkan!');
+            },
+            onError: () => toast.error('Gagal menambahkan kategori'),
+            onFinish: () => setIsSubmitting(false),
+        });
+    };
+
+    const handleUpdateCategory = (id: number) => {
+        if (!editingCategoryName.trim() || isSubmitting) return;
+        setIsSubmitting(true);
+        router.put(`/products/categories/${id}`, { name: editingCategoryName.trim() }, {
+            preserveScroll: true,
+            onSuccess: () => {
+                setEditingCategoryId(null);
+                toast.success('Kategori berhasil diperbarui!');
+            },
+            onError: () => toast.error('Gagal memperbarui kategori'),
+            onFinish: () => setIsSubmitting(false),
+        });
+    };
+
+    const handleDeleteCategory = (id: number, name: string) => {
+        if (!confirm(`Hapus kategori "${name}"? Produk di kategori ini akan menjadi tanpa kategori.`)) return;
+        router.delete(`/products/categories/${id}`, {
+            preserveScroll: true,
+            onSuccess: () => toast.success('Kategori berhasil dihapus!'),
+            onError: () => toast.error('Gagal menghapus kategori'),
+        });
+    };
+
     // Calculate stats from products if not provided
     const productStats = stats || {
         totalProducts: products.data.length,
@@ -60,6 +136,8 @@ export default function UmkmProductsIndex({ products, stats, filters }: { produc
         lowStockCount: products.data.filter(p => p.stock < 10).length,
         pendingOrders: 0,
     };
+
+    const uncategorizedCount = products.data.filter(p => !p.product_category_id).length;
 
     return (
         <AppLayout activeTab="products">
@@ -72,9 +150,18 @@ export default function UmkmProductsIndex({ products, stats, filters }: { produc
                         <p className="text-white/70 text-xs">Kelola Produk</p>
                         <h1 className="text-xl font-bold text-white">{storeName}</h1>
                     </div>
-                    <Link href="/umkm/setup-toko" className="p-2.5 bg-white/15 rounded-xl backdrop-blur-sm">
-                        <Settings className="w-5 h-5 text-white" />
-                    </Link>
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={() => setShowCategoryManager(!showCategoryManager)}
+                            className={`p-2.5 rounded-xl backdrop-blur-sm transition-all ${showCategoryManager ? 'bg-white/30 ring-2 ring-white/50' : 'bg-white/15 hover:bg-white/25'}`}
+                            title="Kelola Kategori"
+                        >
+                            <Layers className="w-5 h-5 text-white" />
+                        </button>
+                        <Link href="/umkm/setup-toko" className="p-2.5 bg-white/15 rounded-xl backdrop-blur-sm">
+                            <Settings className="w-5 h-5 text-white" />
+                        </Link>
+                    </div>
                 </div>
 
                 {/* Search Bar */}
@@ -110,6 +197,162 @@ export default function UmkmProductsIndex({ products, stats, filters }: { produc
                     </div>
                 </div>
             </div>
+
+            {/* Category Manager Panel */}
+            {showCategoryManager && (
+                <div className="px-4 pt-4">
+                    <div className="bg-card rounded-2xl border border-border overflow-hidden shadow-sm">
+                        <div className="p-4 border-b border-border bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                    <Tag className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                                    <h3 className="font-semibold text-foreground">Kelola Kategori Menu</h3>
+                                </div>
+                                <button onClick={() => setShowCategoryManager(false)} className="p-1 hover:bg-black/10 rounded-lg">
+                                    <X className="w-4 h-4 text-muted-foreground" />
+                                </button>
+                            </div>
+                            <p className="text-xs text-muted-foreground mt-1">
+                                Buat kategori untuk mengelompokkan produk di toko Anda (seperti GrabFood)
+                            </p>
+                        </div>
+
+                        {/* Add Category */}
+                        <div className="p-3 border-b border-border">
+                            <div className="flex gap-2">
+                                <input
+                                    type="text"
+                                    value={newCategoryName}
+                                    onChange={(e) => setNewCategoryName(e.target.value)}
+                                    placeholder="Nama kategori baru (misal: Minuman)"
+                                    className="flex-1 px-3 py-2 text-sm border border-border rounded-lg bg-background focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                                    onKeyDown={(e) => e.key === 'Enter' && handleAddCategory()}
+                                />
+                                <button
+                                    onClick={handleAddCategory}
+                                    disabled={!newCategoryName.trim() || isSubmitting}
+                                    className="px-3 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg text-sm font-medium disabled:opacity-50 hover:opacity-90 transition-opacity flex items-center gap-1"
+                                >
+                                    <FolderPlus className="w-4 h-4" />
+                                    Tambah
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Category List */}
+                        <div className="divide-y divide-border max-h-64 overflow-y-auto">
+                            {productCategories.length === 0 ? (
+                                <div className="p-6 text-center">
+                                    <Tag className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+                                    <p className="text-sm text-muted-foreground">Belum ada kategori</p>
+                                    <p className="text-xs text-muted-foreground mt-1">Tambahkan kategori pertama di atas!</p>
+                                </div>
+                            ) : (
+                                productCategories.map((cat) => (
+                                    <div key={cat.id} className="flex items-center gap-2 p-3 hover:bg-muted/50 transition-colors">
+                                        <GripVertical className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+
+                                        {editingCategoryId === cat.id ? (
+                                            <div className="flex-1 flex gap-2">
+                                                <input
+                                                    type="text"
+                                                    value={editingCategoryName}
+                                                    onChange={(e) => setEditingCategoryName(e.target.value)}
+                                                    className="flex-1 px-2 py-1 text-sm border border-border rounded-lg bg-background focus:ring-2 focus:ring-purple-500"
+                                                    onKeyDown={(e) => e.key === 'Enter' && handleUpdateCategory(cat.id)}
+                                                    autoFocus
+                                                />
+                                                <button
+                                                    onClick={() => handleUpdateCategory(cat.id)}
+                                                    disabled={isSubmitting}
+                                                    className="p-1.5 text-green-600 hover:bg-green-50 rounded-lg"
+                                                >
+                                                    <Check className="w-4 h-4" />
+                                                </button>
+                                                <button
+                                                    onClick={() => setEditingCategoryId(null)}
+                                                    className="p-1.5 text-muted-foreground hover:bg-muted rounded-lg"
+                                                >
+                                                    <X className="w-4 h-4" />
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <>
+                                                <div className="flex-1 min-w-0">
+                                                    <span className="text-sm font-medium text-foreground">{cat.name}</span>
+                                                    <span className="ml-2 text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full">
+                                                        {cat.products_count ?? 0} produk
+                                                    </span>
+                                                </div>
+                                                <button
+                                                    onClick={() => {
+                                                        setEditingCategoryId(cat.id);
+                                                        setEditingCategoryName(cat.name);
+                                                    }}
+                                                    className="p-1.5 text-muted-foreground hover:text-blue-600 hover:bg-blue-50 rounded-lg"
+                                                    title="Edit"
+                                                >
+                                                    <Pencil className="w-3.5 h-3.5" />
+                                                </button>
+                                                <button
+                                                    onClick={() => handleDeleteCategory(cat.id, cat.name)}
+                                                    className="p-1.5 text-muted-foreground hover:text-red-600 hover:bg-red-50 rounded-lg"
+                                                    title="Hapus"
+                                                >
+                                                    <Trash2 className="w-3.5 h-3.5" />
+                                                </button>
+                                            </>
+                                        )}
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Category Filter Tabs (Horizontal Scroll) */}
+            {productCategories.length > 0 && (
+                <div className="px-4 pt-4">
+                    <div
+                        ref={categoryScrollRef}
+                        className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide"
+                        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                    >
+                        <button
+                            onClick={() => handleCategoryFilter('all')}
+                            className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all ${activeCategory === 'all'
+                                    ? 'bg-primary text-white shadow-md shadow-primary/30'
+                                    : 'bg-card text-muted-foreground border border-border hover:border-primary/50'
+                                }`}
+                        >
+                            Semua
+                        </button>
+                        {productCategories.map((cat) => (
+                            <button
+                                key={cat.id}
+                                onClick={() => handleCategoryFilter(String(cat.id))}
+                                className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all ${activeCategory === String(cat.id)
+                                        ? 'bg-primary text-white shadow-md shadow-primary/30'
+                                        : 'bg-card text-muted-foreground border border-border hover:border-primary/50'
+                                    }`}
+                            >
+                                {cat.name}
+                                <span className="ml-1.5 text-xs opacity-70">({cat.products_count ?? 0})</span>
+                            </button>
+                        ))}
+                        <button
+                            onClick={() => handleCategoryFilter('uncategorized')}
+                            className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all ${activeCategory === 'uncategorized'
+                                    ? 'bg-gray-700 text-white shadow-md'
+                                    : 'bg-card text-muted-foreground border border-border hover:border-gray-400'
+                                }`}
+                        >
+                            Tanpa Kategori
+                        </button>
+                    </div>
+                </div>
+            )}
 
             {/* Add Product Button */}
             <div className="px-4 py-4">
@@ -178,13 +421,19 @@ export default function UmkmProductsIndex({ products, stats, filters }: { produc
                                     </div>
 
                                     <div className="flex items-center justify-between mt-2">
-                                        <div className="flex items-center gap-2">
+                                        <div className="flex items-center gap-2 flex-wrap">
                                             <span className={`text-xs px-2 py-0.5 rounded-full ${product.stock < 10 ? 'bg-red-100 text-red-600' :
                                                 product.stock < 20 ? 'bg-amber-100 text-amber-600' :
                                                     'bg-green-100 text-green-600'
                                                 }`}>
                                                 Stok: {product.stock}
                                             </span>
+                                            {product.product_category ? (
+                                                <span className="text-xs px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 flex items-center gap-1">
+                                                    <Tag className="w-3 h-3" />
+                                                    {product.product_category.name}
+                                                </span>
+                                            ) : null}
                                             {!product.is_active && (
                                                 <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">
                                                     Nonaktif
@@ -207,7 +456,7 @@ export default function UmkmProductsIndex({ products, stats, filters }: { produc
                 {/* Pagination */}
                 {products.links && products.links.length > 3 && (
                     <div className="mt-6 flex flex-wrap justify-center gap-1">
-                        {products.links.map((link, i) => (
+                        {products.links.map((link: any, i: number) => (
                             link.url ? (
                                 <Link
                                     key={i}

@@ -188,9 +188,11 @@ class MarketplaceController extends Controller
     public function store(UmkmStore $store)
     {
         $products = $store->products()
+            ->with('productCategory')
             ->active()
             ->inStock()
-            ->inRandomOrder()
+            ->orderByRaw('ISNULL(product_category_id), product_category_id ASC')
+            ->orderBy('name')
             ->paginate(50);
 
         // Get review statistics (sentiment-based)
@@ -199,6 +201,8 @@ class MarketplaceController extends Controller
             'negative_count' => $store->reviews()->where('sentiment', 'negative')->count(),
         ];
 
+        $productCategories = $store->productCategories()->withCount('products')->get();
+
         return Inertia::render('marketplace/store', [
             'store' => array_merge($store->toArray(), [
                 'review_stats' => $reviewStats,
@@ -206,6 +210,7 @@ class MarketplaceController extends Controller
                 'total_ratings' => $store->total_ratings,
             ]),
             'products' => $products,
+            'productCategories' => $productCategories,
         ]);
     }
 

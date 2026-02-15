@@ -1,9 +1,10 @@
 import AppLayout from '@/layouts/app-layout';
 import { Head, Link } from '@inertiajs/react';
-import { Product, UmkmStore } from '@/types';
-import { ArrowLeft, Store as StoreIcon, MapPin, ShoppingCart, Package, Star } from 'lucide-react';
+import { Product, UmkmStore, ProductMenuCategory } from '@/types';
+import { ArrowLeft, Store as StoreIcon, MapPin, ShoppingCart, Package, Star, Tag } from 'lucide-react';
 import { useCart } from '@/hooks/useLocalStorage';
 import StarDisplay from '@/components/StarDisplay';
+import { useState, useRef, useMemo, useCallback, useEffect } from 'react';
 
 import SeoHead from '@/components/SeoHead';
 
@@ -13,10 +14,15 @@ interface Props {
         data: Product[];
         links: any[];
     };
+    productCategories: ProductMenuCategory[];
 }
 
-export default function StorePage({ store, products }: Props) {
+export default function StorePage({ store, products, productCategories = [] }: Props) {
     const { getItemCount } = useCart();
+    const [activeCategory, setActiveCategory] = useState<string>('all');
+    const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
+    const tabsRef = useRef<HTMLDivElement>(null);
+    const [isSticky, setIsSticky] = useState(false);
 
     const formatPrice = (price: number) => {
         return new Intl.NumberFormat('id-ID', {
@@ -25,6 +31,57 @@ export default function StorePage({ store, products }: Props) {
             minimumFractionDigits: 0,
         }).format(price);
     };
+
+    // Group products by category
+    const groupedProducts = useMemo(() => {
+        const groups: { id: string; name: string; products: Product[] }[] = [];
+
+        if (productCategories.length === 0) {
+            // No categories defined — show all products flat
+            return [{ id: 'all', name: 'Semua Produk', products: products.data }];
+        }
+
+        // Products grouped by their category
+        for (const cat of productCategories) {
+            const catProducts = products.data.filter(p => p.product_category_id === cat.id);
+            if (catProducts.length > 0) {
+                groups.push({ id: String(cat.id), name: cat.name, products: catProducts });
+            }
+        }
+
+        // Uncategorized products
+        const uncategorized = products.data.filter(p => !p.product_category_id);
+        if (uncategorized.length > 0) {
+            groups.push({ id: 'uncategorized', name: 'Lainnya', products: uncategorized });
+        }
+
+        return groups;
+    }, [products.data, productCategories]);
+
+    // Handle category tab click — smooth scroll to section
+    const scrollToCategory = useCallback((categoryId: string) => {
+        setActiveCategory(categoryId);
+        if (categoryId === 'all') {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            return;
+        }
+        const section = sectionRefs.current[categoryId];
+        if (section) {
+            const offset = 120; // tabs height + some padding
+            const top = section.getBoundingClientRect().top + window.scrollY - offset;
+            window.scrollTo({ top, behavior: 'smooth' });
+        }
+    }, []);
+
+    // Scroll active tab into view
+    useEffect(() => {
+        const activeBtn = tabsRef.current?.querySelector(`[data-cat="${activeCategory}"]`) as HTMLElement;
+        if (activeBtn && tabsRef.current) {
+            const container = tabsRef.current;
+            const scrollLeft = activeBtn.offsetLeft - container.offsetWidth / 2 + activeBtn.offsetWidth / 2;
+            container.scrollTo({ left: scrollLeft, behavior: 'smooth' });
+        }
+    }, [activeCategory]);
 
     const schema = {
         "@context": "https://schema.org",
@@ -44,6 +101,8 @@ export default function StorePage({ store, products }: Props) {
         "url": `https://umkmcipadung.com/marketplace/store/${store.id}`
     };
 
+    const hasCategories = productCategories.length > 0;
+
     return (
         <AppLayout activeTab="marketplace" showBottomNav={false}>
             <SeoHead
@@ -56,7 +115,7 @@ export default function StorePage({ store, products }: Props) {
             />
 
             {/* Header */}
-            <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm px-4 py-3 flex items-center justify-between border-b border-border">
+            <div className="sticky top-0 z-20 bg-background/95 backdrop-blur-sm px-4 py-3 flex items-center justify-between border-b border-border">
                 <div className="flex items-center gap-3">
                     <Link href="/marketplace" className="p-2 hover:bg-muted rounded-full">
                         <ArrowLeft className="w-5 h-5" />
@@ -74,9 +133,7 @@ export default function StorePage({ store, products }: Props) {
             </div>
 
             {/* Store Info Banner */}
-            {/* Store Info Banner */}
             <div className="relative">
-                {/* Banner Image or Gradient */}
                 {store.banner_path ? (
                     <div className="h-48 md:h-64 w-full relative">
                         <img
@@ -90,7 +147,6 @@ export default function StorePage({ store, products }: Props) {
                     <div className="h-48 md:h-64 w-full bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700" />
                 )}
 
-                {/* Content Overlay */}
                 <div className="absolute bottom-0 left-0 right-0 p-4 md:p-6 pb-6">
                     <div className="flex items-end gap-4">
                         <div className="w-20 h-20 md:w-24 md:h-24 bg-white p-1 rounded-2xl shadow-lg -mb-2 overflow-hidden flex-shrink-0">
@@ -108,7 +164,6 @@ export default function StorePage({ store, products }: Props) {
                         </div>
                         <div className="flex-1">
                             <h2 className="text-xl font-bold text-white">{store.name}</h2>
-                            {/* Star Rating Display */}
                             {store.average_rating && store.total_ratings && store.total_ratings > 0 ? (
                                 <div className="flex items-center gap-1.5 mt-1">
                                     <div className="flex items-center gap-0.5">
@@ -128,15 +183,12 @@ export default function StorePage({ store, products }: Props) {
                                     <span className="text-white/70 text-sm italic">Belum ada rating</span>
                                 </div>
                             )}
-
-                            {/* Address always shows if available */}
                             {store.address_pickup && (
                                 <div className="flex items-center gap-1 mt-1 text-white/70 text-sm">
                                     <MapPin className="w-3.5 h-3.5" />
                                     <span className="line-clamp-1">{store.address_pickup}</span>
                                 </div>
                             )}
-
                         </div>
                     </div>
                     {store.description && (
@@ -145,7 +197,7 @@ export default function StorePage({ store, products }: Props) {
                 </div>
             </div>
 
-            {/* Sentiment Card - Show if store has reviews */}
+            {/* Sentiment Card */}
             {store.review_stats && (store.review_stats.positive_count > 0 || store.review_stats.negative_count > 0) && (
                 <div className="px-4 pt-4">
                     <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm">
@@ -186,58 +238,132 @@ export default function StorePage({ store, products }: Props) {
                 </div>
             )}
 
-            {/* Products Grid */}
-            <div className="px-4 py-4">
-                <h3 className="font-semibold text-slate-800 mb-3 flex items-center gap-2">
-                    <Package className="w-5 h-5 text-primary" />
-                    Produk ({products.data.length})
-                </h3>
+            {/* ===== GrabFood-Style Category Tabs ===== */}
+            {hasCategories && (
+                <div className="sticky top-[57px] z-10 bg-background/95 backdrop-blur-sm border-b border-border">
+                    <div
+                        ref={tabsRef}
+                        className="flex gap-1 px-4 py-2.5 overflow-x-auto"
+                        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                    >
+                        <button
+                            data-cat="all"
+                            onClick={() => scrollToCategory('all')}
+                            className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${activeCategory === 'all'
+                                    ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-md shadow-green-500/25'
+                                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                                }`}
+                        >
+                            🍽️ Semua
+                        </button>
+                        {groupedProducts.map((group) => (
+                            <button
+                                key={group.id}
+                                data-cat={group.id}
+                                onClick={() => scrollToCategory(group.id)}
+                                className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${activeCategory === group.id
+                                        ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-md shadow-green-500/25'
+                                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                                    }`}
+                            >
+                                {group.name}
+                                <span className="ml-1 text-xs opacity-75">({group.products.length})</span>
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            )}
 
+            {/* ===== Products Grouped by Category ===== */}
+            <div className="px-4 py-4 space-y-6">
                 {products.data.length === 0 ? (
                     <div className="bg-white rounded-2xl p-8 text-center border border-slate-100">
                         <Package className="w-12 h-12 text-slate-300 mx-auto mb-3" />
                         <p className="text-slate-500">Belum ada produk</p>
                     </div>
+                ) : hasCategories ? (
+                    // Grouped view
+                    groupedProducts.map((group) => (
+                        <div
+                            key={group.id}
+                            ref={(el) => { sectionRefs.current[group.id] = el; }}
+                        >
+                            {/* Section header */}
+                            <div className="flex items-center gap-2 mb-3 pb-2 border-b border-slate-200">
+                                <Tag className="w-4 h-4 text-green-600" />
+                                <h3 className="font-bold text-slate-800">{group.name}</h3>
+                                <span className="text-xs text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">
+                                    {group.products.length} item
+                                </span>
+                            </div>
+
+                            {/* Products in this group */}
+                            <div className="grid grid-cols-2 gap-3">
+                                {group.products.map((product) => (
+                                    <ProductCard key={product.id} product={product} formatPrice={formatPrice} />
+                                ))}
+                            </div>
+                        </div>
+                    ))
                 ) : (
-                    <div className="grid grid-cols-2 gap-3">
-                        {products.data.map((product) => (
-                            <Link
-                                key={product.id}
-                                href={`/marketplace/product/${product.id}`}
-                                className="bg-white rounded-2xl overflow-hidden border border-slate-100 hover:shadow-lg transition-all"
-                            >
-                                <div className="aspect-square bg-slate-100">
-                                    {product.image_path ? (
-                                        <img
-                                            src={`/storage/${product.image_path}`}
-                                            alt={product.name}
-                                            className="w-full h-full object-cover"
-                                        />
-                                    ) : (
-                                        <div className="w-full h-full flex items-center justify-center text-4xl bg-gradient-to-br from-slate-100 to-slate-200">
-                                            📦
-                                        </div>
-                                    )}
-                                </div>
-                                <div className="p-3">
-                                    <h4 className="font-medium text-sm text-slate-800 line-clamp-2">
-                                        {product.name}
-                                    </h4>
-                                    <p className="text-primary font-bold mt-1">
-                                        {formatPrice(Number(product.price))}
-                                    </p>
-                                    <p className="text-xs text-slate-500 mt-1">
-                                        Stok: {product.stock}
-                                    </p>
-                                </div>
-                            </Link>
-                        ))}
-                    </div>
+                    // Flat view (no categories)
+                    <>
+                        <h3 className="font-semibold text-slate-800 flex items-center gap-2">
+                            <Package className="w-5 h-5 text-primary" />
+                            Produk ({products.data.length})
+                        </h3>
+                        <div className="grid grid-cols-2 gap-3">
+                            {products.data.map((product) => (
+                                <ProductCard key={product.id} product={product} formatPrice={formatPrice} />
+                            ))}
+                        </div>
+                    </>
                 )}
             </div>
 
-            {/* Bottom spacing */}
             <div className="h-8" />
         </AppLayout>
+    );
+}
+
+function ProductCard({ product, formatPrice }: { product: Product; formatPrice: (p: number) => string }) {
+    return (
+        <Link
+            href={`/marketplace/product/${product.id}`}
+            className="bg-white rounded-2xl overflow-hidden border border-slate-100 hover:shadow-lg transition-all group"
+        >
+            <div className="aspect-square bg-slate-100 relative overflow-hidden">
+                {product.image_path ? (
+                    <img
+                        src={`/storage/${product.image_path}`}
+                        alt={product.name}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                ) : (
+                    <div className="w-full h-full flex items-center justify-center text-4xl bg-gradient-to-br from-slate-100 to-slate-200">
+                        📦
+                    </div>
+                )}
+                {product.stock <= 5 && product.stock > 0 && (
+                    <div className="absolute top-2 left-2 bg-amber-500 text-white text-[10px] px-2 py-0.5 rounded-full font-medium">
+                        Sisa {product.stock}
+                    </div>
+                )}
+            </div>
+            <div className="p-3">
+                <h4 className="font-medium text-sm text-slate-800 line-clamp-2 leading-snug">
+                    {product.name}
+                </h4>
+                <p className="text-primary font-bold mt-1.5 text-[15px]">
+                    {formatPrice(Number(product.price))}
+                </p>
+                {product.product_category && (
+                    <span className="inline-flex items-center gap-1 mt-1.5 text-[10px] px-1.5 py-0.5 rounded-full bg-green-50 text-green-700 border border-green-100">
+                        <Tag className="w-2.5 h-2.5" />
+                        {product.product_category.name}
+                    </span>
+                )}
+            </div>
+        </Link>
     );
 }

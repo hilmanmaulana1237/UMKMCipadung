@@ -65,7 +65,7 @@ class UmkmStore extends Model
         }
 
         $now = now();
-        
+
         // If open/close times are set, check if current time is within range
         if ($this->open_time && $this->close_time) {
             try {
@@ -108,6 +108,14 @@ class UmkmStore extends Model
     public function products(): HasMany
     {
         return $this->hasMany(Product::class);
+    }
+
+    /**
+     * Get the product menu categories for this store.
+     */
+    public function productCategories(): HasMany
+    {
+        return $this->hasMany(ProductCategory::class)->orderBy('sort_order');
     }
 
     /**
