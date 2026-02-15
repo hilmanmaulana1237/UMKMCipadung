@@ -36,26 +36,51 @@ export default function StorePage({ store, products, productCategories = [] }: P
     const groupedProducts = useMemo(() => {
         const groups: { id: string; name: string; products: Product[] }[] = [];
 
+        // Debug logging
+        console.log('[Store Page Debug]', {
+            totalProducts: products.data.length,
+            productCategories: productCategories,
+            productsWithCategoryId: products.data.filter(p => p.product_category_id).length,
+            productsData: products.data.map(p => ({
+                name: p.name,
+                category_id: p.product_category_id,
+                category: p.product_category
+            }))
+        });
+
         if (productCategories.length === 0) {
-            // No categories defined — show all products flat
+            // No categories defined — show all products in a single list
+            console.log('[Store Page] No categories, showing all products together');
             return [{ id: 'all', name: 'Semua Produk', products: products.data }];
         }
 
-        // Products grouped by their category (use Number() to avoid string/number mismatch)
+        // Track which products we've already assigned to a category
+        const assignedProductIds = new Set<number>();
+
+        // Group products by their custom categories
         for (const cat of productCategories) {
-            const catProducts = products.data.filter(p => Number(p.product_category_id) === Number(cat.id));
+            const catProducts = products.data.filter(p => {
+                // Match by ID, handle both string and number types
+                const productCatId = p.product_category_id ? Number(p.product_category_id) : null;
+                const categoryId = Number(cat.id);
+                return productCatId === categoryId;
+            });
+
             if (catProducts.length > 0) {
+                console.log(`[Store Page] Category "${cat.name}" has ${catProducts.length} products`);
                 groups.push({ id: String(cat.id), name: cat.name, products: catProducts });
+                catProducts.forEach(p => assignedProductIds.add(p.id));
             }
         }
 
-        // Uncategorized products (null or undefined or 0)
-        const categorizedIds = new Set(productCategories.map(c => Number(c.id)));
-        const uncategorized = products.data.filter(p => !p.product_category_id || !categorizedIds.has(Number(p.product_category_id)));
+        // Uncategorized products (products not assigned to any category)
+        const uncategorized = products.data.filter(p => !assignedProductIds.has(p.id));
         if (uncategorized.length > 0) {
+            console.log(`[Store Page] Uncategorized: ${uncategorized.length} products`);
             groups.push({ id: 'uncategorized', name: 'Lainnya', products: uncategorized });
         }
 
+        console.log('[Store Page] Final groups:', groups.map(g => ({ name: g.name, count: g.products.length })));
         return groups;
     }, [products.data, productCategories]);
 
