@@ -203,16 +203,12 @@ export default function EditProduct({ product, categories }: Props) {
                                     AI Enhanced
                                 </div>
                             )}
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    setData('image', null);
-                                    setIsEnhanced(false);
-                                }}
-                                className="absolute bottom-2 right-2 px-3 py-1.5 bg-black/50 text-white text-xs rounded-lg"
+                            <label
+                                htmlFor="product-image"
+                                className="absolute bottom-2 right-2 px-3 py-1.5 bg-black/50 text-white text-xs rounded-lg cursor-pointer hover:bg-black/70 transition-colors"
                             >
                                 Ganti Foto
-                            </button>
+                            </label>
                         </div>
                     ) : (
                         <div className="border-2 border-dashed border-border rounded-2xl p-6 text-center">
@@ -220,13 +216,6 @@ export default function EditProduct({ product, categories }: Props) {
                             <p className="text-sm text-muted-foreground mb-2">
                                 Upload foto untuk preview & AI Enhance
                             </p>
-                            <input
-                                type="file"
-                                accept="image/*"
-                                onChange={(e) => setData('image', e.target.files?.[0] || null)}
-                                className="hidden"
-                                id="product-image"
-                            />
                             <label
                                 htmlFor="product-image"
                                 className="inline-block px-4 py-2 bg-muted text-foreground rounded-lg text-sm cursor-pointer"
@@ -235,6 +224,16 @@ export default function EditProduct({ product, categories }: Props) {
                             </label>
                         </div>
                     )}
+                    <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                            setData('image', e.target.files?.[0] || null);
+                            setIsEnhanced(false);
+                        }}
+                        className="hidden"
+                        id="product-image"
+                    />
                 </div>
 
                 {/* Name */}

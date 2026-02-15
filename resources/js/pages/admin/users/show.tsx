@@ -3,10 +3,12 @@ import { Head, Link, router } from '@inertiajs/react';
 import { User, UmkmStore, Order } from '@/types';
 import {
     ArrowLeft, Users, Mail, Phone, Wallet, ShoppingCart, Truck, Store, Package,
-    Trash2, AlertTriangle, MapPin, Clock, Calendar, Star, Shield, XCircle, CheckCircle, Loader2
+    Trash2, AlertTriangle, MapPin, Clock, Calendar, Star, Shield, XCircle, CheckCircle, Loader2,
+    Eye, EyeOff, Key
 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import axios from 'axios';
 
 interface Props {
     user: User & { umkm_store?: UmkmStore & { products?: any[]; orders?: any[] } };
@@ -19,13 +21,39 @@ interface Props {
     };
     recentOrders: Order[];
     recentDeliveries: Order[];
+    plainPassword?: string | null;
 }
 
-export default function UserDetail({ user, stats, recentOrders, recentDeliveries }: Props) {
+export default function UserDetail({ user, stats, recentOrders, recentDeliveries, plainPassword }: Props) {
     const [showDeleteStoreModal, setShowDeleteStoreModal] = useState(false);
     const [showDeleteUserModal, setShowDeleteUserModal] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
     const [confirmText, setConfirmText] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
+    const [fetchedPassword, setFetchedPassword] = useState<string | null>(plainPassword ?? null);
+    const [loadingPassword, setLoadingPassword] = useState(false);
+
+    const handleShowPassword = async () => {
+        if (showPassword) {
+            setShowPassword(false);
+            return;
+        }
+        if (fetchedPassword) {
+            setShowPassword(true);
+            return;
+        }
+        // Fetch from backend
+        setLoadingPassword(true);
+        try {
+            const res = await axios.get(`/admin/users/${user.id}/password`);
+            setFetchedPassword(res.data.password);
+            setShowPassword(true);
+        } catch {
+            toast.error('Gagal mengambil password');
+        } finally {
+            setLoadingPassword(false);
+        }
+    };
 
     const getRoleBadge = (role: string) => {
         const styles: Record<string, string> = {
@@ -176,6 +204,34 @@ export default function UserDetail({ user, stats, recentOrders, recentDeliveries
                                     <span>Kode Afiliasi: <b className="text-foreground">{user.affiliate_code}</b></span>
                                 </div>
                             )}
+                            {/* Password Section */}
+                            <div className="pt-2 border-t border-border mt-2">
+                                <div className="flex items-center gap-2">
+                                    <Key className="w-4 h-4 text-muted-foreground" />
+                                    <span className="text-sm text-muted-foreground">Password:</span>
+                                    {showPassword && fetchedPassword ? (
+                                        <code className="text-sm bg-muted px-2 py-0.5 rounded font-mono text-foreground">{fetchedPassword}</code>
+                                    ) : showPassword && !fetchedPassword ? (
+                                        <span className="text-xs text-amber-600 italic">Tidak tersedia (akun lama)</span>
+                                    ) : (
+                                        <span className="text-sm text-muted-foreground">••••••••</span>
+                                    )}
+                                    <button
+                                        onClick={handleShowPassword}
+                                        disabled={loadingPassword}
+                                        className="ml-auto p-1.5 rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
+                                        title={showPassword ? 'Sembunyikan' : 'Tampilkan Password'}
+                                    >
+                                        {loadingPassword ? (
+                                            <Loader2 className="w-4 h-4 animate-spin" />
+                                        ) : showPassword ? (
+                                            <EyeOff className="w-4 h-4" />
+                                        ) : (
+                                            <Eye className="w-4 h-4" />
+                                        )}
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </div>
 

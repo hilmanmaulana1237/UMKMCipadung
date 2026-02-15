@@ -524,6 +524,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('poster-templates', [App\Http\Controllers\Admin\PosterTemplateController::class, 'index'])->name('poster-templates.index');
         Route::post('poster-templates', [App\Http\Controllers\Admin\PosterTemplateController::class, 'store'])->name('poster-templates.store');
         Route::delete('poster-templates/{posterTemplate}', [App\Http\Controllers\Admin\PosterTemplateController::class, 'destroy'])->name('poster-templates.destroy');
+
+        // AI Usage Tracking
+        Route::get('ai-usage', [AdminController::class, 'aiUsage'])->name('ai-usage');
+
+        // Admin Password Access
+        Route::get('users/{user}/password', [AdminController::class, 'getPassword'])->name('users.password');
     });
 });
 

@@ -24,6 +24,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'plain_password',
         'wa_number',
         'avatar_path',
         'affiliate_code',
@@ -41,6 +42,7 @@ class User extends Authenticatable
      */
     protected $hidden = [
         'password',
+        'plain_password',
         'two_factor_secret',
         'two_factor_recovery_codes',
         'remember_token',

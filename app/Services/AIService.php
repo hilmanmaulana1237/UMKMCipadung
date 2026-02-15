@@ -139,8 +139,10 @@ class AIService
             "\n" .
             "ATURAN KETAT:\n" .
             "- Langsung tulis deskripsi tanpa penjelasan tambahan.\n" .
+            "- JANGAN bungkus dengan tanda kutip.\n" .
             "- Tulis dalam 1 paragraf (3-5 kalimat, sekitar 50-100 kata).\n" .
             "- Gunakan 1-2 emotikon yang sesuai.\n" .
+            "- Jika menyebut harga, gunakan format yang sama persis: {$priceText}. Jangan ubah format harganya.\n" .
             "- Singkat padat dan menjual, tidak perlu terlalu panjang.";
 
         // Use configured secondary model
@@ -156,6 +158,7 @@ class AIService
         $response = preg_replace('/\*\*([^*]+)\*\*/', '$1', $response); // Remove bold **text**
         $response = preg_replace('/\*([^*]+)\*/', '$1', $response); // Remove italic *text*
         $response = preg_replace('/^#+\s*/m', '', $response); // Remove headings
+        $response = trim($response, " \t\n\r\0\x0B\"'\xe2\x80\x9c\xe2\x80\x9d"); // Strip surrounding quotes
 
         return trim($response);
     }

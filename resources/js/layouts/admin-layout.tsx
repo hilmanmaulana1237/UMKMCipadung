@@ -15,7 +15,8 @@ import {
     Truck, // Added Truck Icon
     Ticket,
     Settings,
-    Image
+    Image,
+    BarChart3
 } from 'lucide-react';
 import { ReactNode, useState, useEffect } from 'react';
 
@@ -84,6 +85,7 @@ export default function AdminLayout({ children, title }: Props) {
         {
             title: 'Pelaporan',
             items: [
+                { href: '/admin/ai-usage', label: 'Penggunaan AI', icon: BarChart3 },
                 { href: '/admin/innovillage-reports', label: 'Laporan Innovillage', icon: LayoutDashboard },
             ]
         },

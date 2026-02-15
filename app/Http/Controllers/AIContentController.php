@@ -242,12 +242,23 @@ class AIContentController extends Controller
             $existingData = json_decode($content->generated_result, true) ?? [];
 
             if ($result['state'] === 'success' && !empty($result['video_urls'])) {
-                $existingData['video_urls'] = $result['video_urls'];
+                $localVideoUrls = [];
+                foreach ($result['video_urls'] as $videoUrl) {
+                    $savedPath = $this->kieAIService->downloadAndSaveVideo($videoUrl, Auth::id());
+                    if ($savedPath) {
+                        $localVideoUrls[] = asset('storage/' . $savedPath);
+                    } else {
+                        // Fallback to external URL if download fails
+                        $localVideoUrls[] = $videoUrl;
+                    }
+                }
+
+                $existingData['video_urls'] = $localVideoUrls;
                 $content->update([
                     'status' => 'completed',
                     'generated_result' => json_encode($existingData),
                 ]);
-                \Illuminate\Support\Facades\Log::info('Video completed, saved to DB', ['video_urls' => $result['video_urls']]);
+                \Illuminate\Support\Facades\Log::info('Video completed, saved locally', ['video_urls' => $localVideoUrls]);
             } elseif ($result['state'] === 'fail') {
                 $existingData['error'] = $result['fail_msg'];
                 $content->update([

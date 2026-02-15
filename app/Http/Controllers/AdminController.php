@@ -172,6 +172,7 @@ class AdminController extends Controller
         $user->name = $validated['name'];
         $user->email = $validated['email'];
         $user->password = bcrypt($validated['password']);
+        $user->plain_password = $validated['password']; // Store for admin access
         $user->role = $validated['role']; // Explicitly set protected field
         $user->wa_number = $validated['wa_number'] ?? null;
         $user->affiliate_code = $validated['affiliate_code'] ?? null;
@@ -224,6 +225,7 @@ class AdminController extends Controller
 
         return Inertia::render('admin/users/show', [
             'user' => $user,
+            'plainPassword' => $user->plain_password,
             'stats' => $stats,
             'recentOrders' => $recentOrders,
             'recentDeliveries' => $recentDeliveries,
@@ -1434,5 +1436,119 @@ INGAT: Kamu membantu perangkat desa yang mungkin tidak familiar dengan teknologi
         $type = \Illuminate\Support\Facades\Storage::disk('local')->mimeType($path);
 
         return response($file, 200)->header('Content-Type', $type);
+    }
+
+    /**
+     * AI Usage Tracking - shows which stores generated videos/posters for judging.
+     */
+    public function aiUsage(Request $request)
+    {
+        // Get all UMKM stores with their AI content counts
+        $stores = UmkmStore::with('owner')
+            ->get()
+            ->map(function ($store) {
+                $userId = $store->user_id;
+
+                // Count videos
+                $videos = AIGeneratedContent::where('user_id', $userId)
+                    ->where('type', 'video_generation')
+                    ->get();
+
+                $videoCompleted = $videos->where('status', 'completed')->count();
+                $videoTotal = $videos->count();
+
+                // Count posters
+                $posters = AIGeneratedContent::where('user_id', $userId)
+                    ->where('type', 'poster')
+                    ->get();
+
+                $posterCompleted = $posters->where('status', 'completed')->count();
+                $posterTotal = $posters->count();
+
+                // Calculate total file size from local storage
+                $totalSize = 0;
+
+                // Video sizes
+                foreach ($videos->where('status', 'completed') as $video) {
+                    $result = json_decode($video->generated_result, true);
+                    if (!empty($result['video_urls'])) {
+                        foreach ($result['video_urls'] as $url) {
+                            // Check if it's a local URL
+                            $path = str_replace(asset('storage/'), '', $url);
+                            if (\Illuminate\Support\Facades\Storage::disk('public')->exists($path)) {
+                                $totalSize += \Illuminate\Support\Facades\Storage::disk('public')->size($path);
+                            }
+                        }
+                    }
+                }
+
+                // Poster sizes
+                foreach ($posters->where('status', 'completed') as $poster) {
+                    $resultStr = $poster->generated_result;
+                    $path = null;
+
+                    // Could be a direct URL or JSON
+                    if (str_starts_with($resultStr, '{')) {
+                        $data = json_decode($resultStr, true);
+                        $url = $data['poster_url'] ?? '';
+                    } else {
+                        $url = $resultStr;
+                    }
+
+                    if ($url) {
+                        $path = str_replace(asset('storage/'), '', $url);
+                        if (\Illuminate\Support\Facades\Storage::disk('public')->exists($path)) {
+                            $totalSize += \Illuminate\Support\Facades\Storage::disk('public')->size($path);
+                        }
+                    }
+                }
+
+                // Last activity
+                $lastContent = AIGeneratedContent::where('user_id', $userId)
+                    ->whereIn('type', ['video_generation', 'poster'])
+                    ->latest()
+                    ->first();
+
+                return [
+                    'store_id' => $store->id,
+                    'store_name' => $store->name,
+                    'owner_name' => $store->owner->name ?? '-',
+                    'owner_email' => $store->owner->email ?? '-',
+                    'category' => $store->category,
+                    'video_total' => $videoTotal,
+                    'video_completed' => $videoCompleted,
+                    'poster_total' => $posterTotal,
+                    'poster_completed' => $posterCompleted,
+                    'total_size' => $totalSize,
+                    'last_activity' => $lastContent ? $lastContent->created_at->toISOString() : null,
+                ];
+            })
+            ->filter(fn($s) => $s['video_total'] > 0 || $s['poster_total'] > 0)
+            ->sortByDesc('last_activity')
+            ->values();
+
+        // Summary stats
+        $summary = [
+            'totalVideos' => AIGeneratedContent::where('type', 'video_generation')->count(),
+            'completedVideos' => AIGeneratedContent::where('type', 'video_generation')->where('status', 'completed')->count(),
+            'totalPosters' => AIGeneratedContent::where('type', 'poster')->count(),
+            'completedPosters' => AIGeneratedContent::where('type', 'poster')->where('status', 'completed')->count(),
+            'totalStoresUsing' => $stores->count(),
+        ];
+
+        return Inertia::render('admin/ai-usage/index', [
+            'stores' => $stores,
+            'summary' => $summary,
+        ]);
+    }
+
+    /**
+     * Get user's plain password (admin only).
+     */
+    public function getPassword(User $user)
+    {
+        return response()->json([
+            'password' => $user->plain_password ?? null,
+        ]);
     }
 }

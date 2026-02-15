@@ -17,7 +17,7 @@ class KieAIService
         $config = ApiSetting::getConfig('video');
         $this->apiKey = $config['api_key'] ?? '';
         $this->baseUrl = $config['base_url'] ?: 'https://api.kie.ai/api/v1/jobs';
-        
+
         // Safety check: Fix for issue where OpenRouter URL is incorrectly set for Video config
         if (str_contains($this->baseUrl, 'openrouter.ai')) {
             Log::warning('KieAIService: Detected OpenRouter URL in Video Config. Forcing reset to Kie AI default.');
@@ -57,15 +57,15 @@ class KieAIService
                 'Authorization' => 'Bearer ' . $this->apiKey,
                 'Content-Type' => 'application/json',
             ])->timeout(60)->post($this->baseUrl . '/createTask', [
-                'model' => $this->model,
-                'input' => [
-                    'prompt' => $prompt,
-                    'image_urls' => [$imageUrl],
-                    'aspect_ratio' => $aspectRatio,
-                    'n_frames' => $duration,
-                    'remove_watermark' => true,
-                ],
-            ]);
+                        'model' => $this->model,
+                        'input' => [
+                            'prompt' => $prompt,
+                            'image_urls' => [$imageUrl],
+                            'aspect_ratio' => $aspectRatio,
+                            'n_frames' => $duration,
+                            'remove_watermark' => true,
+                        ],
+                    ]);
 
             if ($response->successful()) {
                 $data = $response->json();
@@ -105,16 +105,16 @@ class KieAIService
             $response = Http::withHeaders([
                 'Authorization' => 'Bearer ' . $this->apiKey,
             ])->timeout(30)->get($this->baseUrl . '/recordInfo', [
-                'taskId' => $taskId,
-            ]);
+                        'taskId' => $taskId,
+                    ]);
 
             if ($response->successful()) {
                 $data = $response->json();
                 Log::info('KieAI Status Response', ['task_id' => $taskId, 'response' => $data]);
-                
+
                 if ($data['code'] === 200) {
                     $taskData = $data['data'];
-                    
+
                     // Parse resultJson if exists
                     $resultUrls = [];
                     if (!empty($taskData['resultJson'])) {
@@ -147,6 +147,29 @@ class KieAIService
                 'success' => false,
                 'error' => $e->getMessage(),
             ];
+        }
+    }
+
+    /**
+     * Download and save generated video to local storage
+     */
+    public function downloadAndSaveVideo(string $videoUrl, int $userId): ?string
+    {
+        try {
+            $response = Http::timeout(120)->get($videoUrl);
+
+            if ($response->successful()) {
+                $filename = "generated-videos/{$userId}_" . time() . ".mp4";
+                \Illuminate\Support\Facades\Storage::disk('public')->put($filename, $response->body());
+                Log::info('Video downloaded and saved locally', ['path' => $filename, 'size' => strlen($response->body())]);
+                return $filename;
+            }
+
+            Log::error('Video download failed', ['url' => $videoUrl, 'status' => $response->status()]);
+            return null;
+        } catch (\Exception $e) {
+            Log::error('Video download exception: ' . $e->getMessage());
+            return null;
         }
     }
 }
