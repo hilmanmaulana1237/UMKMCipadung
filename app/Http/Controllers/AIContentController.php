@@ -22,7 +22,7 @@ class AIContentController extends Controller
     protected $posterService;
 
     // Maximum videos and posters per UMKM
-    private const MAX_VIDEOS_PER_UMKM = 2;
+    private const MAX_VIDEOS_PER_UMKM = 5;
     private const MAX_POSTERS_PER_UMKM = 5;
 
     public function __construct(
