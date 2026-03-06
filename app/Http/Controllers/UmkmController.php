@@ -30,7 +30,22 @@ class UmkmController extends Controller
         $store = $user->umkmStore;
 
         if (!$store) {
-            return redirect()->route('umkm.store.setup');
+            // Render dashboard with null store - frontend will show setup prompt
+            return Inertia::render('umkm/dashboard', [
+                'store' => null,
+                'stats' => [
+                    'totalProducts' => 0,
+                    'activeProducts' => 0,
+                    'pendingOrders' => 0,
+                    'processingOrders' => 0,
+                    'totalRevenue' => 0,
+                ],
+                'reviewStats' => [
+                    'positive_count' => 0,
+                    'negative_count' => 0,
+                ],
+                'recentOrders' => [],
+            ]);
         }
 
         $stats = [
@@ -383,7 +398,7 @@ class UmkmController extends Controller
         $store = auth()->user()->umkmStore;
 
         if (!$store) {
-            return redirect()->route('umkm.store.setup');
+            return redirect()->route('umkm.dashboard');
         }
 
         // Sales Statistics

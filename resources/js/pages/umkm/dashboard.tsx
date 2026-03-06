@@ -1,7 +1,7 @@
 import AppLayout from '@/layouts/app-layout';
 import { Head, Link, router } from '@inertiajs/react';
 import { UmkmStore, Order } from '@/types';
-import { Settings, ChevronRight, Brain, Loader2, Flame, MessageSquare, ThumbsUp, ThumbsDown, ShoppingBag, Clock, CheckCircle, Star, AlertTriangle, MapPin } from 'lucide-react';
+import { Settings, ChevronRight, Brain, Loader2, Flame, MessageSquare, ThumbsUp, ThumbsDown, ShoppingBag, Clock, CheckCircle, Star, AlertTriangle, MapPin, Store } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 
@@ -34,7 +34,7 @@ interface ReviewStats {
 }
 
 interface Props {
-    store: UmkmStore;
+    store: UmkmStore | null;
     stats: Stats;
     reviewStats: ReviewStats;
     recentOrders: Order[];
@@ -48,19 +48,53 @@ export default function UmkmDashboard({ store, stats, reviewStats, recentOrders 
     const [showOpenModal, setShowOpenModal] = useState(false);
     const [showCloseModal, setShowCloseModal] = useState(false);
 
-    // Check for incomplete store setup
+    // Check for incomplete store setup (computed before hooks for safety)
     const missingFields: { label: string; icon: string }[] = [];
-    if (!store.address_pickup) missingFields.push({ label: 'Alamat Lengkap', icon: '📍' });
-    if (!store.latitude || !store.longitude) missingFields.push({ label: 'Koordinat Lokasi (GPS)', icon: '🗺️' });
-    if (!store.contact_number) missingFields.push({ label: 'Nomor WhatsApp / HP', icon: '📱' });
-    if (!store.bank_name || !store.bank_account || !store.bank_holder) missingFields.push({ label: 'Informasi Rekening Bank', icon: '🏦' });
+    if (store) {
+        if (!store.address_pickup) missingFields.push({ label: 'Alamat Lengkap', icon: '📍' });
+        if (!store.latitude || !store.longitude) missingFields.push({ label: 'Koordinat Lokasi (GPS)', icon: '🗺️' });
+        if (!store.contact_number) missingFields.push({ label: 'Nomor WhatsApp / HP', icon: '📱' });
+        if (!store.bank_name || !store.bank_account || !store.bank_holder) missingFields.push({ label: 'Informasi Rekening Bank', icon: '🏦' });
+    }
 
     const [showSetupModal, setShowSetupModal] = useState(missingFields.length > 0);
 
     useEffect(() => {
-        fetchInsights();
-        fetchTrends();
+        if (store) {
+            fetchInsights();
+            fetchTrends();
+        } else {
+            setIsLoadingInsights(false);
+            setIsLoadingTrends(false);
+        }
     }, []);
+
+    // If store is null, show setup prompt instead of dashboard
+    if (!store) {
+        return (
+            <AppLayout activeTab="dashboard">
+                <Head title="Setup Toko" />
+                <div className="min-h-screen flex items-center justify-center px-6">
+                    <div className="text-center max-w-sm">
+                        <div className="w-20 h-20 bg-gradient-to-br from-primary to-indigo-600 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-primary/30 rotate-3">
+                            <Store className="w-10 h-10 text-white" />
+                        </div>
+                        <h1 className="text-2xl font-bold text-foreground mb-3">Selamat Datang! 🎉</h1>
+                        <p className="text-muted-foreground mb-8 leading-relaxed">
+                            Yuk setup toko kamu dulu supaya bisa mulai jualan dan menerima pesanan dari pembeli.
+                        </p>
+                        <Link
+                            href="/umkm/setup-toko"
+                            className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-primary to-indigo-600 text-white rounded-2xl font-bold text-lg shadow-lg shadow-primary/30 hover:scale-105 transition-transform active:scale-95"
+                        >
+                            <Settings className="w-5 h-5" />
+                            Setup Toko Sekarang
+                        </Link>
+                    </div>
+                </div>
+            </AppLayout>
+        );
+    }
 
     const fetchInsights = async () => {
         try {
