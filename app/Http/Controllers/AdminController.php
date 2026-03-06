@@ -244,10 +244,15 @@ class AdminController extends Controller
         }
 
         DB::transaction(function () use ($store) {
+            // Delete order items first, then orders
+            $orderIds = $store->orders()->pluck('id');
+            \App\Models\OrderItem::whereIn('order_id', $orderIds)->delete();
+
             // Delete related store data
             $store->reviews()->delete();
             $store->ratings()->delete();
-            $store->orders()->update(['umkm_store_id' => null]); // Preserve order history
+            $store->orders()->delete();
+            $store->productCategories()->delete();
             $store->products()->delete();
 
             // Delete store files
@@ -286,18 +291,35 @@ class AdminController extends Controller
             // Delete store if exists
             $store = $user->umkmStore;
             if ($store) {
+                // Delete order items for store's orders first
+                $storeOrderIds = $store->orders()->pluck('id');
+                \App\Models\OrderItem::whereIn('order_id', $storeOrderIds)->delete();
+
+                // Delete store reviews & ratings
                 $store->reviews()->delete();
                 $store->ratings()->delete();
-                $store->orders()->update(['umkm_store_id' => null]);
+
+                // Delete store orders (as seller)
+                $store->orders()->delete();
+
+                // Delete product categories
+                $store->productCategories()->delete();
+
+                // Delete products
                 $store->products()->delete();
+
+                // Delete landing pages
                 UmkmLandingPage::where('umkm_store_id', $store->id)->delete();
+
                 $store->delete();
             }
 
-            // Clean up orders (as buyer)
-            $user->orders()->update(['buyer_id' => null]);
+            // Delete orders where user is buyer (and their items)
+            $buyerOrderIds = $user->orders()->pluck('id');
+            \App\Models\OrderItem::whereIn('order_id', $buyerOrderIds)->delete();
+            $user->orders()->delete();
 
-            // Clean up deliveries (as courier)
+            // Clean up deliveries (as courier) - courier_id is nullable
             $user->deliveries()->update(['courier_id' => null]);
 
             // Delete affiliate rewards
@@ -305,6 +327,15 @@ class AdminController extends Controller
 
             // Delete complaints
             Complaint::where('user_id', $user->id)->delete();
+
+            // Delete AI chat sessions & messages
+            \App\Models\AIChatSession::where('user_id', $user->id)->delete();
+
+            // Delete AI generated content
+            \App\Models\AIGeneratedContent::where('user_id', $user->id)->delete();
+
+            // Delete withdrawal requests
+            \App\Models\WithdrawalRequest::where('user_id', $user->id)->delete();
 
             // Delete avatar
             if ($user->avatar_path) {
