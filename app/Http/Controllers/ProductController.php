@@ -27,7 +27,7 @@ class ProductController extends Controller
         $store = auth()->user()->umkmStore;
 
         if (!$store) {
-            return redirect()->route('umkm.dashboard');
+            return redirect()->route('umkm.store.setup');
         }
 
         try {
