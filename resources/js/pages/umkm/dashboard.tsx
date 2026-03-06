@@ -34,7 +34,7 @@ interface ReviewStats {
 }
 
 interface Props {
-    store: UmkmStore;
+    store: UmkmStore | null;
     stats: Stats;
     reviewStats: ReviewStats;
     recentOrders: Order[];
@@ -50,16 +50,18 @@ export default function UmkmDashboard({ store, stats, reviewStats, recentOrders 
 
     // Check for incomplete store setup
     const missingFields: { label: string; icon: string }[] = [];
-    if (!store.address_pickup) missingFields.push({ label: 'Alamat Lengkap', icon: '📍' });
-    if (!store.latitude || !store.longitude) missingFields.push({ label: 'Koordinat Lokasi (GPS)', icon: '🗺️' });
-    if (!store.contact_number) missingFields.push({ label: 'Nomor WhatsApp / HP', icon: '📱' });
-    if (!store.bank_name || !store.bank_account || !store.bank_holder) missingFields.push({ label: 'Informasi Rekening Bank', icon: '🏦' });
+    if (!store || !store.address_pickup) missingFields.push({ label: 'Alamat Lengkap', icon: '📍' });
+    if (!store || !store.latitude || !store.longitude) missingFields.push({ label: 'Koordinat Lokasi (GPS)', icon: '🗺️' });
+    if (!store || !store.contact_number) missingFields.push({ label: 'Nomor WhatsApp / HP', icon: '📱' });
+    if (!store || !store.bank_name || !store.bank_account || !store.bank_holder) missingFields.push({ label: 'Informasi Rekening Bank', icon: '🏦' });
 
-    const [showSetupModal, setShowSetupModal] = useState(missingFields.length > 0);
+    const [showSetupModal, setShowSetupModal] = useState(!store || missingFields.length > 0);
 
     useEffect(() => {
-        fetchInsights();
-        fetchTrends();
+        if (store) {
+            fetchInsights();
+            fetchTrends();
+        }
     }, []);
 
     const fetchInsights = async () => {
@@ -115,18 +117,15 @@ export default function UmkmDashboard({ store, stats, reviewStats, recentOrders 
                 <div className="flex items-start justify-between">
                     <div>
                         <p className="text-white/70 text-sm">Selamat datang,</p>
-                        <h1 className="text-xl font-bold text-white">{store.name}</h1>
+                        <h1 className="text-xl font-bold text-white">{store?.name || 'Toko Anda'}</h1>
                         {/* Star Rating Moved Below */}
                     </div>
                     <div className="flex items-center gap-2">
-                        <button
+                        {store && <button
                             onClick={() => {
                                 if (store.is_open_today) {
-                                    // Closing - Simple confirm
-                                    // Closing - Show Confirmation Modal
                                     setShowCloseModal(true);
                                 } else {
-                                    // Opening - Show Motivational Modal
                                     setShowOpenModal(true);
                                 }
                             }}
@@ -137,7 +136,7 @@ export default function UmkmDashboard({ store, stats, reviewStats, recentOrders 
                         >
                             <span className={`w-2 h-2 rounded-full ${store.is_open_today ? 'bg-white animate-pulse' : 'bg-white/70'}`} />
                             {store.is_open_today ? 'BUKA' : 'TUTUP'}
-                        </button>
+                        </button>}
                         <Link href="/umkm/setup-toko" className="p-2.5 bg-white/15 rounded-xl backdrop-blur-sm hover:bg-white/25 transition-colors">
                             <Settings className="w-5 h-5 text-white" />
                         </Link>
@@ -147,23 +146,23 @@ export default function UmkmDashboard({ store, stats, reviewStats, recentOrders 
                 {/* Operating Hours & Rating Row */}
                 <div className="flex flex-wrap items-center gap-3 mt-3 mb-5">
                     {/* Star Rating Display */}
-                    {store.average_rating !== undefined && store.total_ratings !== undefined && store.total_ratings > 0 && (
+                    {store?.average_rating !== undefined && store?.total_ratings !== undefined && store?.total_ratings > 0 && (
                         <div className="flex items-center gap-1.5 bg-white/10 px-3 py-1.5 rounded-full backdrop-blur-sm border border-white/10">
                             <div className="flex items-center gap-0.5">
                                 {[1, 2, 3, 4, 5].map((s) => (
                                     <Star
                                         key={s}
-                                        className={`w-3.5 h-3.5 ${s <= Math.round(store.average_rating || 0) ? 'text-amber-400 fill-amber-400' : 'text-white/30'}`}
+                                        className={`w-3.5 h-3.5 ${s <= Math.round(store?.average_rating || 0) ? 'text-amber-400 fill-amber-400' : 'text-white/30'}`}
                                     />
                                 ))}
                             </div>
-                            <span className="text-white font-medium text-xs ml-1">{store.average_rating?.toFixed(1)}</span>
-                            <span className="text-white/60 text-[10px]">({store.total_ratings})</span>
+                            <span className="text-white font-medium text-xs ml-1">{store?.average_rating?.toFixed(1)}</span>
+                            <span className="text-white/60 text-[10px]">({store?.total_ratings})</span>
                         </div>
                     )}
 
                     {/* Operating Hours Info */}
-                    {store.open_time && store.close_time && (
+                    {store?.open_time && store?.close_time && (
                         <div className="flex items-center gap-1.5 bg-white/10 px-3 py-1.5 rounded-full backdrop-blur-sm border border-white/10 text-white/90 text-xs font-medium">
                             <Clock className="w-3.5 h-3.5 text-white/70" />
                             <span>Jam Operasional: {store.open_time.substring(0, 5)} - {store.close_time.substring(0, 5)}</span>
@@ -359,154 +358,160 @@ export default function UmkmDashboard({ store, stats, reviewStats, recentOrders 
             <div className="h-20" />
 
             {/* Store Open Motivational Modal */}
-            {showOpenModal && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
-                    <div className="bg-white rounded-3xl w-full max-w-sm p-6 relative shadow-2xl animate-in zoom-in-95 duration-200">
-                        {/* Decorative background element */}
-                        <div className="absolute top-0 left-0 w-full h-24 bg-gradient-to-br from-green-400 to-emerald-600 rounded-t-3xl opacity-20" />
+            {
+                showOpenModal && (
+                    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
+                        <div className="bg-white rounded-3xl w-full max-w-sm p-6 relative shadow-2xl animate-in zoom-in-95 duration-200">
+                            {/* Decorative background element */}
+                            <div className="absolute top-0 left-0 w-full h-24 bg-gradient-to-br from-green-400 to-emerald-600 rounded-t-3xl opacity-20" />
 
-                        <div className="relative">
-                            <div className="w-16 h-16 bg-gradient-to-br from-green-400 to-emerald-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-green-500/30 rotate-3">
-                                <span className="text-3xl">🚀</span>
-                            </div>
+                            <div className="relative">
+                                <div className="w-16 h-16 bg-gradient-to-br from-green-400 to-emerald-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-green-500/30 rotate-3">
+                                    <span className="text-3xl">🚀</span>
+                                </div>
 
-                            <h3 className="text-xl font-bold text-center text-gray-900 mb-2">
-                                Selamat Pagi, {store.name}!
-                            </h3>
+                                <h3 className="text-xl font-bold text-center text-gray-900 mb-2">
+                                    Selamat Pagi, {store?.name || 'Pengusaha'}!
+                                </h3>
 
-                            <p className="text-center text-gray-600 mb-6 leading-relaxed">
-                                "Semoga bagus penjualannya hari ini ya! Tetap semangat menebar manfaat."
-                            </p>
+                                <p className="text-center text-gray-600 mb-6 leading-relaxed">
+                                    "Semoga bagus penjualannya hari ini ya! Tetap semangat menebar manfaat."
+                                </p>
 
-                            <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-4 mb-6">
-                                <div className="flex items-start gap-3">
-                                    <div className="p-1.5 bg-indigo-100 rounded-lg shrink-0">
-                                        <Brain className="w-4 h-4 text-indigo-600" />
-                                    </div>
-                                    <div>
-                                        <p className="text-xs font-bold text-indigo-700 uppercase tracking-wide mb-1">
-                                            Saran AI Mentor
-                                        </p>
-                                        <p className="text-xs text-indigo-600 leading-relaxed">
-                                            Jika ada kendala atau butuh strategi penjualan, jangan ragu tanyakan ke <b>Business Mentor AI</b>.
-                                        </p>
+                                <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-4 mb-6">
+                                    <div className="flex items-start gap-3">
+                                        <div className="p-1.5 bg-indigo-100 rounded-lg shrink-0">
+                                            <Brain className="w-4 h-4 text-indigo-600" />
+                                        </div>
+                                        <div>
+                                            <p className="text-xs font-bold text-indigo-700 uppercase tracking-wide mb-1">
+                                                Saran AI Mentor
+                                            </p>
+                                            <p className="text-xs text-indigo-600 leading-relaxed">
+                                                Jika ada kendala atau butuh strategi penjualan, jangan ragu tanyakan ke <b>Business Mentor AI</b>.
+                                            </p>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
 
-                            <div className="grid grid-cols-2 gap-3">
-                                <button
-                                    onClick={() => setShowOpenModal(false)}
-                                    className="px-4 py-3 rounded-xl font-medium text-gray-500 hover:bg-gray-100 transition-colors"
-                                >
-                                    Nanti Dulu
-                                </button>
-                                <button
-                                    onClick={() => {
-                                        setShowOpenModal(false);
-                                        router.post('/umkm/store/toggle-open');
-                                    }}
-                                    className="px-4 py-3 rounded-xl font-bold text-white bg-gradient-to-r from-green-500 to-emerald-600 shadow-lg shadow-green-500/30 hover:scale-105 transition-transform"
-                                >
-                                    Buka Toko!
-                                </button>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <button
+                                        onClick={() => setShowOpenModal(false)}
+                                        className="px-4 py-3 rounded-xl font-medium text-gray-500 hover:bg-gray-100 transition-colors"
+                                    >
+                                        Nanti Dulu
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            setShowOpenModal(false);
+                                            router.post('/umkm/store/toggle-open');
+                                        }}
+                                        className="px-4 py-3 rounded-xl font-bold text-white bg-gradient-to-r from-green-500 to-emerald-600 shadow-lg shadow-green-500/30 hover:scale-105 transition-transform"
+                                    >
+                                        Buka Toko!
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-            )}
+                )
+            }
 
             {/* Store Close Confirmation Modal */}
-            {showCloseModal && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
-                    <div className="bg-white rounded-3xl w-full max-w-sm p-6 relative shadow-2xl animate-in zoom-in-95 duration-200">
-                        {/* Decorative background element */}
-                        <div className="absolute top-0 left-0 w-full h-24 bg-gradient-to-br from-red-500 to-orange-600 rounded-t-3xl opacity-20" />
+            {
+                showCloseModal && (
+                    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
+                        <div className="bg-white rounded-3xl w-full max-w-sm p-6 relative shadow-2xl animate-in zoom-in-95 duration-200">
+                            {/* Decorative background element */}
+                            <div className="absolute top-0 left-0 w-full h-24 bg-gradient-to-br from-red-500 to-orange-600 rounded-t-3xl opacity-20" />
 
-                        <div className="relative">
-                            <div className="w-16 h-16 bg-gradient-to-br from-red-500 to-orange-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-red-500/30 -rotate-3">
-                                <span className="text-3xl">😴</span>
-                            </div>
+                            <div className="relative">
+                                <div className="w-16 h-16 bg-gradient-to-br from-red-500 to-orange-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-red-500/30 -rotate-3">
+                                    <span className="text-3xl">😴</span>
+                                </div>
 
-                            <h3 className="text-xl font-bold text-center text-gray-900 mb-2">
-                                Yakin Ingin Tutup?
-                            </h3>
+                                <h3 className="text-xl font-bold text-center text-gray-900 mb-2">
+                                    Yakin Ingin Tutup?
+                                </h3>
 
-                            <p className="text-center text-gray-600 mb-6 leading-relaxed">
-                                Toko tidak akan muncul di pencarian pembeli sampai Anda membukanya kembali.
-                            </p>
+                                <p className="text-center text-gray-600 mb-6 leading-relaxed">
+                                    Toko tidak akan muncul di pencarian pembeli sampai Anda membukanya kembali.
+                                </p>
 
-                            <div className="grid grid-cols-2 gap-3">
-                                <button
-                                    onClick={() => setShowCloseModal(false)}
-                                    className="px-4 py-3 rounded-xl font-medium text-gray-500 hover:bg-gray-100 transition-colors"
-                                >
-                                    Batal
-                                </button>
-                                <button
-                                    onClick={() => {
-                                        setShowCloseModal(false);
-                                        router.post('/umkm/store/toggle-open');
-                                    }}
-                                    className="px-4 py-3 rounded-xl font-bold text-white bg-gradient-to-r from-red-500 to-orange-600 shadow-lg shadow-red-500/30 hover:scale-105 transition-transform"
-                                >
-                                    Tutup Toko
-                                </button>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <button
+                                        onClick={() => setShowCloseModal(false)}
+                                        className="px-4 py-3 rounded-xl font-medium text-gray-500 hover:bg-gray-100 transition-colors"
+                                    >
+                                        Batal
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            setShowCloseModal(false);
+                                            router.post('/umkm/store/toggle-open');
+                                        }}
+                                        className="px-4 py-3 rounded-xl font-bold text-white bg-gradient-to-r from-red-500 to-orange-600 shadow-lg shadow-red-500/30 hover:scale-105 transition-transform"
+                                    >
+                                        Tutup Toko
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-            )}
+                )
+            }
 
             {/* Incomplete Store Setup Reminder Modal */}
-            {showSetupModal && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
-                    <div className="bg-white rounded-3xl w-full max-w-sm p-6 relative shadow-2xl animate-in zoom-in-95 duration-200">
-                        {/* Decorative background */}
-                        <div className="absolute top-0 left-0 w-full h-24 bg-gradient-to-br from-amber-400 to-orange-500 rounded-t-3xl opacity-20" />
+            {
+                showSetupModal && (
+                    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
+                        <div className="bg-white rounded-3xl w-full max-w-sm p-6 relative shadow-2xl animate-in zoom-in-95 duration-200">
+                            {/* Decorative background */}
+                            <div className="absolute top-0 left-0 w-full h-24 bg-gradient-to-br from-amber-400 to-orange-500 rounded-t-3xl opacity-20" />
 
-                        <div className="relative">
-                            <div className="w-16 h-16 bg-gradient-to-br from-amber-400 to-orange-500 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-amber-500/30">
-                                <AlertTriangle className="w-8 h-8 text-white" />
-                            </div>
+                            <div className="relative">
+                                <div className="w-16 h-16 bg-gradient-to-br from-amber-400 to-orange-500 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-amber-500/30">
+                                    <AlertTriangle className="w-8 h-8 text-white" />
+                                </div>
 
-                            <h3 className="text-xl font-bold text-center text-gray-900 mb-2">
-                                Data Toko Belum Lengkap
-                            </h3>
+                                <h3 className="text-xl font-bold text-center text-gray-900 mb-2">
+                                    Data Toko Belum Lengkap
+                                </h3>
 
-                            <p className="text-center text-gray-600 mb-5 leading-relaxed text-sm">
-                                Lengkapi data berikut agar toko Anda bisa beroperasi dengan optimal dan kurir dapat menemukan lokasi Anda.
-                            </p>
+                                <p className="text-center text-gray-600 mb-5 leading-relaxed text-sm">
+                                    Lengkapi data berikut agar toko Anda bisa beroperasi dengan optimal dan kurir dapat menemukan lokasi Anda.
+                                </p>
 
-                            {/* Missing Fields Checklist */}
-                            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6 space-y-3">
-                                {missingFields.map((field, index) => (
-                                    <div key={index} className="flex items-center gap-3">
-                                        <span className="text-lg">{field.icon}</span>
-                                        <span className="text-sm font-medium text-gray-700">{field.label}</span>
-                                        <span className="ml-auto text-xs font-bold text-amber-600 bg-amber-100 px-2 py-0.5 rounded-full">Belum diisi</span>
-                                    </div>
-                                ))}
-                            </div>
+                                {/* Missing Fields Checklist */}
+                                <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6 space-y-3">
+                                    {missingFields.map((field, index) => (
+                                        <div key={index} className="flex items-center gap-3">
+                                            <span className="text-lg">{field.icon}</span>
+                                            <span className="text-sm font-medium text-gray-700">{field.label}</span>
+                                            <span className="ml-auto text-xs font-bold text-amber-600 bg-amber-100 px-2 py-0.5 rounded-full">Belum diisi</span>
+                                        </div>
+                                    ))}
+                                </div>
 
-                            <div className="grid grid-cols-2 gap-3">
-                                <button
-                                    onClick={() => setShowSetupModal(false)}
-                                    className="px-4 py-3 rounded-xl font-medium text-gray-500 hover:bg-gray-100 transition-colors"
-                                >
-                                    Nanti Saja
-                                </button>
-                                <Link
-                                    href="/umkm/setup-toko"
-                                    className="px-4 py-3 rounded-xl font-bold text-white bg-gradient-to-r from-amber-500 to-orange-500 shadow-lg shadow-amber-500/30 hover:scale-105 transition-transform text-center"
-                                >
-                                    Lengkapi Sekarang
-                                </Link>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <button
+                                        onClick={() => setShowSetupModal(false)}
+                                        className="px-4 py-3 rounded-xl font-medium text-gray-500 hover:bg-gray-100 transition-colors"
+                                    >
+                                        Nanti Saja
+                                    </button>
+                                    <Link
+                                        href="/umkm/setup-toko"
+                                        className="px-4 py-3 rounded-xl font-bold text-white bg-gradient-to-r from-amber-500 to-orange-500 shadow-lg shadow-amber-500/30 hover:scale-105 transition-transform text-center"
+                                    >
+                                        Lengkapi Sekarang
+                                    </Link>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-            )}
-        </AppLayout>
+                )
+            }
+        </AppLayout >
     );
 }
