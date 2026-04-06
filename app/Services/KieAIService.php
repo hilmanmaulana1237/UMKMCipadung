@@ -187,13 +187,22 @@ class KieAIService
                     // Map state: Veo API may use numeric codes or string states
                     $state = $taskData['state'] ?? $taskData['status'] ?? 'unknown';
 
-                    // Numeric state mapping (some API versions)
-                    if (is_numeric($state)) {
-                        $state = match ((int)$state) {
-                            1 => 'success',
-                            2, 3 => 'fail',
-                            default => 'generating',
-                        };
+                    // If we successfully parsed resultUrls, it means the video is done regardless of state flag
+                    if (!empty($resultUrls)) {
+                        $state = 'success';
+                    } else {
+                        // Numeric state mapping (some API versions)
+                        if (is_numeric($state)) {
+                            $state = match ((int)$state) {
+                                1 => 'success',
+                                2, 3, 501 => 'fail',
+                                0 => 'generating',
+                                default => 'generating',
+                            };
+                        } else if ($state === 'unknown') {
+                            // Default to generating if state is missing
+                            $state = 'generating';
+                        }
                     }
 
                     return [
