@@ -2160,6 +2160,9 @@ export default function AIContentIndex({ store, videoQuota, posterQuota, content
                                             minute: '2-digit'
                                         });
 
+                                        // Smart status: if video_urls exist, treat as completed regardless of stored status
+                                        const effectiveStatus = videoUrl ? 'completed' : video.status;
+
                                         return (
                                             <div key={video.id} className="border border-gray-200 rounded-xl p-4">
                                                 <div className="flex items-start justify-between mb-3">
@@ -2167,11 +2170,11 @@ export default function AIContentIndex({ store, videoQuota, posterQuota, content
                                                         <p className="font-semibold text-gray-800">{storeName}</p>
                                                         <p className="text-xs text-gray-500">{createdAt}</p>
                                                     </div>
-                                                    {getStatusBadge(video.status)}
+                                                    {getStatusBadge(effectiveStatus)}
                                                 </div>
 
-                                                {/* Video Player for completed videos */}
-                                                {(video.status === 'completed' || video.status === 'success') && videoUrl && (
+                                                {/* Video Player - show whenever video URL exists */}
+                                                {videoUrl && (
                                                     <div className="space-y-2">
                                                         <video
                                                             src={videoUrl}
@@ -2191,11 +2194,11 @@ export default function AIContentIndex({ store, videoQuota, posterQuota, content
                                                 )}
 
                                                 {/* Processing status - including 'waiting' */}
-                                                {['waiting', 'queuing', 'generating'].includes(video.status) && (
+                                                {!videoUrl && ['waiting', 'queuing', 'generating'].includes(effectiveStatus) && (
                                                     <div className="bg-yellow-50 rounded-lg p-3 space-y-2">
                                                         <div className="flex items-center gap-2">
                                                             <Loader2 className="w-4 h-4 text-yellow-600 animate-spin" />
-                                                            <span className="text-sm text-yellow-700">Video sedang diproses... ({video.status})</span>
+                                                            <span className="text-sm text-yellow-700">Video sedang diproses...</span>
                                                         </div>
                                                         <button
                                                             onClick={() => {
@@ -2211,9 +2214,26 @@ export default function AIContentIndex({ store, videoQuota, posterQuota, content
                                                 )}
 
                                                 {/* Failed status */}
-                                                {(video.status === 'fail' || video.status === 'failed') && (
+                                                {!videoUrl && (effectiveStatus === 'fail' || effectiveStatus === 'failed') && (
                                                     <div className="bg-red-50 rounded-lg p-3">
                                                         <span className="text-sm text-red-700">Gagal membuat video. {data?.error || ''}</span>
+                                                    </div>
+                                                )}
+
+                                                {/* Unknown status without video - show retry button */}
+                                                {!videoUrl && !['waiting', 'queuing', 'generating', 'completed', 'success', 'fail', 'failed'].includes(effectiveStatus) && (
+                                                    <div className="bg-blue-50 rounded-lg p-3 space-y-2">
+                                                        <span className="text-sm text-blue-700">Status: {video.status}. Video mungkin sudah selesai.</span>
+                                                        <button
+                                                            onClick={() => {
+                                                                if (data?.task_id) {
+                                                                    refreshVideoStatus(video.id, data.task_id);
+                                                                }
+                                                            }}
+                                                            className="w-full py-2 bg-blue-500 text-white rounded-lg text-xs font-medium hover:bg-blue-600"
+                                                        >
+                                                            🔄 Cek Status Ulang
+                                                        </button>
                                                     </div>
                                                 )}
                                             </div>
