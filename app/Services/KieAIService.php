@@ -194,12 +194,8 @@ class KieAIService
                         Log::info('KieAI Veo 3.1 Video URLs found', ['urls' => $resultUrls]);
                     }
 
-                    // Map state: Veo API may use numeric codes, string states, or successFlag
+                    // Map state: Veo API may use numeric codes or string states
                     $state = $taskData['state'] ?? $taskData['status'] ?? 'unknown';
-                    
-                    if (isset($taskData['successFlag'])) {
-                        $state = $taskData['successFlag'] == 1 ? 'success' : 'fail';
-                    }
 
                     // If we successfully parsed resultUrls, it means the video is done regardless of state flag
                     if (!empty($resultUrls)) {
