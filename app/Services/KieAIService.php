@@ -174,6 +174,16 @@ class KieAIService
                         }
                     }
 
+                    // Check nested response.resultUrls (Veo 3.1 actual format)
+                    if (empty($resultUrls) && !empty($taskData['response']['resultUrls'])) {
+                        if (is_string($taskData['response']['resultUrls'])) {
+                            $decoded = json_decode($taskData['response']['resultUrls'], true);
+                            $resultUrls = is_array($decoded) ? $decoded : [$taskData['response']['resultUrls']];
+                        } else {
+                            $resultUrls = $taskData['response']['resultUrls'];
+                        }
+                    }
+
                     // Fallback: check resultJson (old format compatibility)
                     if (empty($resultUrls) && !empty($taskData['resultJson'])) {
                         $result = json_decode($taskData['resultJson'], true);
@@ -184,8 +194,12 @@ class KieAIService
                         Log::info('KieAI Veo 3.1 Video URLs found', ['urls' => $resultUrls]);
                     }
 
-                    // Map state: Veo API may use numeric codes or string states
+                    // Map state: Veo API may use numeric codes, string states, or successFlag
                     $state = $taskData['state'] ?? $taskData['status'] ?? 'unknown';
+                    
+                    if (isset($taskData['successFlag'])) {
+                        $state = $taskData['successFlag'] == 1 ? 'success' : 'fail';
+                    }
 
                     // If we successfully parsed resultUrls, it means the video is done regardless of state flag
                     if (!empty($resultUrls)) {
