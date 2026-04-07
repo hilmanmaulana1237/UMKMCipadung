@@ -15,17 +15,11 @@ class PosterAIService
 
     public function __construct()
     {
-        // Use the same API config as video (Kie AI)
+        // Use the same API config as video (Kie AI) for the key, but fix the base URL for jobs
         $config = ApiSetting::getConfig('video');
         $this->apiKey = $config['api_key'] ?? '';
-        $this->baseUrl = $config['base_url'] ?: 'https://api.kie.ai/api/v1/jobs';
+        $this->baseUrl = 'https://api.kie.ai/api/v1/jobs'; // Harus /jobs, bukan /veo
         $this->model = 'seedream/4.5-edit'; // Bytedance Seedream 4.5 - better text rendering
-
-        // Safety check: Fix for issue where OpenRouter URL is incorrectly set for Video config
-        if (str_contains($this->baseUrl, 'openrouter.ai')) {
-            Log::warning('PosterAIService: Detected OpenRouter URL in Config. Forcing reset to Kie AI default.');
-            $this->baseUrl = 'https://api.kie.ai/api/v1/jobs';
-        }
 
         if (empty($this->apiKey)) {
             Log::warning('PosterAIService: API Key is missing or not configured.');
