@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\AIContentController;
 use App\Http\Controllers\AffiliateController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\ComplaintController;
@@ -44,6 +45,9 @@ Route::get('/manual-book/{role}', function (string $role) {
         'role' => $role,
     ]);
 })->name('manual.role');
+
+Route::get('/media/generated-video/{token}', [AIContentController::class, 'publicGeneratedVideo'])
+    ->name('media.generated-video');
 
 // Public Template Preview (for iframe in landing page builder)
 Route::get('/landing-page-templates/{templateId}', [LandingPageController::class, 'previewTemplate'])->name('landingpage.template-preview');

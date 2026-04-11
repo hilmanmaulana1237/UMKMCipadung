@@ -1659,6 +1659,8 @@ export default function AIContentIndex({ store, videoQuota, posterQuota, content
     const [generationStatus, setGenerationStatus] = useState<string>('');
     const [videoUrls, setVideoUrls] = useState<string[]>([]);
     const [errorMessage, setErrorMessage] = useState<string>('');
+    const [newVideoUnavailable, setNewVideoUnavailable] = useState(false);
+    const [historyVideoUnavailable, setHistoryVideoUnavailable] = useState<Record<string, boolean>>({});
 
     // Video history from props
     const videoHistory = contents.filter(c => c.type === 'video_generation');
@@ -1695,6 +1697,7 @@ export default function AIContentIndex({ store, videoQuota, posterQuota, content
                     if (response.data.success) {
                         setGenerationStatus(response.data.state);
                         if (response.data.state === 'success' && response.data.video_urls?.length) {
+                            setNewVideoUnavailable(false);
                             setVideoUrls(response.data.video_urls);
                             setTaskId(null);
                             // Reload page to refresh history
@@ -1775,6 +1778,7 @@ export default function AIContentIndex({ store, videoQuota, posterQuota, content
         setLoading(true);
         setErrorMessage('');
         setVideoUrls([]);
+        setNewVideoUnavailable(false);
         setGenerationStatus('starting');
 
         const formData = new FormData();
@@ -2122,21 +2126,30 @@ export default function AIContentIndex({ store, videoQuota, posterQuota, content
                                     <Play className="w-5 h-5" />
                                     Video Siap! 🎉
                                 </h3>
-                                <video
-                                    src={videoUrls[0]}
-                                    controls
-                                    className="w-full rounded-xl shadow-md"
-                                    poster={photoPreview || undefined}
-                                />
-                                <a
-                                    href={videoUrls[0]}
-                                    download
-                                    target="_blank"
-                                    className="mt-4 w-full py-3 bg-green-500 text-white rounded-xl font-medium flex items-center justify-center gap-2 hover:bg-green-600"
-                                >
-                                    <Download className="w-5 h-5" />
-                                    Download Video
-                                </a>
+                                {!newVideoUnavailable ? (
+                                    <>
+                                        <video
+                                            src={videoUrls[0]}
+                                            controls
+                                            className="w-full rounded-xl shadow-md"
+                                            poster={photoPreview || undefined}
+                                            onError={() => setNewVideoUnavailable(true)}
+                                        />
+                                        <a
+                                            href={videoUrls[0]}
+                                            download
+                                            target="_blank"
+                                            className="mt-4 w-full py-3 bg-green-500 text-white rounded-xl font-medium flex items-center justify-center gap-2 hover:bg-green-600"
+                                        >
+                                            <Download className="w-5 h-5" />
+                                            Download Video
+                                        </a>
+                                    </>
+                                ) : (
+                                    <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-800">
+                                        Maaf kak, video yang Anda cari sudah tidak tersedia di server karena melewati masa simpan media. Data proses pembuatan tetap tercatat untuk pelaporan.
+                                    </div>
+                                )}
                             </div>
                         )}
 
@@ -2151,6 +2164,10 @@ export default function AIContentIndex({ store, videoQuota, posterQuota, content
                                     {videoHistory.map((video) => {
                                         const data = parseVideoData(video.generated_result);
                                         const videoUrl = data?.video_urls?.[0];
+                                        const hasExpiredVideos = Array.isArray(data?.expired_video_urls) && data.expired_video_urls.length > 0;
+                                        const retentionNotice = data?.video_retention_notice;
+                                        const playbackUnavailable = !!historyVideoUnavailable[video.id];
+                                        const shouldShowUnavailableNotice = (!videoUrl && hasExpiredVideos) || !!retentionNotice || playbackUnavailable;
                                         const storeName = data?.store_name || 'Video';
                                         const createdAt = new Date(video.created_at).toLocaleDateString('id-ID', {
                                             day: 'numeric',
@@ -2174,12 +2191,13 @@ export default function AIContentIndex({ store, videoQuota, posterQuota, content
                                                 </div>
 
                                                 {/* Video Player - show whenever video URL exists */}
-                                                {videoUrl && (
+                                                {videoUrl && !playbackUnavailable && (
                                                     <div className="space-y-2">
                                                         <video
                                                             src={videoUrl}
                                                             controls
                                                             className="w-full rounded-lg aspect-video bg-black"
+                                                            onError={() => setHistoryVideoUnavailable(prev => ({ ...prev, [video.id]: true }))}
                                                         />
                                                         <a
                                                             href={videoUrl}
@@ -2193,8 +2211,16 @@ export default function AIContentIndex({ store, videoQuota, posterQuota, content
                                                     </div>
                                                 )}
 
+                                                {shouldShowUnavailableNotice && (
+                                                    <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+                                                        <span className="text-sm text-amber-800">
+                                                            Maaf kak, video yang Anda inginkan sudah tidak tersedia di server karena melewati masa simpan media dari penyedia AI. Namun, riwayat proses dan data pelaporan tetap aman.
+                                                        </span>
+                                                    </div>
+                                                )}
+
                                                 {/* Processing status - including 'waiting' */}
-                                                {!videoUrl && ['waiting', 'queuing', 'generating'].includes(effectiveStatus) && (
+                                                {!videoUrl && !shouldShowUnavailableNotice && ['waiting', 'queuing', 'generating'].includes(effectiveStatus) && (
                                                     <div className="bg-yellow-50 rounded-lg p-3 space-y-2">
                                                         <div className="flex items-center gap-2">
                                                             <Loader2 className="w-4 h-4 text-yellow-600 animate-spin" />
@@ -2214,14 +2240,14 @@ export default function AIContentIndex({ store, videoQuota, posterQuota, content
                                                 )}
 
                                                 {/* Failed status */}
-                                                {!videoUrl && (effectiveStatus === 'fail' || effectiveStatus === 'failed') && (
+                                                {!videoUrl && !shouldShowUnavailableNotice && (effectiveStatus === 'fail' || effectiveStatus === 'failed') && (
                                                     <div className="bg-red-50 rounded-lg p-3">
                                                         <span className="text-sm text-red-700">Gagal membuat video. {data?.error || ''}</span>
                                                     </div>
                                                 )}
 
                                                 {/* Unknown status without video - show retry button */}
-                                                {!videoUrl && !['waiting', 'queuing', 'generating', 'completed', 'success', 'fail', 'failed'].includes(effectiveStatus) && (
+                                                {!videoUrl && !shouldShowUnavailableNotice && !['waiting', 'queuing', 'generating', 'completed', 'success', 'fail', 'failed'].includes(effectiveStatus) && (
                                                     <div className="bg-blue-50 rounded-lg p-3 space-y-2">
                                                         <span className="text-sm text-blue-700">Status: {video.status}. Video mungkin sudah selesai.</span>
                                                         <button

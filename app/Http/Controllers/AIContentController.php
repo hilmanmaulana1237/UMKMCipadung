@@ -67,7 +67,49 @@ class AIContentController extends Controller
         // Get all AI generated contents
         $contents = AIGeneratedContent::where('user_id', $user->id)
             ->orderBy('created_at', 'desc')
-            ->get();
+            ->get()
+            ->map(function ($content) {
+                if ($content->type !== 'video_generation' || empty($content->generated_result)) {
+                    return $content;
+                }
+
+                $decoded = json_decode($content->generated_result, true);
+                if (!is_array($decoded) || empty($decoded['video_urls']) || !is_array($decoded['video_urls'])) {
+                    return $content;
+                }
+
+                $availableUrls = [];
+                $expiredUrls = [];
+
+                foreach ($decoded['video_urls'] as $url) {
+                    if (!is_string($url) || trim($url) === '') {
+                        continue;
+                    }
+
+                    $localPath = $this->extractLocalGeneratedVideoPath($url);
+                    if ($localPath !== null) {
+                        $url = route('media.generated-video', [
+                            'token' => $this->encodeVideoPathToken($localPath),
+                        ]);
+                    }
+
+                    if ($this->isMissingLocalGeneratedVideo($url)) {
+                        $expiredUrls[] = $url;
+                    } else {
+                        $availableUrls[] = $url;
+                    }
+                }
+
+                $decoded['video_urls'] = $availableUrls;
+                $decoded['expired_video_urls'] = $expiredUrls;
+
+                if (!empty($expiredUrls)) {
+                    $decoded['video_retention_notice'] = 'Video ini sudah melewati masa simpan penyedia AI, sehingga file media tidak lagi tersedia di server.';
+                }
+
+                $content->generated_result = json_encode($decoded);
+                return $content;
+            });
 
         // Landing Page Data
         $landingPage = null;
@@ -246,7 +288,9 @@ class AIContentController extends Controller
                 foreach ($result['video_urls'] as $videoUrl) {
                     $savedPath = $this->kieAIService->downloadAndSaveVideo($videoUrl, Auth::id());
                     if ($savedPath) {
-                        $localVideoUrls[] = asset('storage/' . $savedPath);
+                        $localVideoUrls[] = route('media.generated-video', [
+                            'token' => $this->encodeVideoPathToken($savedPath),
+                        ]);
                     } else {
                         // Fallback to external URL if download fails
                         $localVideoUrls[] = $videoUrl;
@@ -276,6 +320,84 @@ class AIContentController extends Controller
             'video_urls' => $result['video_urls'] ?? [],
             'fail_msg' => $result['fail_msg'] ?? null,
         ]);
+    }
+
+    public function publicGeneratedVideo(string $token)
+    {
+        $relativePath = $this->decodeVideoPathToken($token);
+
+        if ($relativePath === null || !str_starts_with($relativePath, 'generated-videos/')) {
+            return response()->view('media.video-unavailable', [
+                'title' => 'Video Tidak Ditemukan',
+                'message' => 'Maaf kak, video yang Anda cari tidak ditemukan. Kemungkinan tautan sudah tidak aktif atau file sudah dipindahkan.',
+            ], 404);
+        }
+
+        if (!Storage::disk('public')->exists($relativePath)) {
+            return response()->view('media.video-unavailable', [
+                'title' => 'Video Sudah Tidak Tersedia',
+                'message' => 'Maaf kak, video yang Anda inginkan sudah tidak tersedia di server karena melewati masa simpan media dari penyedia AI. Namun, data proses pembuatan tetap tercatat untuk kebutuhan pelaporan.',
+            ], 200);
+        }
+
+        return response()->file(Storage::disk('public')->path($relativePath), [
+            'Cache-Control' => 'public, max-age=3600',
+        ]);
+    }
+
+    private function isMissingLocalGeneratedVideo(string $url): bool
+    {
+        $relativePath = $this->extractLocalGeneratedVideoPath($url);
+        if ($relativePath === null) {
+            return false;
+        }
+
+        if (!str_starts_with($relativePath, 'generated-videos/')) {
+            return false;
+        }
+
+        return !Storage::disk('public')->exists($relativePath);
+    }
+
+    private function extractLocalGeneratedVideoPath(string $url): ?string
+    {
+        $path = parse_url($url, PHP_URL_PATH);
+        if (!is_string($path) || trim($path) === '') {
+            return null;
+        }
+
+        if (str_contains($path, '/storage/generated-videos/')) {
+            $relativePath = ltrim(str_replace('/storage/', '', $path), '/');
+            return $relativePath !== '' ? $relativePath : null;
+        }
+
+        if (str_starts_with($path, 'generated-videos/')) {
+            return $path;
+        }
+
+        return null;
+    }
+
+    private function encodeVideoPathToken(string $relativePath): string
+    {
+        $base64 = base64_encode($relativePath);
+        return rtrim(strtr($base64, '+/', '-_'), '=');
+    }
+
+    private function decodeVideoPathToken(string $token): ?string
+    {
+        $base64 = strtr($token, '-_', '+/');
+        $padding = strlen($base64) % 4;
+        if ($padding > 0) {
+            $base64 .= str_repeat('=', 4 - $padding);
+        }
+
+        $decoded = base64_decode($base64, true);
+        if (!is_string($decoded) || trim($decoded) === '') {
+            return null;
+        }
+
+        return ltrim($decoded, '/');
     }
 
     /**
