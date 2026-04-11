@@ -362,17 +362,33 @@ class AIContentController extends Controller
     public function publicGeneratedVideoByName(string $filename)
     {
         $relativePath = 'generated-videos/' . ltrim($filename, '/');
-        return redirect()->route('media.generated-file', [
-            'token' => $this->encodeMediaPathToken($relativePath),
-        ]);
+
+        if (Storage::disk('public')->exists($relativePath)) {
+            return response()->file(Storage::disk('public')->path($relativePath), [
+                'Cache-Control' => 'public, max-age=3600',
+            ]);
+        }
+
+        return response()->view('media.video-unavailable', [
+            'title' => 'Video Sudah Tidak Tersedia',
+            'message' => 'Maaf kak, video yang Anda inginkan sudah tidak tersedia di server karena melewati masa simpan media dari penyedia AI. Yuk, generate video baru dengan prompt terbaru agar kontennya tetap fresh.',
+        ], 200);
     }
 
     public function publicGeneratedPosterByName(string $filename)
     {
         $relativePath = 'generated-posters/' . ltrim($filename, '/');
-        return redirect()->route('media.generated-file', [
-            'token' => $this->encodeMediaPathToken($relativePath),
-        ]);
+
+        if (Storage::disk('public')->exists($relativePath)) {
+            return response()->file(Storage::disk('public')->path($relativePath), [
+                'Cache-Control' => 'public, max-age=3600',
+            ]);
+        }
+
+        return response()->view('media.video-unavailable', [
+            'title' => 'Poster Sudah Tidak Tersedia',
+            'message' => 'Maaf kak, poster yang Anda inginkan sudah tidak tersedia di server karena melewati masa simpan media dari penyedia AI. Yuk, buat poster baru dengan prompt terbaru agar hasilnya tetap up to date.',
+        ], 200);
     }
 
     private function extractLocalGeneratedMediaPath(string $url, string $prefix): ?string
