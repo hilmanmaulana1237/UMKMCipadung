@@ -1,4 +1,4 @@
-import { wayfinder } from '@laravel/vite-plugin-wayfinder';
+// import { wayfinder } from '@laravel/vite-plugin-wayfinder'; // Disabled: causes build failure on VPS
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import laravel from 'laravel-vite-plugin';
@@ -18,9 +18,7 @@ export default defineConfig({
             },
         }),
         tailwindcss(),
-        wayfinder({
-            formVariants: true,
-        }),
+        // wayfinder({ formVariants: true }), // Disabled: causes build failure on VPS
         VitePWA({
             registerType: 'autoUpdate',
             devOptions: {
