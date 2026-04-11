@@ -349,8 +349,8 @@ class AIContentController extends Controller
             return response()->view('media.video-unavailable', [
                 'title' => $kind === 'poster' ? 'Poster Sudah Tidak Tersedia' : 'Video Sudah Tidak Tersedia',
                 'message' => $kind === 'poster'
-                    ? 'Maaf kak, poster yang Anda inginkan sudah tidak tersedia di server karena melewati masa simpan media dari penyedia AI. Namun, data proses pembuatan tetap tercatat untuk kebutuhan pelaporan.'
-                    : 'Maaf kak, video yang Anda inginkan sudah tidak tersedia di server karena melewati masa simpan media dari penyedia AI. Namun, data proses pembuatan tetap tercatat untuk kebutuhan pelaporan.',
+                    ? 'Maaf kak, poster yang Anda inginkan sudah tidak tersedia di server karena melewati masa simpan media dari penyedia AI. Yuk, buat poster baru dengan prompt terbaru agar hasilnya tetap up to date.'
+                    : 'Maaf kak, video yang Anda inginkan sudah tidak tersedia di server karena melewati masa simpan media dari penyedia AI. Yuk, generate video baru dengan prompt terbaru agar kontennya tetap fresh.',
             ], 200);
         }
 

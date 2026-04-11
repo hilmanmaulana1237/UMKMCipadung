@@ -93,7 +93,7 @@
         <h1>{{ $title ?? 'Video Tidak Tersedia' }}</h1>
         <p>{{ $message ?? 'Maaf kak, video yang Anda cari saat ini belum tersedia.' }}</p>
         <div class="note">
-            Untuk kebutuhan penjurian, informasi proses pembuatan konten tetap tersimpan pada sistem meskipun file media sudah melewati masa retensi penyimpanan.
+            Silakan buat media baru dari menu AI Content agar Anda mendapatkan file terbaru yang bisa langsung dipakai dan dibagikan kembali.
         </div>
     </main>
 </body>
