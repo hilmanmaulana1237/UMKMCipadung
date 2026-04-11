@@ -69,7 +69,16 @@ class AIContentController extends Controller
             ->orderBy('created_at', 'desc')
             ->get()
             ->map(function ($content) {
-                if ($content->type !== 'video_generation' || empty($content->generated_result)) {
+                if (empty($content->generated_result)) {
+                    return $content;
+                }
+
+                if ($content->type === 'poster') {
+                    $content->generated_result = $this->normalizePosterResultUrl($content->generated_result);
+                    return $content;
+                }
+
+                if ($content->type !== 'video_generation') {
                     return $content;
                 }
 
@@ -86,14 +95,16 @@ class AIContentController extends Controller
                         continue;
                     }
 
-                    $localPath = $this->extractLocalGeneratedVideoPath($url);
+                    $localPath = $this->extractLocalGeneratedMediaPath($url, 'generated-videos/');
+                    $isMissing = $localPath !== null && !Storage::disk('public')->exists($localPath);
+
                     if ($localPath !== null) {
-                        $url = route('media.generated-video', [
-                            'token' => $this->encodeVideoPathToken($localPath),
+                        $url = route('media.generated-file', [
+                            'token' => $this->encodeMediaPathToken($localPath),
                         ]);
                     }
 
-                    if ($this->isMissingLocalGeneratedVideo($url)) {
+                    if ($isMissing) {
                         $expiredUrls[] = $url;
                     } else {
                         $availableUrls[] = $url;
@@ -288,8 +299,8 @@ class AIContentController extends Controller
                 foreach ($result['video_urls'] as $videoUrl) {
                     $savedPath = $this->kieAIService->downloadAndSaveVideo($videoUrl, Auth::id());
                     if ($savedPath) {
-                        $localVideoUrls[] = route('media.generated-video', [
-                            'token' => $this->encodeVideoPathToken($savedPath),
+                        $localVideoUrls[] = route('media.generated-file', [
+                            'token' => $this->encodeMediaPathToken($savedPath),
                         ]);
                     } else {
                         // Fallback to external URL if download fails
@@ -322,21 +333,24 @@ class AIContentController extends Controller
         ]);
     }
 
-    public function publicGeneratedVideo(string $token)
+    public function publicGeneratedFile(string $token)
     {
-        $relativePath = $this->decodeVideoPathToken($token);
+        $relativePath = $this->decodeMediaPathToken($token);
 
-        if ($relativePath === null || !str_starts_with($relativePath, 'generated-videos/')) {
+        if ($relativePath === null || !$this->isAllowedGeneratedMediaPath($relativePath)) {
             return response()->view('media.video-unavailable', [
-                'title' => 'Video Tidak Ditemukan',
-                'message' => 'Maaf kak, video yang Anda cari tidak ditemukan. Kemungkinan tautan sudah tidak aktif atau file sudah dipindahkan.',
+                'title' => 'Media Tidak Ditemukan',
+                'message' => 'Maaf kak, file yang Anda cari tidak ditemukan. Kemungkinan tautan sudah tidak aktif atau file sudah dipindahkan.',
             ], 404);
         }
 
         if (!Storage::disk('public')->exists($relativePath)) {
+            $kind = str_starts_with($relativePath, 'generated-posters/') ? 'poster' : 'video';
             return response()->view('media.video-unavailable', [
-                'title' => 'Video Sudah Tidak Tersedia',
-                'message' => 'Maaf kak, video yang Anda inginkan sudah tidak tersedia di server karena melewati masa simpan media dari penyedia AI. Namun, data proses pembuatan tetap tercatat untuk kebutuhan pelaporan.',
+                'title' => $kind === 'poster' ? 'Poster Sudah Tidak Tersedia' : 'Video Sudah Tidak Tersedia',
+                'message' => $kind === 'poster'
+                    ? 'Maaf kak, poster yang Anda inginkan sudah tidak tersedia di server karena melewati masa simpan media dari penyedia AI. Namun, data proses pembuatan tetap tercatat untuk kebutuhan pelaporan.'
+                    : 'Maaf kak, video yang Anda inginkan sudah tidak tersedia di server karena melewati masa simpan media dari penyedia AI. Namun, data proses pembuatan tetap tercatat untuk kebutuhan pelaporan.',
             ], 200);
         }
 
@@ -345,46 +359,88 @@ class AIContentController extends Controller
         ]);
     }
 
-    private function isMissingLocalGeneratedVideo(string $url): bool
+    public function publicGeneratedVideoByName(string $filename)
     {
-        $relativePath = $this->extractLocalGeneratedVideoPath($url);
-        if ($relativePath === null) {
-            return false;
-        }
-
-        if (!str_starts_with($relativePath, 'generated-videos/')) {
-            return false;
-        }
-
-        return !Storage::disk('public')->exists($relativePath);
+        $relativePath = 'generated-videos/' . ltrim($filename, '/');
+        return redirect()->route('media.generated-file', [
+            'token' => $this->encodeMediaPathToken($relativePath),
+        ]);
     }
 
-    private function extractLocalGeneratedVideoPath(string $url): ?string
+    public function publicGeneratedPosterByName(string $filename)
+    {
+        $relativePath = 'generated-posters/' . ltrim($filename, '/');
+        return redirect()->route('media.generated-file', [
+            'token' => $this->encodeMediaPathToken($relativePath),
+        ]);
+    }
+
+    private function extractLocalGeneratedMediaPath(string $url, string $prefix): ?string
     {
         $path = parse_url($url, PHP_URL_PATH);
         if (!is_string($path) || trim($path) === '') {
             return null;
         }
 
-        if (str_contains($path, '/storage/generated-videos/')) {
+        if (str_contains($path, '/storage/' . $prefix)) {
             $relativePath = ltrim(str_replace('/storage/', '', $path), '/');
             return $relativePath !== '' ? $relativePath : null;
         }
 
-        if (str_starts_with($path, 'generated-videos/')) {
+        if (str_starts_with($path, $prefix)) {
             return $path;
         }
 
         return null;
     }
 
-    private function encodeVideoPathToken(string $relativePath): string
+    private function normalizePosterResultUrl(string $rawResult): string
+    {
+        if ($rawResult === '') {
+            return $rawResult;
+        }
+
+        if (str_starts_with($rawResult, '{')) {
+            $decoded = json_decode($rawResult, true);
+            if (!is_array($decoded) || empty($decoded['poster_url']) || !is_string($decoded['poster_url'])) {
+                return $rawResult;
+            }
+
+            $localPath = $this->extractLocalGeneratedMediaPath($decoded['poster_url'], 'generated-posters/');
+            if ($localPath === null) {
+                return $rawResult;
+            }
+
+            $decoded['poster_url'] = route('media.generated-file', [
+                'token' => $this->encodeMediaPathToken($localPath),
+            ]);
+
+            return json_encode($decoded);
+        }
+
+        $localPath = $this->extractLocalGeneratedMediaPath($rawResult, 'generated-posters/');
+        if ($localPath === null) {
+            return $rawResult;
+        }
+
+        return route('media.generated-file', [
+            'token' => $this->encodeMediaPathToken($localPath),
+        ]);
+    }
+
+    private function isAllowedGeneratedMediaPath(string $relativePath): bool
+    {
+        return str_starts_with($relativePath, 'generated-videos/')
+            || str_starts_with($relativePath, 'generated-posters/');
+    }
+
+    private function encodeMediaPathToken(string $relativePath): string
     {
         $base64 = base64_encode($relativePath);
         return rtrim(strtr($base64, '+/', '-_'), '=');
     }
 
-    private function decodeVideoPathToken(string $token): ?string
+    private function decodeMediaPathToken(string $token): ?string
     {
         $base64 = strtr($token, '-_', '+/');
         $padding = strlen($base64) % 4;
@@ -716,13 +772,17 @@ class AIContentController extends Controller
                 if ($savedPath) {
                     $content->update([
                         'status' => 'completed',
-                        'generated_result' => asset('storage/' . $savedPath),
+                        'generated_result' => route('media.generated-file', [
+                            'token' => $this->encodeMediaPathToken($savedPath),
+                        ]),
                     ]);
 
                     return response()->json([
                         'success' => true,
                         'status' => 'completed',
-                        'poster_url' => asset('storage/' . $savedPath),
+                        'poster_url' => route('media.generated-file', [
+                            'token' => $this->encodeMediaPathToken($savedPath),
+                        ]),
                     ]);
                 } else {
                     // Download failed

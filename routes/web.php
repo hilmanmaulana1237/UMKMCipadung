@@ -46,8 +46,14 @@ Route::get('/manual-book/{role}', function (string $role) {
     ]);
 })->name('manual.role');
 
-Route::get('/media/generated-video/{token}', [AIContentController::class, 'publicGeneratedVideo'])
-    ->name('media.generated-video');
+Route::get('/media/generated-file/{token}', [AIContentController::class, 'publicGeneratedFile'])
+    ->name('media.generated-file');
+
+Route::get('/storage/generated-videos/{filename}', [AIContentController::class, 'publicGeneratedVideoByName'])
+    ->where('filename', '.*');
+
+Route::get('/storage/generated-posters/{filename}', [AIContentController::class, 'publicGeneratedPosterByName'])
+    ->where('filename', '.*');
 
 // Public Template Preview (for iframe in landing page builder)
 Route::get('/landing-page-templates/{templateId}', [LandingPageController::class, 'previewTemplate'])->name('landingpage.template-preview');
