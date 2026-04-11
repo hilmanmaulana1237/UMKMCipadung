@@ -138,6 +138,12 @@ export default function Welcome({
                                 </div>
                             </Link>
                             <div className="flex items-center gap-2 sm:gap-3">
+                                <Link
+                                    href="/manual-book"
+                                    className="px-3 sm:px-4 py-2 text-slate-600 hover:text-slate-900 font-medium text-xs sm:text-sm transition-colors"
+                                >
+                                    Manual Book
+                                </Link>
                                 {auth.user ? (
                                     <Link
                                         href={marketplaceUrl}

@@ -24,6 +24,27 @@ use Laravel\Fortify\Features;
 // Public Landing Page (No Auth Required)
 Route::get('/toko/{slug}', [LandingPageController::class, 'show'])->name('landingpage.show');
 
+// Public Manual Book (No Auth Required)
+Route::get('/manual-book', function () {
+    return Inertia::render('manual/index');
+})->name('manual.index');
+
+Route::get('/manual-book/report', function () {
+    return Inertia::render('manual/report');
+})->name('manual.report');
+
+Route::get('/manual-book/{role}', function (string $role) {
+    $allowedRoles = ['umkm', 'pengguna', 'kurir'];
+
+    if (!in_array($role, $allowedRoles, true)) {
+        abort(404);
+    }
+
+    return Inertia::render('manual/role', [
+        'role' => $role,
+    ]);
+})->name('manual.role');
+
 // Public Template Preview (for iframe in landing page builder)
 Route::get('/landing-page-templates/{templateId}', [LandingPageController::class, 'previewTemplate'])->name('landingpage.template-preview');
 
