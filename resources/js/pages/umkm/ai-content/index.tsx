@@ -2261,7 +2261,7 @@ export default function AIContentIndex({ store, videoQuota, posterQuota, content
                                 ) : isGenerating ? (
                                     <>
                                         <Loader2 className="w-5 h-5 animate-spin" />
-                                        Sedang Membuat Video... ({getStatusText(generationStatus)})
+                                        ({getStatusText(generationStatus)})
                                     </>
                                 ) : (
                                     <>

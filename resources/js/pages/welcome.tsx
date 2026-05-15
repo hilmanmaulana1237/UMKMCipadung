@@ -87,6 +87,7 @@ export default function Welcome({
     const supporters = [
         { src: '/mitra-lomba/sobatkampus.webp', name: 'Sobat Kampus' },
         { src: '/mitra-lomba/logo Informatika Sakti.webp', name: 'IF Sakti Production' },
+        { src: '/mitra-lomba/Himatif.png', name: 'HIMATIF' },
     ];
 
     const schema = {
