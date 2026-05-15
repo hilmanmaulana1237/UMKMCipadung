@@ -1,5 +1,5 @@
 import AppLayout from '@/layouts/app-layout';
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, usePage } from '@inertiajs/react';
 import { ChevronLeft, Film, ImageIcon, Layout, Store, Package, Camera, Sparkles, Wand2, Loader2, Upload, X, Play, Download, AlertCircle, Clock, CheckCircle, XCircle, Search, Check, Trash2, Share2, Copy, Eye, ExternalLink, ShieldCheck } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import axios from 'axios';
@@ -52,9 +52,23 @@ interface LandingPageData {
     business_hours?: string | null;
     instagram?: string | null;
     email?: string | null;
-    products: number[];
+    products: Array<{
+        name?: string;
+        price?: string;
+        description?: string;
+        image_path?: string | null;
+    }>;
     is_published: boolean;
 }
+
+type ManualProduct = {
+    name: string;
+    price: string;
+    description: string;
+    image_path?: string | null;
+    imageFile?: File | null;
+    imagePreview?: string | null;
+};
 
 interface Props {
     store: { id: number; name: string; address_pickup?: string; contact_number?: string; address?: string; category?: string; description?: string } | null;
@@ -85,13 +99,100 @@ function LandingPagePanel({ store, landingPage, products, templates }: {
     const [selectedTemplate, setSelectedTemplate] = useState<string>(landingPage?.template || '');
     const [tagline, setTagline] = useState(landingPage?.tagline || '');
     const [lpDescription, setLpDescription] = useState(landingPage?.description || '');
-    const [selectedProducts, setSelectedProducts] = useState<number[]>(
-        (landingPage?.products || []).map(id => Number(id))
-    );
+
     const [heroImage, setHeroImage] = useState<File | null>(null);
     const [heroPreview, setHeroPreview] = useState<string | null>(
         landingPage?.hero_image_path ? `/storage/${landingPage.hero_image_path}` : null
     );
+
+    // Manual Products
+    const [manualProducts, setManualProducts] = useState<ManualProduct[]>(
+        Array.isArray(landingPage?.products)
+            ? landingPage.products.map((p) => ({
+                name: p?.name || '',
+                price: p?.price || '',
+                description: p?.description || '',
+                image_path: p?.image_path || null,
+                imageFile: null,
+                imagePreview: null,
+            }))
+            : []
+    );
+
+    const addProduct = () => {
+        if (manualProducts.length >= 10) {
+            alert('Maksimal 10 produk dapat ditambahkan.');
+            return;
+        }
+        setManualProducts([...manualProducts, { name: '', price: '', description: '', image_path: null, imageFile: null, imagePreview: null }]);
+    };
+
+    const removeProduct = (index: number) => {
+        setManualProducts(manualProducts.filter((_, i) => i !== index));
+    };
+
+    const updateProduct = (index: number, field: 'name' | 'price' | 'description', value: string) => {
+        const newProducts = [...manualProducts];
+        newProducts[index] = { ...newProducts[index], [field]: value };
+        setManualProducts(newProducts);
+    };
+
+    const updateProductImage = (index: number, file: File | null) => {
+        const newProducts = [...manualProducts];
+
+        if (!file) {
+            newProducts[index] = {
+                ...newProducts[index],
+                imageFile: null,
+                imagePreview: null,
+                image_path: null,
+            };
+            setManualProducts(newProducts);
+            return;
+        }
+
+        newProducts[index] = {
+            ...newProducts[index],
+            imageFile: file,
+            imagePreview: URL.createObjectURL(file),
+        };
+        setManualProducts(newProducts);
+    };
+
+    const [generatingProductIndex, setGeneratingProductIndex] = useState<number | null>(null);
+
+    const generateProductDescription = async (index: number) => {
+        const prod = manualProducts[index];
+
+        setGeneratingProductIndex(index);
+        try {
+            const response = await axios.post('/ai/generate-description', {
+                name: prod.name || null,
+                category: store?.category || 'lainnya',
+                price: prod.price ? Number(prod.price.replace(/[^0-9]/g, '')) : null,
+                mode: 'short',
+            });
+            
+            if (response.data.success) {
+                const shortDescription = String(response.data.description || '').slice(0, 120);
+                const newProducts = [...manualProducts];
+                newProducts[index] = {
+                    ...newProducts[index],
+                    name: response.data.name,
+                    price: response.data.price,
+                    description: shortDescription
+                };
+                setManualProducts(newProducts);
+            } else {
+                alert('Gagal membuat deskripsi. Silakan coba lagi.');
+            }
+        } catch (error) {
+            console.error('Failed to generate description', error);
+            alert('Gagal membuat deskripsi. Silakan coba lagi.');
+        } finally {
+            setGeneratingProductIndex(null);
+        }
+    };
 
     // Business info states
     const [businessPhone, setBusinessPhone] = useState(landingPage?.business_phone || store?.contact_number || '');
@@ -106,7 +207,6 @@ function LandingPagePanel({ store, landingPage, products, templates }: {
     const [step, setStep] = useState<'template' | 'customize'>(landingPage ? 'customize' : 'template');
     const [copySuccess, setCopySuccess] = useState(false);
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
-    const [productSearch, setProductSearch] = useState('');
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [deleting, setDeleting] = useState(false);
     // Feature states for AI-generated content
@@ -118,13 +218,7 @@ function LandingPagePanel({ store, landingPage, products, templates }: {
     const [feature3Desc, setFeature3Desc] = useState(landingPage?.feature3_desc || '');
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    // Filter products based on search
-    const filteredProducts = products.filter(p =>
-        p.name.toLowerCase().includes(productSearch.toLowerCase())
-    );
 
-    // Get selected product details
-    const selectedProductDetails = products.filter(p => selectedProducts.includes(p.id));
 
     // Handle initial state update if landing page prop changes
     useEffect(() => {
@@ -132,9 +226,21 @@ function LandingPagePanel({ store, landingPage, products, templates }: {
             setSelectedTemplate(landingPage.template || '');
             setTagline(landingPage.tagline || '');
             setLpDescription(landingPage.description || '');
-            setSelectedProducts((landingPage.products || []).map(id => Number(id)));
+
             setHeroPreview(landingPage.hero_image_path ? `/storage/${landingPage.hero_image_path}` : null);
             setIsPublished(landingPage.is_published);
+            setManualProducts(
+                Array.isArray(landingPage.products)
+                    ? landingPage.products.map((p) => ({
+                        name: p?.name || '',
+                        price: p?.price || '',
+                        description: p?.description || '',
+                        image_path: p?.image_path || null,
+                        imageFile: null,
+                        imagePreview: null,
+                    }))
+                    : []
+            );
             // Features
             setFeature1Title(landingPage.feature1_title || '');
             setFeature1Desc(landingPage.feature1_desc || '');
@@ -145,9 +251,15 @@ function LandingPagePanel({ store, landingPage, products, templates }: {
         }
     }, [landingPage]);
 
-    const handleTemplateSelect = (templateId: string) => {
+    const handleTemplateSelect = async (templateId: string) => {
         setSelectedTemplate(templateId);
         setStep('customize');
+        
+        if (landingPage) {
+            // Auto save when changing template
+            await handleSave(isPublished, templateId);
+            window.location.reload();
+        }
     };
 
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -190,21 +302,29 @@ function LandingPagePanel({ store, landingPage, products, templates }: {
         }
     };
 
-    const handleSave = async (publish: boolean = false) => {
-        if (!selectedTemplate) {
+    const handleSave = async (publish: boolean = false, overrideTemplate?: string) => {
+        const templateToSave = overrideTemplate || selectedTemplate;
+        if (!templateToSave) {
             setErrorMsg('Silakan pilih template terlebih dahulu.');
             return;
         }
         setSaving(true);
         setErrorMsg(null);
         const formData = new FormData();
-        formData.append('template', selectedTemplate);
+        formData.append('template', templateToSave);
         formData.append('tagline', tagline);
         formData.append('description', lpDescription);
         formData.append('is_published', publish ? '1' : '0');
 
-        // Append selected products
-        selectedProducts.forEach(id => formData.append('products[]', String(id)));
+        // Append manual products
+        manualProducts.forEach((prod, index) => {
+            formData.append(`products[${index}][name]`, prod.name);
+            formData.append(`products[${index}][price]`, prod.price);
+            formData.append(`products[${index}][description]`, prod.description);
+            if (prod.imageFile) {
+                formData.append(`product_images[${index}]`, prod.imageFile);
+            }
+        });
 
         // Append features
         formData.append('feature1_title', feature1Title);
@@ -267,19 +387,7 @@ function LandingPagePanel({ store, landingPage, products, templates }: {
         }
     };
 
-    const toggleProduct = (productId: number) => {
-        if (selectedProducts.includes(productId)) {
-            // Remove product if already selected
-            setSelectedProducts(selectedProducts.filter(id => id !== productId));
-        } else {
-            // Add product if not at max limit (10)
-            if (selectedProducts.length < 10) {
-                setSelectedProducts([...selectedProducts, Number(productId)]);
-            } else {
-                alert('Maksimal 10 produk dapat dipilih.');
-            }
-        }
-    };
+
 
     const copyLink = () => {
         if (landingPage?.slug) {
@@ -439,7 +547,15 @@ function LandingPagePanel({ store, landingPage, products, templates }: {
                                                 URL: <span className="font-mono bg-white px-2 py-0.5 rounded">/toko/{landingPage.slug}</span>
                                             </div>
                                         )}
+                                        {selectedTemplate !== landingPage.template && (
+                                            <div className="text-xs text-orange-600 mt-1 font-medium animate-pulse">
+                                                ⚠️ Tema diubah. Jangan lupa klik "Simpan/Publish".
+                                            </div>
+                                        )}
                                     </div>
+                                    <button onClick={() => setStep('template')} className="text-xs bg-white border border-gray-300 shadow-sm text-gray-700 px-3 py-1.5 rounded-lg font-medium hover:bg-gray-50 flex items-center gap-1 transition-colors">
+                                        🎨 Ganti Tema
+                                    </button>
                                 </div>
                                 {landingPage.is_published && (
                                     <div className="flex gap-2">
@@ -504,94 +620,114 @@ function LandingPagePanel({ store, landingPage, products, templates }: {
                         />
                     </div>
 
-                    {/* Product Selection */}
+                    {/* Manual Products Entry */}
                     <div className="bg-white rounded-2xl p-5 shadow-lg border border-gray-100">
-                        <h3 className="font-semibold text-gray-800 mb-3">🛒 Pilih Produk <span className="text-gray-400 font-normal">({selectedProducts.length}/10)</span></h3>
-
-                        {/* Selected Products */}
-                        {selectedProducts.length > 0 && (
-                            <div className="mb-4">
-                                <div className="text-xs text-gray-500 mb-2">Produk Terpilih:</div>
-                                <div className="flex flex-wrap gap-2">
-                                    {selectedProductDetails.map(product => (
-                                        <div key={product.id} className="flex items-center gap-2 bg-white border border-gray-200 rounded-lg pl-3 pr-1 py-1.5 shadow-sm group hover:border-red-200 transition-colors">
-                                            <span className="text-xs font-medium text-gray-700 truncate max-w-[120px]">{product.name}</span>
-                                            <button
-                                                onClick={(e) => { e.stopPropagation(); toggleProduct(product.id); }}
-                                                className="w-6 h-6 bg-gray-100 text-gray-500 rounded-md flex items-center justify-center hover:bg-red-50 hover:text-red-500 transition-colors"
-                                                title="Hapus dari pilihan"
-                                            >
-                                                <Trash2 size={12} />
-                                            </button>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Search Input */}
-                        <div className="relative mb-3">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                            <input
-                                type="text"
-                                placeholder="Cari produk..."
-                                value={productSearch}
-                                onChange={(e) => setProductSearch(e.target.value)}
-                                className="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-100 focus:border-blue-500 transition-all outline-none"
-                            />
+                        <div className="flex justify-between items-center mb-3">
+                            <h3 className="font-semibold text-gray-800">🛒 Daftar Produk/Layanan <span className="text-gray-400 font-normal">({manualProducts.length}/10)</span></h3>
+                            <button onClick={addProduct} className="text-xs bg-green-50 text-green-600 px-3 py-1.5 rounded-lg font-medium border border-green-200 hover:bg-green-100 transition">
+                                + Tambah Produk
+                            </button>
                         </div>
-
-                        {products.length === 0 ? (
-                            <div className="text-center text-gray-500 text-sm py-6">Belum ada produk. Tambahkan produk terlebih dahulu.</div>
-                        ) : filteredProducts.length === 0 ? (
-                            <div className="text-center text-gray-500 text-sm py-6">Tidak ada produk yang cocok dengan pencarian.</div>
+                        
+                        {manualProducts.length === 0 ? (
+                            <div className="text-center text-gray-500 text-sm py-6 border-2 border-dashed border-gray-200 rounded-xl">
+                                Belum ada produk. Klik tombol tambah untuk memasukkan produk/layanan Anda.
+                            </div>
                         ) : (
-                            <div className="grid grid-cols-3 gap-2 max-h-48 overflow-y-auto p-1 custom-scrollbar">
-                                {filteredProducts.map(product => {
-                                    const isSelected = selectedProducts.includes(product.id);
-                                    const isDisabled = !isSelected && selectedProducts.length >= 10;
-
-                                    return (
-                                        <div
-                                            key={product.id}
-                                            onClick={() => !isDisabled && toggleProduct(product.id)}
-                                            className={`relative h-20 border rounded-lg overflow-hidden cursor-pointer transition-all group ${isSelected
-                                                ? 'border-green-500 ring-1 ring-green-500 bg-green-50'
-                                                : isDisabled
-                                                    ? 'border-gray-100 opacity-50 cursor-not-allowed grayscale'
-                                                    : 'border-gray-200 hover:border-green-300 hover:shadow-sm'
-                                                }`}
+                            <div className="space-y-4">
+                                {manualProducts.map((prod, index) => (
+                                    <div key={index} className="relative bg-gray-50 p-4 rounded-xl border border-gray-200">
+                                        <button 
+                                            onClick={() => removeProduct(index)}
+                                            className="absolute top-3 right-3 text-red-400 hover:text-red-600 p-1"
+                                            title="Hapus Produk"
                                         >
-                                            {/* Product Image or Text Fallback */}
-                                            {product.image_path ? (
-                                                <img
-                                                    src={`/storage/${product.image_path}`}
-                                                    alt={product.name}
-                                                    className="w-full h-full object-cover"
+                                            <Trash2 size={16} />
+                                        </button>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+                                            <div>
+                                                <label className="block text-xs font-medium text-gray-600 mb-1">Nama Produk/Layanan</label>
+                                                <input
+                                                    type="text"
+                                                    value={prod.name}
+                                                    onChange={(e) => updateProduct(index, 'name', e.target.value)}
+                                                    placeholder="Contoh: Nasi Goreng Spesial (Atau biarkan AI yang isi)"
+                                                    className="w-full p-2 border border-gray-300 rounded-lg text-sm"
+                                                    required
                                                 />
-                                            ) : (
-                                                <div className={`w-full h-full flex items-center justify-center p-2 text-center text-xs text-gray-500 bg-gray-50 ${isSelected ? 'bg-green-50' : ''}`}>
-                                                    {product.name}
-                                                </div>
-                                            )}
-
-                                            {/* Selection Overlay */}
-                                            {isSelected && (
-                                                <div className="absolute inset-0 bg-green-500/10 flex items-center justify-center group-hover:bg-red-500/10 transition-colors">
-                                                    <div className="w-6 h-6 bg-green-500 text-white rounded-full flex items-center justify-center shadow-sm group-hover:bg-red-500 transition-colors">
-                                                        <Check size={14} strokeWidth={3} className="group-hover:hidden" />
-                                                        <Trash2 size={12} className="hidden group-hover:block" />
-                                                    </div>
-                                                </div>
-                                            )}
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs font-medium text-gray-600 mb-1">Harga (Opsional)</label>
+                                                <input
+                                                    type="text"
+                                                    value={prod.price}
+                                                    onChange={(e) => updateProduct(index, 'price', e.target.value)}
+                                                    placeholder="Contoh: 25000"
+                                                    className="w-full p-2 border border-gray-300 rounded-lg text-sm"
+                                                />
+                                            </div>
                                         </div>
-                                    );
-                                })}
+
+                                        <div className="mb-3">
+                                            <label className="block text-xs font-medium text-gray-600 mb-1">Foto Produk</label>
+                                            <div className="flex items-start gap-3">
+                                                <label className="w-24 h-24 rounded-lg border-2 border-dashed border-gray-300 bg-white hover:border-violet-400 transition-colors cursor-pointer overflow-hidden flex items-center justify-center">
+                                                    {(prod.imagePreview || prod.image_path) ? (
+                                                        <img
+                                                            src={prod.imagePreview || `/storage/${prod.image_path}`}
+                                                            alt={`Produk ${index + 1}`}
+                                                            className="w-full h-full object-cover"
+                                                        />
+                                                    ) : (
+                                                        <span className="text-[10px] text-gray-500 text-center px-1">Upload Foto</span>
+                                                    )}
+                                                    <input
+                                                        type="file"
+                                                        accept="image/*"
+                                                        className="hidden"
+                                                        onChange={(e) => updateProductImage(index, e.target.files?.[0] || null)}
+                                                    />
+                                                </label>
+                                                <div className="flex-1 text-xs text-gray-500 space-y-2">
+                                                    <p>Gunakan foto asli produk agar tampil di landing page.</p>
+                                                    {(prod.imagePreview || prod.image_path) && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => updateProductImage(index, null)}
+                                                            className="text-red-500 hover:text-red-600"
+                                                        >
+                                                            Hapus Foto
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <div className="flex justify-between items-center mb-1">
+                                                <label className="block text-xs font-medium text-gray-600">Deskripsi Singkat</label>
+                                                <button 
+                                                    onClick={() => generateProductDescription(index)}
+                                                    disabled={generatingProductIndex === index}
+                                                    className="text-[10px] bg-gradient-to-r from-violet-500 to-purple-500 text-white px-2 py-1 rounded-md font-medium"
+                                                >
+                                                    {generatingProductIndex === index ? '⏳ AI...' : '🤖 AI Generate'}
+                                                </button>
+                                            </div>
+                                            <input
+                                                type="text"
+                                                value={prod.description}
+                                                onChange={(e) => updateProduct(index, 'description', e.target.value)}
+                                                placeholder="Contoh: Jersey handmade motif tradisional, nyaman dipakai harian."
+                                                maxLength={120}
+                                                className="w-full p-2 border border-gray-300 rounded-lg text-sm"
+                                            />
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
                         )}
-                    </div>
-
-                    {/* Error Display */}
+                    </div>                    {/* Error Display */}
                     {errorMsg && (
                         <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-red-700 text-sm flex items-center gap-2">
                             <AlertCircle className="w-5 h-5 flex-shrink-0" />
@@ -743,7 +879,7 @@ interface PosterTemplate {
 }
 
 function PosterGeneratorPanel({ store, contents, quota }: { store: Props['store']; contents: VideoContent[]; quota: VideoQuota }) {
-    const [posterType, setPosterType] = useState<'makanan' | 'enhance'>('makanan');
+    const [posterType, setPosterType] = useState<'makanan' | 'enhance'>('enhance');
     const [templates, setTemplates] = useState<{ makanan: PosterTemplate[] }>({ makanan: [] });
     const [selectedTemplate, setSelectedTemplate] = useState<string>('');
     const [loadingTemplates, setLoadingTemplates] = useState(true);
@@ -1113,37 +1249,7 @@ function PosterGeneratorPanel({ store, contents, quota }: { store: Props['store'
             )}
 
             <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4">
-                {/* Poster Type Selection */}
-                <div className="bg-white rounded-2xl p-5 shadow-lg border border-gray-100">
-                    <h2 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
-                        <ImageIcon className="w-5 h-5 text-violet-500" />
-                        Pilih Jenis Poster
-                    </h2>
-                    <div className="grid grid-cols-2 gap-3">
-                        <button
-                            onClick={() => handleTypeChange('makanan')}
-                            className={`p-4 rounded-xl border-2 transition-all text-left ${posterType === 'makanan'
-                                ? 'border-violet-500 bg-violet-50'
-                                : 'border-gray-200 hover:border-gray-300'
-                                }`}
-                        >
-                            <div className="text-2xl mb-1">🍜</div>
-                            <div className="font-semibold text-gray-800">Makanan</div>
-                            <p className="text-xs text-gray-500">Fokus 1 produk dengan foto</p>
-                        </button>
-                        <button
-                            onClick={() => handleTypeChange('enhance')}
-                            className={`p-4 rounded-xl border-2 transition-all text-left ${posterType === 'enhance'
-                                ? 'border-violet-500 bg-violet-50'
-                                : 'border-gray-200 hover:border-gray-300'
-                                }`}
-                        >
-                            <div className="text-2xl mb-1">✨</div>
-                            <div className="font-semibold text-gray-800">Percantik Produk</div>
-                            <p className="text-xs text-gray-500">Foto produk jadi profesional</p>
-                        </button>
-                    </div>
-                </div>
+
 
                 {/* Template Selection - Only for makanan type */}
                 {posterType === 'makanan' && (
@@ -1662,12 +1768,18 @@ export default function AIContentIndex({ store, videoQuota, posterQuota, content
     const [newVideoUnavailable, setNewVideoUnavailable] = useState(false);
     const [historyVideoUnavailable, setHistoryVideoUnavailable] = useState<Record<string, boolean>>({});
 
+    // UGC Photo Generation State
+    const [ugcTaskId, setUgcTaskId] = useState<string | null>(null);
+    const [ugcContentId, setUgcContentId] = useState<string | null>(null);
+    const [ugcStatus, setUgcStatus] = useState<string>('');
+    const [ugcPhotoUrl, setUgcPhotoUrl] = useState<string | null>(null);
+
     // Video history from props
     const videoHistory = contents.filter(c => c.type === 'video_generation');
 
-    // Find any generating videos on mount and resume polling
+    // Find any generating videos or UGC photos on mount and resume polling
     useEffect(() => {
-        const generatingVideo = videoHistory.find(v => ['waiting', 'queuing', 'generating'].includes(v.status));
+        const generatingVideo = videoHistory.find(v => ['waiting', 'queuing', 'generating', 'running', 'starting'].includes(v.status));
         if (generatingVideo) {
             try {
                 const data = JSON.parse(generatingVideo.generated_result);
@@ -1679,14 +1791,35 @@ export default function AIContentIndex({ store, videoQuota, posterQuota, content
             } catch (e) {
                 console.error('Failed to parse generating video data');
             }
+        } else {
+            // Only check UGC if no video is generating, to resume the 2-step process
+            const generatingUgc = contents.find(c => c.type === 'ugc_photo' && ['waiting', 'queuing', 'generating', 'running', 'starting'].includes(c.status));
+            if (generatingUgc) {
+                try {
+                    const data = JSON.parse(generatingUgc.generated_result);
+                    if (data.task_id) {
+                        setUgcTaskId(data.task_id);
+                        setUgcContentId(generatingUgc.id);
+                        setUgcStatus(generatingUgc.status);
+                        if (data.product_name) {
+                            setProductName(data.product_name);
+                        }
+                    }
+                } catch (e) {
+                    console.error('Failed to parse generating UGC data');
+                }
+            }
         }
     }, []);
+
+    // Ref lock to prevent duplicate generateVideo POST requests
+    const isGeneratingVideoRef = useRef(false);
 
     // Polling for video status
     useEffect(() => {
         let interval: NodeJS.Timeout;
-        // Include 'waiting' in the list of active statuses
-        const activeStatuses = ['waiting', 'queuing', 'generating'];
+        // Include 'waiting', 'running' in the list of active statuses
+        const activeStatuses = ['waiting', 'queuing', 'generating', 'running', 'starting'];
         if (taskId && contentId && activeStatuses.includes(generationStatus)) {
             interval = setInterval(async () => {
                 try {
@@ -1700,11 +1833,13 @@ export default function AIContentIndex({ store, videoQuota, posterQuota, content
                             setNewVideoUnavailable(false);
                             setVideoUrls(response.data.video_urls);
                             setTaskId(null);
+                            isGeneratingVideoRef.current = false;
                             // Reload page to refresh history
                             window.location.reload();
                         } else if (response.data.state === 'fail') {
                             setErrorMessage(response.data.fail_msg || 'Video generation failed');
                             setTaskId(null);
+                            isGeneratingVideoRef.current = false;
                         }
                     }
                 } catch (error) {
@@ -1714,6 +1849,64 @@ export default function AIContentIndex({ store, videoQuota, posterQuota, content
         }
         return () => clearInterval(interval);
     }, [taskId, contentId, generationStatus]);
+
+    // Ref guard to prevent duplicate auto-video-generation from overlapping polling callbacks
+    const hasAutoTriggeredVideoRef = useRef(false);
+
+    // Reset the guard when user starts a new UGC photo generation
+    useEffect(() => {
+        if (ugcTaskId) {
+            hasAutoTriggeredVideoRef.current = false;
+        }
+    }, [ugcTaskId]);
+
+    // Polling for UGC Photo status
+    useEffect(() => {
+        let interval: NodeJS.Timeout;
+        const activeStatuses = ['waiting', 'queuing', 'generating', 'running', 'starting'];
+        if (ugcTaskId && ugcContentId && activeStatuses.includes(ugcStatus)) {
+            interval = setInterval(async () => {
+                // If we already triggered video generation, stop polling immediately
+                if (hasAutoTriggeredVideoRef.current) {
+                    clearInterval(interval);
+                    return;
+                }
+                try {
+                    const response = await axios.post('/umkm/ai-content/check-ugc-photo-status', {
+                        task_id: ugcTaskId,
+                        content_id: ugcContentId,
+                    });
+                    if (response.data.success) {
+                        setUgcStatus(response.data.state);
+                        if (response.data.state === 'success') {
+                            // Guard: only trigger video generation once
+                            if (hasAutoTriggeredVideoRef.current) return;
+                            hasAutoTriggeredVideoRef.current = true;
+
+                            // Stop polling immediately (don't wait for React state update)
+                            clearInterval(interval);
+
+                            const generatedUrl = response.data.local_url || (response.data.image_urls && response.data.image_urls[0]);
+                            setUgcPhotoUrl(generatedUrl);
+                            setUgcTaskId(null);
+                            
+                            // Auto-proceed to video generation (called exactly once)
+                            generateVideo(generatedUrl);
+                            
+                        } else if (response.data.state === 'fail') {
+                            clearInterval(interval);
+                            setErrorMessage(response.data.fail_msg || 'Gagal membuat foto UGC');
+                            setUgcTaskId(null);
+                            setLoading(false);
+                        }
+                    }
+                } catch (error) {
+                    console.error('UGC Status check error:', error);
+                }
+            }, 5000);
+        }
+        return () => clearInterval(interval);
+    }, [ugcTaskId, ugcContentId, ugcStatus]);
 
     // Manual refresh status for a specific video
     const refreshVideoStatus = async (videoId: string, videoTaskId: string) => {
@@ -1768,13 +1961,53 @@ export default function AIContentIndex({ store, videoQuota, posterQuota, content
         }
     };
 
-    const generateVideo = async () => {
-        if (!photo || !storeName || !description) return;
+    const generateUGCPhoto = async () => {
+        if (!photo || !productName) return;
+        isGeneratingVideoRef.current = false; // Reset video lock for new generation cycle
+        setLoading(true);
+        setErrorMessage('');
+        setUgcStatus('starting');
+        setUgcPhotoUrl(null);
+        
+        const formData = new FormData();
+        formData.append('product_name', productName);
+        formData.append('photo', photo);
+        
+        try {
+            const response = await axios.post('/umkm/ai-content/generate-ugc-photo', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
+            if (response.data.success) {
+                setUgcTaskId(response.data.task_id);
+                setUgcContentId(response.data.content_id);
+                setUgcStatus('queuing');
+            }
+        } catch (error: any) {
+            setErrorMessage(error.response?.data?.error || 'Gagal memulai foto UGC');
+            setUgcStatus('');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+
+
+    const generateVideo = async (providedUgcUrl?: string) => {
+        // Prevent duplicate calls (race condition guard)
+        if (isGeneratingVideoRef.current) {
+            console.warn('generateVideo: already in progress, skipping duplicate call');
+            return;
+        }
+
+        const finalUgcUrl = providedUgcUrl || ugcPhotoUrl;
+        
+        if ((!photo && !finalUgcUrl) || !productName) return;
         if (videoQuota.remaining <= 0) {
             setErrorMessage(`Kuota video habis. Maksimal ${videoQuota.max} video per UMKM.`);
             return;
         }
 
+        isGeneratingVideoRef.current = true;
         setLoading(true);
         setErrorMessage('');
         setVideoUrls([]);
@@ -1782,15 +2015,13 @@ export default function AIContentIndex({ store, videoQuota, posterQuota, content
         setGenerationStatus('starting');
 
         const formData = new FormData();
-        formData.append('mode', mode);
-        formData.append('store_name', storeName);
-        formData.append('category', category);
-        formData.append('product_name', productName); // Append product name
-        formData.append('description', description);
-        formData.append('location', location);
-        formData.append('contact', contact);
-        formData.append('photo', photo);
-        formData.append('duration', duration);
+        formData.append('product_name', productName);
+        
+        if (finalUgcUrl) {
+            formData.append('ugc_photo_url', finalUgcUrl);
+        } else if (photo) {
+            formData.append('photo', photo);
+        }
 
         try {
             const response = await axios.post('/umkm/ai-content/generate-video', formData, {
@@ -1802,14 +2033,14 @@ export default function AIContentIndex({ store, videoQuota, posterQuota, content
                 setGenerationStatus('queuing');
             }
         } catch (error: any) {
+            isGeneratingVideoRef.current = false;
             setErrorMessage(error.response?.data?.error || 'Gagal generate video');
             setGenerationStatus('');
-        } finally {
             setLoading(false);
         }
     };
 
-    const isFormValid = photo && storeName && description;
+    const isFormValid = photo && productName;
     const isGenerating = !!taskId || loading;
 
     const getStatusText = (status: string) => {
@@ -1850,9 +2081,41 @@ export default function AIContentIndex({ store, videoQuota, posterQuota, content
         }
     };
 
+    const { auth } = usePage().props as any;
+    const hasAvatar = !!auth?.user?.avatar_path;
+
     return (
-        <AppLayout activeTab="dashboard">
+        <AppLayout activeTab="ai-tools">
             <Head title="AI Content Generator" />
+
+            {/* Modal: Foto profil wajib */}
+            {!hasAvatar && auth?.user?.role !== 'admin' && (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[999] p-4">
+                    <div className="bg-white rounded-2xl p-8 max-w-sm w-full shadow-2xl text-center">
+                        <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <Camera className="w-10 h-10 text-blue-600" />
+                        </div>
+                        <h2 className="text-xl font-bold text-gray-900 mb-2">Upload Foto Profil</h2>
+                        <p className="text-gray-500 text-sm mb-6">
+                            Foto profil Anda diperlukan sebagai bahan untuk AI Content Generator.
+                            Silakan upload foto terlebih dahulu.
+                        </p>
+                        <Link
+                            href="/profile"
+                            className="block w-full py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-bold text-sm hover:opacity-90 transition-opacity"
+                        >
+                            <Camera className="w-4 h-4 inline mr-2" />
+                            Upload Foto Sekarang
+                        </Link>
+                        <Link
+                            href="/umkm/dashboard"
+                            className="block mt-3 text-sm text-gray-400 hover:text-gray-600"
+                        >
+                            Kembali ke Dashboard
+                        </Link>
+                    </div>
+                </div>
+            )}
 
             {/* Header */}
             <div className="bg-gradient-to-br from-violet-600 to-purple-700 px-4 pt-6 pb-8 rounded-b-3xl text-white">
@@ -1926,53 +2189,17 @@ export default function AIContentIndex({ store, videoQuota, posterQuota, content
                             </div>
                         )}
 
-                        {/* Mode Selection */}
-                        <div className="bg-white rounded-2xl p-5 shadow-lg border border-gray-100">
-                            <h2 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
-                                <Film className="w-5 h-5 text-violet-500" />
-                                Pilih Jenis Video
-                            </h2>
-                            <div className="grid grid-cols-2 gap-3">
-                                <button
-                                    onClick={() => setMode('store_photo')}
-                                    disabled={isGenerating}
-                                    className={`p-4 rounded-xl border-2 text-left transition-all disabled:opacity-50 ${mode === 'store_photo' ? 'border-violet-500 bg-violet-50' : 'border-gray-200'}`}
-                                >
-                                    <Store className={`w-8 h-8 mb-2 ${mode === 'store_photo' ? 'text-violet-500' : 'text-gray-400'}`} />
-                                    <p className="font-semibold text-sm text-gray-800">Foto Toko</p>
-                                    <p className="text-xs text-gray-500">Gunakan foto lokasi usaha</p>
-                                </button>
-                                <button
-                                    onClick={() => setMode('product_photo')}
-                                    disabled={isGenerating}
-                                    className={`p-4 rounded-xl border-2 text-left transition-all disabled:opacity-50 ${mode === 'product_photo' ? 'border-violet-500 bg-violet-50' : 'border-gray-200'}`}
-                                >
-                                    <Package className={`w-8 h-8 mb-2 ${mode === 'product_photo' ? 'text-violet-500' : 'text-gray-400'}`} />
-                                    <p className="font-semibold text-sm text-gray-800">Foto Produk</p>
-                                    <p className="text-xs text-gray-500">AI buatkan suasana</p>
-                                </button>
-                            </div>
-                        </div>
-
                         {/* Photo Upload */}
                         <div className="bg-white rounded-2xl p-5 shadow-lg border border-gray-100">
                             <h2 className="font-bold text-gray-800 mb-3 flex items-center gap-2">
                                 <Camera className="w-5 h-5 text-violet-500" />
-                                {mode === 'store_photo' ? 'Upload Foto Toko' : 'Upload Foto Produk'}
+                                Upload Foto Produk
                             </h2>
-
-                            {/* Warning Alert */}
-                            <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-4 flex items-start gap-2">
-                                <AlertCircle className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
-                                <p className="text-xs text-amber-800 leading-relaxed">
-                                    <strong>⚠️ Penting:</strong> Pastikan <strong>TIDAK ADA ORANG</strong> dalam foto agar AI dapat memproses video dengan lancar dan tidak error.
-                                </p>
-                            </div>
 
                             {!photoPreview ? (
                                 <label className="flex flex-col items-center justify-center h-40 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer hover:border-violet-400 transition-all">
                                     <Upload className="w-8 h-8 text-gray-400 mb-2" />
-                                    <span className="text-sm text-gray-500">Tap untuk pilih foto</span>
+                                    <span className="text-sm text-gray-500">Tap untuk pilih foto produk</span>
                                     <input ref={fileInputRef} type="file" accept="image/*" onChange={handlePhotoChange} className="hidden" disabled={isGenerating} />
                                 </label>
                             ) : (
@@ -1989,103 +2216,22 @@ export default function AIContentIndex({ store, videoQuota, posterQuota, content
                         <div className="bg-white rounded-2xl p-5 shadow-lg border border-gray-100 space-y-4">
                             <h2 className="font-bold text-gray-800 flex items-center gap-2">
                                 <Sparkles className="w-5 h-5 text-violet-500" />
-                                Info Usaha
+                                Detail Produk
                             </h2>
 
-                            <input
-                                type="text"
-                                value={storeName}
-                                onChange={(e) => setStoreName(e.target.value)}
-                                disabled={isGenerating}
-                                className="w-full px-4 py-3 border border-gray-200 rounded-xl disabled:bg-gray-50"
-                                placeholder="Nama Usaha / Toko"
-                            />
-
-                            <select
-                                value={category}
-                                onChange={(e) => setCategory(e.target.value)}
-                                disabled={isGenerating}
-                                className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-white disabled:bg-gray-50"
-                            >
-                                {CATEGORIES.map((cat) => (
-                                    <option key={cat.value} value={cat.value}>{cat.label}</option>
-                                ))}
-                            </select>
-
-
-
-                            {/* New Product Name & Auto Description */}
                             <div className="space-y-2">
-                                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Detail Produk</label>
-                                <div className="flex gap-2">
-                                    <input
-                                        type="text"
-                                        value={productName}
-                                        onChange={(e) => setProductName(e.target.value)}
-                                        disabled={isGenerating}
-                                        className="flex-1 px-4 py-3 border border-gray-200 rounded-xl disabled:bg-gray-50 bg-gray-50 focus:bg-white transition-colors"
-                                        placeholder="Nama Produk (Cth: Seblak Jeletot)"
-                                    />
-                                    <button
-                                        onClick={handleGenerateDescription}
-                                        disabled={generatingDesc || isGenerating || !productName}
-                                        className="px-4 py-2 bg-gradient-to-br from-indigo-500 to-purple-600 text-white rounded-xl font-medium shadow-sm hover:shadow-md transition-all disabled:opacity-50 whitespace-nowrap flex items-center gap-2"
-                                        title="Buat deskripsi otomatis dengan AI"
-                                    >
-                                        {generatingDesc ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-                                        <span className="hidden sm:inline">{generatingDesc ? 'Membuat...' : 'Buat Deskripsi'}</span>
-                                        <span className="sm:hidden">{generatingDesc ? '...' : 'Auto'}</span>
-                                    </button>
-                                </div>
-                                <p className="text-xs text-gray-400">
-                                    💡 Masukkan nama produk, lalu klik tombol "Buat Deskripsi".
+                                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Nama Produk</label>
+                                <input
+                                    type="text"
+                                    value={productName}
+                                    onChange={(e) => setProductName(e.target.value)}
+                                    disabled={isGenerating}
+                                    className="w-full px-4 py-3 border border-gray-200 rounded-xl disabled:bg-gray-50 focus:bg-white transition-colors"
+                                    placeholder="Cth: Seblak Jeletot"
+                                />
+                                <p className="text-xs text-gray-400 mt-1">
+                                    💡 Masukkan nama produk Anda. AI akan otomatis membuatkan narasi video untuk mempromosikan produk ini.
                                 </p>
-                                <div className="mt-2 p-3 bg-blue-50 border border-blue-100 rounded-xl text-xs text-blue-700 space-y-1">
-                                    <p className="font-semibold flex items-center gap-1">
-                                        <ShieldCheck className="w-3 h-3" />
-                                        Jaminan Konten Relevan
-                                    </p>
-                                    <p>
-                                        AI akan otomatis menyesuaikan visual dengan <b>Kategori Toko</b> Anda agar tidak melenceng (misal: Toko Sembako tidak akan dibuatkan video Makanan Siap Saji).
-                                    </p>
-                                    <p className="opacity-80">
-                                        *Kami juga otomatis menyelipkan produk lain dari etalase toko Anda sebagai latar belakang agar video terlihat lebih nyata & "hidup".
-                                    </p>
-                                </div>
-                            </div>
-
-                            <textarea
-                                value={description}
-                                onChange={(e) => setDescription(e.target.value)}
-                                disabled={isGenerating}
-                                className="w-full px-4 py-3 border border-gray-200 rounded-xl h-28 resize-none disabled:bg-gray-50 text-sm leading-relaxed"
-                                placeholder={mode === 'store_photo' ? 'Deskripsi suasana toko...' : 'Deskripsi visual produk...'}
-                            />
-
-                            <div className="grid grid-cols-2 gap-3">
-                                <input
-                                    type="text"
-                                    value={location}
-                                    onChange={(e) => setLocation(e.target.value)}
-                                    disabled={isGenerating}
-                                    className="px-3 py-2.5 border border-gray-200 rounded-xl text-sm disabled:bg-gray-50"
-                                    placeholder="Lokasi (Opsional)"
-                                />
-                                <input
-                                    type="text"
-                                    value={contact}
-                                    onChange={(e) => setContact(e.target.value)}
-                                    disabled={isGenerating}
-                                    className="px-3 py-2.5 border border-gray-200 rounded-xl text-sm disabled:bg-gray-50"
-                                    placeholder="Kontak (Opsional)"
-                                />
-                            </div>
-
-                            <div className="flex items-center gap-3">
-                                <span className="text-sm text-gray-600">Durasi:</span>
-                                <div className="px-4 py-2 rounded-lg text-sm font-medium bg-violet-500 text-white">
-                                    15 detik
-                                </div>
                             </div>
                         </div>
 
@@ -2094,30 +2240,37 @@ export default function AIContentIndex({ store, videoQuota, posterQuota, content
                             <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-start gap-3">
                                 <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
                                 <div>
-                                    <p className="text-sm font-medium text-red-700">Gagal Generate</p>
+                                    <p className="text-sm font-medium text-red-700">Terjadi Kesalahan</p>
                                     <p className="text-sm text-red-600">{errorMessage}</p>
                                 </div>
                             </div>
                         )}
 
-                        {/* Generate Button */}
-                        <button
-                            onClick={generateVideo}
-                            disabled={loading || !isFormValid || videoQuota.remaining <= 0 || isGenerating}
-                            className="w-full py-4 bg-gradient-to-r from-violet-500 to-purple-600 text-white rounded-2xl font-bold shadow-lg flex items-center justify-center gap-2 disabled:opacity-50 transition-all"
-                        >
-                            {isGenerating ? (
-                                <>
-                                    <Loader2 className="w-5 h-5 animate-spin" />
-                                    {getStatusText(generationStatus)}
-                                </>
-                            ) : (
-                                <>
-                                    <Wand2 className="w-5 h-5" />
-                                    Generate Video AI
-                                </>
-                            )}
-                        </button>
+                        {/* GENERATE ACTION BUTTON */}
+                        <div className="space-y-3">
+                            <button
+                                onClick={generateUGCPhoto}
+                                disabled={loading || !photo || !productName || !!ugcTaskId || isGenerating}
+                                className="w-full py-4 bg-gradient-to-r from-violet-500 to-purple-600 text-white rounded-2xl font-bold shadow-lg flex items-center justify-center gap-2 disabled:opacity-50 transition-all"
+                            >
+                                {!!ugcTaskId ? (
+                                    <>
+                                        <Loader2 className="w-5 h-5 animate-spin" />
+                                        Sedang Menyatukan Foto...
+                                    </>
+                                ) : isGenerating ? (
+                                    <>
+                                        <Loader2 className="w-5 h-5 animate-spin" />
+                                        Sedang Membuat Video... ({getStatusText(generationStatus)})
+                                    </>
+                                ) : (
+                                    <>
+                                        <Wand2 className="w-5 h-5" />
+                                        Generate Video AI
+                                    </>
+                                )}
+                            </button>
+                        </div>
 
                         {/* New Video Result */}
                         {videoUrls.length > 0 && (

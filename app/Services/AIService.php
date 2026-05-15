@@ -4,6 +4,7 @@ namespace App\Services;
 
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use App\Models\ApiSetting;
 
 class AIService
@@ -125,42 +126,114 @@ class AIService
     /**
      * Generate product description.
      */
-    public function generateProductDescription(string $name, string $category, ?float $price = null): string
+    public function generateProductDescription(?string $name, string $category, ?float $price = null, string $mode = 'normal'): array
     {
         // 1. Switch to Secondary API (Fast)
         $this->useSecondaryApi();
 
         $priceText = $price ? "Rp " . number_format($price, 0, ',', '.') : '';
 
-        $prompt = "Buatkan deskripsi produk yang menarik dan persuasif dalam Bahasa Indonesia untuk produk UMKM desa.\n\n" .
-            "Nama Produk: {$name}\n" .
-            "Kategori: {$category}\n" .
-            ($price ? "Harga: {$priceText}\n" : "") .
-            "\n" .
-            "ATURAN KETAT:\n" .
-            "- Langsung tulis deskripsi tanpa penjelasan tambahan.\n" .
-            "- JANGAN bungkus dengan tanda kutip.\n" .
-            "- Tulis dalam 1 paragraf (3-5 kalimat, sekitar 50-100 kata).\n" .
-            "- Gunakan 1-2 emotikon yang sesuai.\n" .
-            "- Jika menyebut harga, gunakan format yang sama persis: {$priceText}. Jangan ubah format harganya.\n" .
-            "- Singkat padat dan menjual, tidak perlu terlalu panjang.";
+        if (empty($name)) {
+            $prompt = "Buatkan ide produk UMKM fiktif namun realistis untuk kategori: {$category}.\n" .
+                "Konteks: Pasar desa Cipadung, Bandung. Skala ekonomi menengah ke bawah.\n\n" .
+                "Output HARUS JSON dengan struktur:\n" .
+                "{\n" .
+                "  \"name\": \"Nama Produk (Maks 4 kata)\",\n" .
+                "  \"price\": \"Harga dalam angka saja (contoh: 15000)\",\n" .
+                ($mode === 'short'
+                    ? "  \"description\": \"Deskripsi ringkas 1 kalimat, maksimal 120 karakter, tanpa emoji.\"\n"
+                    : "  \"description\": \"Deskripsi singkat 2-3 kalimat yang sangat menarik dan persuasif.\"\n") .
+                "}\n" .
+                "Hanya output JSON, tanpa markdown, tanpa teks lain.";
+        } else {
+            $prompt = "Tugas: Anda adalah AI yang mengembalikan output JSON MURNI.\n\n" .
+                "Buatkan deskripsi produk yang menarik dan persuasif dalam Bahasa Indonesia untuk produk UMKM desa.\n\n" .
+                "Nama Produk: {$name}\n" .
+                "Kategori: {$category}\n" .
+                ($price ? "Harga: {$priceText}\n" : "") .
+                "\n" .
+                "ATURAN KETAT:\n" .
+                "- Output HARUS berupa JSON dengan satu key 'description'.\n" .
+                ($mode === 'short'
+                    ? "- Tulis hanya 1 kalimat ringkas, maksimal 120 karakter, tanpa emoji.\n"
+                    : "- Tulis deskripsi dalam 1 paragraf (3-5 kalimat, sekitar 50-100 kata).\n") .
+                ($mode === 'short' ? '' : "- Gunakan 1-2 emotikon yang sesuai.\n") .
+                "- Jika menyebut harga, gunakan format yang sama persis: {$priceText}.\n" .
+                "Format Output:\n" .
+                "{\"description\": \"Teks deskripsi di sini...\"}";
+        }
 
         // Use configured secondary model
         $response = $this->chat($prompt);
 
-        // Fallback jika API gagal
-        if (!$response) {
-            return $this->getFallbackDescription($name, $category);
+        // Clean response dari reasoning tags dan markdown formatting
+        $responseCleaned = $response ? preg_replace('/<think>.*?<\/think>/s', '', $response) : '';
+        $responseCleaned = preg_replace('/```json\s*|\s*```/', '', $responseCleaned);
+        $responseCleaned = trim($responseCleaned);
+
+        $data = json_decode($responseCleaned, true);
+
+        // Fallback jika API gagal atau JSON tidak valid
+        if (!$data) {
+            $fallbackName = $name ?: 'Produk ' . ucfirst($category) . ' Spesial';
+            return [
+                'name' => $fallbackName,
+                'price' => $price ?: '15000',
+                'description' => $this->getFallbackDescription($fallbackName, $category)
+            ];
         }
 
-        // Clean response dari reasoning tags dan markdown formatting
-        $response = preg_replace('/<think>.*?<\/think>/s', '', $response);
-        $response = preg_replace('/\*\*([^*]+)\*\*/', '$1', $response); // Remove bold **text**
-        $response = preg_replace('/\*([^*]+)\*/', '$1', $response); // Remove italic *text*
-        $response = preg_replace('/^#+\s*/m', '', $response); // Remove headings
-        $response = trim($response, " \t\n\r\0\x0B\"'\xe2\x80\x9c\xe2\x80\x9d"); // Strip surrounding quotes
+        if (!empty($name)) {
+            $description = $data['description'] ?? $this->getFallbackDescription($name, $category);
+            if ($mode === 'short') {
+                $description = $this->normalizeShortDescription($description, $priceText);
+            }
 
-        return trim($response);
+            return [
+                'name' => $name,
+                'price' => $price ?: '',
+                'description' => $description,
+            ];
+        }
+
+        $description = $data['description'] ?? $this->getFallbackDescription($data['name'] ?? 'Produk Spesial', $category);
+        if ($mode === 'short') {
+            $description = $this->normalizeShortDescription($description);
+        }
+
+        return [
+            'name' => $data['name'] ?? 'Produk ' . ucfirst($category) . ' Spesial',
+            'price' => $data['price'] ?? '15000',
+            'description' => $description,
+        ];
+    }
+
+    private function normalizeShortDescription(string $description, string $priceText = ''): string
+    {
+        $clean = trim(preg_replace('/\s+/', ' ', strip_tags($description)) ?? $description);
+
+        $parts = preg_split('/(?<=[.!?])\s+/', $clean);
+        if (is_array($parts) && !empty($parts[0])) {
+            $clean = trim($parts[0]);
+        }
+
+        $clean = preg_replace('/[^\p{L}\p{N}\p{P}\p{Zs}]/u', '', $clean) ?? $clean;
+        $clean = trim(preg_replace('/\s+/', ' ', $clean) ?? $clean);
+
+        if ($priceText !== '' && !str_contains($clean, $priceText)) {
+            $suffix = ', harga ' . $priceText;
+            if (Str::length($clean . $suffix) <= 120) {
+                $clean .= $suffix;
+            }
+        }
+
+        $clean = Str::limit($clean, 120, '...');
+
+        if ($clean === '') {
+            return 'Produk berkualitas dari UMKM lokal dengan harga terjangkau.';
+        }
+
+        return $clean;
     }
 
     /**

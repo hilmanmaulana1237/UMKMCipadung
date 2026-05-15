@@ -3,7 +3,9 @@
 namespace App\Actions\Fortify;
 
 use App\Models\User;
+use App\Models\UmkmStore;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Laravel\Fortify\Contracts\CreatesNewUsers;
 
@@ -13,6 +15,7 @@ class CreateNewUser implements CreatesNewUsers
 
     /**
      * Validate and create a newly registered user.
+     * All users are automatically sellers (UMKM) with an auto-created store.
      *
      * @param  array<string, string>  $input
      */
@@ -28,14 +31,24 @@ class CreateNewUser implements CreatesNewUsers
                 Rule::unique(User::class),
             ],
             'password' => $this->passwordRules(),
-            'wa_number' => ['nullable', 'string', 'max:20'],
         ])->validate();
 
-        return User::create([
+        $user = User::create([
             'name' => $input['name'],
             'email' => $input['email'],
             'password' => $input['password'],
-            'wa_number' => $input['wa_number'] ?? null,
+            'role' => 'umkm',
         ]);
+
+        // Auto-create UMKM store for the new seller
+        UmkmStore::create([
+            'user_id' => $user->id,
+            'name' => $input['name'],
+            'slug' => Str::slug($input['name']) . '-' . Str::random(5),
+            'description' => '',
+            'address_pickup' => '',
+        ]);
+
+        return $user;
     }
 }

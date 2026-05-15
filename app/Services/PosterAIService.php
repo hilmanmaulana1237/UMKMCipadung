@@ -177,9 +177,6 @@ class PosterAIService
         ];
     }
 
-    /**
-     * Upload local file to temporary host (file.io) for AI access
-     */
     private function uploadToTempHost(string $path): ?string
     {
         try {
@@ -187,19 +184,22 @@ class PosterAIService
                 'file',
                 file_get_contents($path),
                 basename($path)
-            )->post('https://file.io/?expires=1d');
+            )->post('https://tmpfiles.org/api/v1/upload');
 
             if ($response->successful()) {
                 $data = $response->json();
-                if ($data['success']) {
-                    Log::info('PosterAIService: Uploaded to file.io', ['url' => $data['link']]);
-                    return $data['link'];
+                if (isset($data['status']) && $data['status'] === 'success') {
+                    $url = $data['data']['url'];
+                    // Convert to direct download link
+                    $rawUrl = str_replace('tmpfiles.org/', 'tmpfiles.org/dl/', $url);
+                    Log::info('PosterAIService: Uploaded to tmpfiles.org', ['url' => $rawUrl]);
+                    return $rawUrl;
                 }
             }
-            Log::error('PosterAIService: file.io upload failed', ['body' => $response->body()]);
+            Log::error('PosterAIService: tmpfiles upload failed', ['body' => $response->body()]);
             return null;
         } catch (\Exception $e) {
-            Log::error('PosterAIService: file.io exception: ' . $e->getMessage());
+            Log::error('PosterAIService: temp host upload exception: ' . $e->getMessage());
             return null;
         }
     }

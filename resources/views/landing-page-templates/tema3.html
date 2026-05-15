@@ -236,6 +236,17 @@
 
         /* --- RESPONSIVE MOBILE --- */
         @media (max-width: 768px) {
+            /* NAV FIX */
+            .logo {
+                white-space: nowrap !important;
+                overflow: hidden !important;
+                text-overflow: ellipsis !important;
+                max-width: 70% !important;
+            }
+            nav .btn, nav .nav-cta, nav a.btn, header .btn {
+                display: none !important;
+            }
+        
             .nav-links { display: none; } /* Hide menu on mobile for simplicity */
             
             .hero {
@@ -267,7 +278,7 @@
             <div class="nav-inner">
                 <a href="#" class="logo">MONOGRAM.</a>
                 
-                <div class="nav-links">
+                <div class="nav-links" id="navLinks">
                     <a href="#" class="active">Koleksi</a>
                     <a href="#">Tentang</a>
                     <a href="#">Jurnal</a>
@@ -277,7 +288,13 @@
                     Hubungi Kami
                 </a>
             </div>
-        </nav>
+        
+                <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Menu">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+            </nav>
 
         <header class="hero">
             <div class="hero-text">

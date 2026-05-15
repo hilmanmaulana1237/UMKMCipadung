@@ -1,6 +1,7 @@
 import AppLayout from '@/layouts/app-layout';
-import { Head, usePage, router } from '@inertiajs/react';
-import { User, Settings, Wallet, LogOut, ChevronRight, ShieldCheck, BarChart3, Store } from 'lucide-react';
+import { Head, usePage, router, Link } from '@inertiajs/react';
+import { User, Settings, LogOut, ChevronRight, Camera, Sparkles, LayoutDashboard, Loader2, Store } from 'lucide-react';
+import { useRef, useState } from 'react';
 
 interface PageProps {
     auth: {
@@ -9,106 +10,121 @@ interface PageProps {
             name: string;
             email: string;
             role: string;
-            wa_number?: string;
-            wallet_balance: number;
-            affiliate_code?: string;
-            umkmStore?: {
-                id: number;
-                name: string;
-            };
+            avatar_path?: string;
         };
     };
-    totalRevenue?: number;
     [key: string]: any;
 }
 
 export default function ProfileIndex() {
-    const { auth, totalRevenue } = usePage<PageProps>().props;
+    const { auth } = usePage<PageProps>().props;
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const [uploading, setUploading] = useState(false);
 
     const handleLogout = () => {
-        // Clear AI chat history on logout
         if (typeof window !== 'undefined') {
             localStorage.removeItem('ai_chat_messages');
         }
         router.post('/logout');
     };
 
-    const roleLabels: Record<string, string> = {
-        buyer: 'Pembeli',
-        umkm: 'UMKM',
-        courier: 'Kurir',
-        affiliator: 'Affiliator',
+    const handleAvatarClick = () => {
+        fileInputRef.current?.click();
     };
 
-    const isUmkm = auth.user.role === 'umkm';
-    const displayAmount = isUmkm ? (totalRevenue || 0) : auth.user.wallet_balance;
-    const amountLabel = isUmkm ? 'Pendapatan Kamu' : 'Saldo Dompet';
+    const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setUploading(true);
+        const formData = new FormData();
+        formData.append('avatar', file);
+
+        router.post('/profile/avatar', formData, {
+            forceFormData: true,
+            onFinish: () => setUploading(false),
+        });
+    };
 
     return (
         <AppLayout activeTab="account">
-            <Head title="Profil" />
+            <Head title="Profil - MudaPreneur AI" />
 
             {/* Profile Header */}
-            <div className="px-4 pt-6 pb-6 bg-gradient-to-br from-primary to-secondary">
+            <div className="px-4 pt-6 pb-8 bg-gradient-to-br from-slate-900 via-blue-950 to-indigo-950">
                 <div className="flex items-center gap-4">
-                    <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center">
-                        <User className="w-8 h-8 text-white" />
+                    <div className="relative">
+                        <button
+                            onClick={handleAvatarClick}
+                            disabled={uploading}
+                            className="w-20 h-20 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/25 overflow-hidden border-2 border-white/10 cursor-pointer hover:ring-2 hover:ring-blue-400 transition-all disabled:opacity-60"
+                        >
+                            {uploading ? (
+                                <Loader2 className="w-8 h-8 text-white animate-spin" />
+                            ) : auth.user.avatar_path ? (
+                                <img src={`/storage/${auth.user.avatar_path}`} alt={auth.user.name} className="w-full h-full object-cover" />
+                            ) : (
+                                <User className="w-10 h-10 text-white/80" />
+                            )}
+                        </button>
+                        <div
+                            onClick={handleAvatarClick}
+                            className="absolute -bottom-1 -right-1 w-7 h-7 bg-blue-500 rounded-lg flex items-center justify-center border-2 border-white shadow-sm cursor-pointer hover:bg-blue-600 transition-colors"
+                        >
+                            <Camera className="w-3.5 h-3.5 text-white" />
+                        </div>
+                        <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept="image/*"
+                            onChange={handleAvatarUpload}
+                            className="hidden"
+                        />
                     </div>
                     <div>
                         <h1 className="text-xl font-bold text-white">{auth.user.name}</h1>
-                        <p className="text-white/80 text-sm">{auth.user.email}</p>
-                        <span className="inline-block mt-1 px-2 py-0.5 bg-white/20 text-white text-xs rounded-full">
-                            {roleLabels[auth.user.role] || auth.user.role}
+                        <p className="text-white/60 text-sm">{auth.user.email}</p>
+                        <span className={`inline-flex items-center gap-1 mt-1.5 px-2.5 py-0.5 text-xs rounded-full font-medium ${
+                            auth.user.role === 'admin' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/20' : 'bg-blue-500/20 text-blue-300 border border-blue-500/20'
+                        }`}>
+                            {auth.user.role === 'admin' ? <LayoutDashboard className="w-3 h-3" /> : <Sparkles className="w-3 h-3" />}
+                            {auth.user.role === 'admin' ? 'Administrator' : 'Penjual UMKM'}
                         </span>
                     </div>
                 </div>
+
+                {/* Click to upload prompt */}
+                {auth.user.role !== 'admin' && !auth.user.avatar_path && (
+                    <button
+                        onClick={handleAvatarClick}
+                        className="mt-4 w-full bg-amber-500/20 border border-amber-400/30 rounded-xl p-3 backdrop-blur-sm"
+                    >
+                        <p className="text-xs text-amber-300 text-center font-medium">
+                            ⚠️ Upload foto profil Anda untuk menggunakan AI Content Generator
+                        </p>
+                    </button>
+                )}
+
+                {/* Info: foto dipakai untuk AI (only for sellers who already have photo) */}
+                {auth.user.role !== 'admin' && auth.user.avatar_path && (
+                    <div className="mt-4 bg-white/5 border border-white/10 rounded-xl p-3 backdrop-blur-sm">
+                        <p className="text-xs text-white/50 text-center">
+                            💡 Foto profil Anda akan digunakan sebagai bahan untuk AI Content Generator. Klik foto untuk mengganti.
+                        </p>
+                    </div>
+                )}
             </div>
 
-            {/* Wallet/Revenue Card - Only for Courier & Affiliate */}
-            {(auth.user.role === 'courier' || auth.user.role === 'affiliator') && (
-                <div className="px-4 -mt-4">
-                    <div
-                        onClick={() => router.visit('/wallet')}
-                        className="bg-card rounded-2xl p-4 border border-border shadow-sm cursor-pointer"
+            {/* Admin Panel Link */}
+            {auth.user.role === 'admin' && (
+                <div className="px-4 -mt-3 mb-2">
+                    <Link
+                        href="/admin/dashboard"
+                        className="block w-full bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl p-4 text-center text-white font-bold shadow-lg shadow-blue-500/25"
                     >
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 bg-success/10 rounded-xl flex items-center justify-center">
-                                    <Wallet className="w-5 h-5 text-success" />
-                                </div>
-                                <div>
-                                    <p className="text-xs text-muted-foreground">Saldo Dompet</p>
-                                    <p className="text-lg font-bold text-foreground">
-                                        Rp {auth.user.wallet_balance.toLocaleString('id-ID')}
-                                    </p>
-                                    {auth.user.role === 'affiliator' && (
-                                        <p className="text-xs text-muted-foreground mt-1">Dari komisi affiliate</p>
-                                    )}
-                                </div>
-                            </div>
-                            <ChevronRight className="w-5 h-5 text-muted-foreground" />
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Revenue Card - Only for UMKM */}
-            {isUmkm && (
-                <div className="px-4 -mt-4">
-                    <div className="bg-card rounded-2xl p-4 border border-border shadow-sm">
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-blue-500/10 rounded-xl flex items-center justify-center">
-                                <BarChart3 className="w-5 h-5 text-blue-600" />
-                            </div>
-                            <div>
-                                <p className="text-xs text-muted-foreground">Pendapatan Kamu</p>
-                                <p className="text-lg font-bold text-foreground">
-                                    Rp {displayAmount.toLocaleString('id-ID')}
-                                </p>
-                                <p className="text-xs text-muted-foreground mt-1">Dari penjualan di aplikasi</p>
-                            </div>
-                        </div>
-                    </div>
+                        <LayoutDashboard className="w-5 h-5 inline mr-2" />
+                        Buka Admin Panel
+                    </Link>
                 </div>
             )}
 
@@ -118,8 +134,8 @@ export default function ProfileIndex() {
                     onClick={() => router.visit('/settings/profile')}
                     className="w-full bg-card rounded-xl p-4 border border-border flex items-center gap-4"
                 >
-                    <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center">
-                        <Settings className="w-5 h-5 text-primary" />
+                    <div className="w-10 h-10 bg-blue-500/10 rounded-xl flex items-center justify-center">
+                        <Settings className="w-5 h-5 text-blue-600" />
                     </div>
                     <div className="flex-1 text-left">
                         <p className="font-medium text-foreground">Pengaturan Profil</p>
@@ -128,65 +144,22 @@ export default function ProfileIndex() {
                     <ChevronRight className="w-5 h-5 text-muted-foreground" />
                 </button>
 
-                {isUmkm && (
-                    <button
-                        onClick={() => router.visit('/umkm/setup-toko')}
-                        className="w-full bg-card rounded-xl p-4 border border-border flex items-center gap-4"
-                    >
-                        <div className="w-10 h-10 bg-orange-500/10 rounded-xl flex items-center justify-center">
-                            <Store className="w-5 h-5 text-orange-600" />
-                        </div>
-                        <div className="flex-1 text-left">
-                            <p className="font-medium text-foreground">Pengaturan Toko</p>
-                            <p className="text-xs text-muted-foreground">Lokasi, jam operasional, info</p>
-                        </div>
-                        <ChevronRight className="w-5 h-5 text-muted-foreground" />
-                    </button>
-                )}
-
-                {auth.user.role === 'umkm' && (
-                    <button
-                        onClick={() => router.visit('/umkm/analytics')}
-                        className="w-full bg-card rounded-xl p-4 border border-border flex items-center gap-4"
-                    >
-                        <div className="w-10 h-10 bg-blue-500/10 rounded-xl flex items-center justify-center">
-                            <BarChart3 className="w-5 h-5 text-blue-600" />
-                        </div>
-                        <div className="flex-1 text-left">
-                            <p className="font-medium text-foreground">Statistik & Analitik</p>
-                            <p className="text-xs text-muted-foreground">Lihat performa penjualan & AI</p>
-                        </div>
-                        <ChevronRight className="w-5 h-5 text-muted-foreground" />
-                    </button>
-                )}
-
-                {auth.user.role === 'affiliator' && auth.user.affiliate_code && (
-                    <div className="bg-card rounded-xl p-4 border border-border flex items-center gap-4">
-                        <div className="w-10 h-10 bg-secondary/10 rounded-xl flex items-center justify-center">
-                            <ShieldCheck className="w-5 h-5 text-secondary" />
-                        </div>
-                        <div className="flex-1 text-left">
-                            <p className="font-medium text-foreground">Kode Afiliasi</p>
-                            <p className="text-lg font-bold text-primary">{auth.user.affiliate_code}</p>
-                        </div>
-                    </div>
-                )}
-
+                {/* Pengaturan Toko */}
                 <button
-                    onClick={() => router.visit('/settings/about')}
+                    onClick={() => router.visit('/umkm/setup-toko')}
                     className="w-full bg-card rounded-xl p-4 border border-border flex items-center gap-4"
                 >
                     <div className="w-10 h-10 bg-indigo-500/10 rounded-xl flex items-center justify-center">
-                        <User className="w-5 h-5 text-indigo-600" />
+                        <Store className="w-5 h-5 text-indigo-600" />
                     </div>
                     <div className="flex-1 text-left">
-                        <p className="font-medium text-foreground">Tentang Aplikasi</p>
-                        <p className="text-xs text-muted-foreground">Informasi Innovillage 2025 & Mitra</p>
+                        <p className="font-medium text-foreground">Pengaturan Toko</p>
+                        <p className="text-xs text-muted-foreground">Ubah nama toko, alamat, kontak</p>
                     </div>
                     <ChevronRight className="w-5 h-5 text-muted-foreground" />
                 </button>
 
-                {/* Admin Contact Info - For All Roles */}
+                {/* Admin Contact */}
                 <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-4 border border-green-200">
                     <div className="flex items-start gap-3">
                         <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
@@ -196,11 +169,7 @@ export default function ProfileIndex() {
                         </div>
                         <div className="flex-1">
                             <p className="font-semibold text-green-900 mb-1">Bantuan & Support</p>
-                            <p className="text-xs text-green-700 mb-2">
-                                {auth.user.role === 'courier' || auth.user.role === 'affiliator'
-                                    ? 'Hubungi admin untuk konfirmasi penarikan saldo atau jika ada kendala:'
-                                    : 'Ada masalah atau pertanyaan? Hubungi admin kami:'}
-                            </p>
+                            <p className="text-xs text-green-700 mb-2">Ada masalah atau pertanyaan? Hubungi admin kami:</p>
                             <a
                                 href="https://wa.me/6287827718245"
                                 target="_blank"
@@ -232,8 +201,8 @@ export default function ProfileIndex() {
 
             {/* App Info */}
             <div className="px-4 py-4 text-center">
-                <p className="text-xs text-muted-foreground">MUDAPRENEUR.AI v1.0.0</p>
-                <p className="text-xs text-muted-foreground">Super App untuk Wirausaha Muda</p>
+                <p className="text-xs text-muted-foreground">MudaPreneur.AI v2.0.0</p>
+                <p className="text-xs text-muted-foreground">AI Content Generator untuk UMKM</p>
             </div>
         </AppLayout>
     );

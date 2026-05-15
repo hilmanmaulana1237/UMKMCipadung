@@ -95,11 +95,17 @@ export default function LandingPageBuilder({ store, landingPage, products, templ
     const [selectedTemplate, setSelectedTemplate] = useState<string>(landingPage?.template || '');
     const [tagline, setTagline] = useState(landingPage?.tagline || '');
     const [description, setDescription] = useState(landingPage?.description || '');
-    const [selectedProducts, setSelectedProducts] = useState<number[]>(landingPage?.products || []);
-    const [heroImage, setHeroImage] = useState<File | null>(null);
-    const [heroPreview, setHeroPreview] = useState<string | null>(
-        landingPage?.hero_image_path ? `/storage/${landingPage.hero_image_path}` : null
+    // Products state now stores the full objects to be saved
+    const [landingProducts, setLandingProducts] = useState<Partial<Product>[]>(
+        landingPage?.products ? (landingPage.products as any).map((p: any, i: number) => ({
+            ...p,
+            id: -(i + 1), // Temporary IDs for manual products
+            isManual: true
+        })) : []
     );
+    const [productImages, setProductImages] = useState<Record<number, File>>({});
+    const [productPreviews, setProductPreviews] = useState<Record<number, string>>({});
+
     const [isPublished, setIsPublished] = useState(landingPage?.is_published || false);
     const [saving, setSaving] = useState(false);
     const [generatingAI, setGeneratingAI] = useState(false);
@@ -134,12 +140,67 @@ export default function LandingPageBuilder({ store, landingPage, products, templ
         }
     };
 
-    const toggleProduct = (productId: number) => {
-        if (selectedProducts.includes(productId)) {
-            setSelectedProducts(selectedProducts.filter(id => id !== productId));
-        } else if (selectedProducts.length < 10) {
-            setSelectedProducts([...selectedProducts, productId]);
+    const handleProductImageChange = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            setProductImages(prev => ({ ...prev, [index]: file }));
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setProductPreviews(prev => ({ ...prev, [index]: reader.result as string }));
+            };
+            reader.readAsDataURL(file);
         }
+    };
+
+    const addManualProduct = () => {
+        if (landingProducts.length >= 10) {
+            alert('Maksimal 10 produk.');
+            return;
+        }
+        const newId = -(landingProducts.length + 1);
+        setLandingProducts([...landingProducts, {
+            id: newId,
+            name: '',
+            price: 0,
+            description: '',
+            image_path: null,
+            isManual: true
+        } as any]);
+    };
+
+    const selectFromStore = (product: Product) => {
+        if (landingProducts.length >= 10) {
+            alert('Maksimal 10 produk.');
+            return;
+        }
+        // Don't add if already in list
+        if (landingProducts.find(p => p.name === product.name)) return;
+
+        setLandingProducts([...landingProducts, {
+            ...product,
+            isManual: false
+        }]);
+    };
+
+    const removeProduct = (index: number) => {
+        const newProducts = [...landingProducts];
+        newProducts.splice(index, 1);
+        setLandingProducts(newProducts);
+        
+        // Also cleanup images/previews
+        const newImages = { ...productImages };
+        delete newImages[index];
+        setProductImages(newImages);
+        
+        const newPreviews = { ...productPreviews };
+        delete newPreviews[index];
+        setProductPreviews(newPreviews);
+    };
+
+    const updateProduct = (index: number, field: keyof Product, value: any) => {
+        const newProducts = [...landingProducts];
+        newProducts[index] = { ...newProducts[index], [field]: value };
+        setLandingProducts(newProducts);
     };
 
     const generateAIContent = async () => {
@@ -162,15 +223,37 @@ export default function LandingPageBuilder({ store, landingPage, products, templ
     };
 
     const handleSave = (publish: boolean = false) => {
+        if (!selectedTemplate) {
+            alert('Pilih template terlebih dahulu.');
+            return;
+        }
+        
         setSaving(true);
         const formData = new FormData();
         formData.append('template', selectedTemplate);
         formData.append('tagline', tagline);
         formData.append('description', description);
         formData.append('is_published', publish ? '1' : '0');
-        selectedProducts.forEach((id, index) => {
-            formData.append(`products[${index}]`, id.toString());
+        
+        // Filter out products without names to avoid validation errors
+        const validProducts = landingProducts.filter(p => p.name && p.name.trim() !== '');
+        
+        validProducts.forEach((product, index) => {
+            formData.append(`products[${index}][name]`, product.name || '');
+            formData.append(`products[${index}][price]`, (product.price || 0).toString());
+            formData.append(`products[${index}][description]`, product.description || '');
+            if (product.image_path) {
+                formData.append(`products[${index}][image_path]`, product.image_path);
+            }
+            
+            // Map the product images based on their index in the validProducts array
+            // Find the original index from landingProducts to get the correct image file
+            const originalIndex = landingProducts.indexOf(product);
+            if (productImages[originalIndex]) {
+                formData.append(`product_images[${index}]`, productImages[index]);
+            }
         });
+
         if (heroImage) {
             formData.append('hero_image', heroImage);
         }
@@ -178,6 +261,10 @@ export default function LandingPageBuilder({ store, landingPage, products, templ
         router.post('/umkm/landing-page', formData, {
             forceFormData: true,
             onFinish: () => setSaving(false),
+            onError: (errors) => {
+                console.error(errors);
+                alert('Gagal menyimpan. Silakan coba lagi atau cek apakah ada data yang belum lengkap.');
+            }
         });
     };
 
@@ -666,87 +753,151 @@ export default function LandingPageBuilder({ store, landingPage, products, templ
                             />
                         </div>
 
-                        {/* Product Selection */}
+                        {/* Product Management Section */}
                         <div style={{ marginBottom: '24px' }}>
-                            <label style={{ fontWeight: '600', display: 'block', marginBottom: '4px' }}>
-                                🛒 Pilih Produk Unggulan (Max 10)
-                            </label>
-                            <p style={{ fontSize: '0.8rem', color: '#6b7280', marginBottom: '12px' }}>
-                                Klik produk yang ingin ditampilkan di landing page ({selectedProducts.length}/10 dipilih)
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                                <label style={{ fontWeight: '600' }}>🛒 Produk yang Ditampilkan ({landingProducts.length}/10)</label>
+                                <button
+                                    onClick={addManualProduct}
+                                    style={{
+                                        background: '#f3f4f6',
+                                        padding: '6px 12px',
+                                        borderRadius: '6px',
+                                        border: '1px solid #e5e7eb',
+                                        fontSize: '0.8rem',
+                                        cursor: 'pointer',
+                                    }}
+                                >
+                                    ➕ Tambah Produk Manual
+                                </button>
+                            </div>
+                            <p style={{ fontSize: '0.8rem', color: '#6b7280', marginBottom: '16px' }}>
+                                Kelola daftar produk yang akan muncul di landing page Anda. Anda bisa edit nama, harga, and upload foto khusus.
                             </p>
 
-                            {products.length === 0 ? (
-                                <div style={{
-                                    background: '#fef3c7',
-                                    padding: '24px',
-                                    borderRadius: '12px',
-                                    textAlign: 'center',
-                                }}>
-                                    <div style={{ fontSize: '2rem', marginBottom: '8px' }}>📦</div>
-                                    <div style={{ fontWeight: '500', marginBottom: '4px' }}>Belum ada produk</div>
-                                    <div style={{ fontSize: '0.85rem', color: '#6b7280' }}>
-                                        Tambahkan produk terlebih dahulu di menu "Produk"
-                                    </div>
-                                </div>
-                            ) : (
-                                <div style={{
-                                    display: 'grid',
-                                    gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))',
-                                    gap: '12px',
-                                }}>
-                                    {products.map(product => (
-                                        <div
-                                            key={product.id}
-                                            onClick={() => toggleProduct(product.id)}
+                            {/* Selected Products List */}
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '24px' }}>
+                                {landingProducts.map((product, index) => (
+                                    <div key={index} style={{
+                                        background: '#fff',
+                                        border: '1px solid #e5e7eb',
+                                        borderRadius: '12px',
+                                        padding: '12px',
+                                        display: 'flex',
+                                        gap: '12px',
+                                        alignItems: 'flex-start',
+                                        position: 'relative'
+                                    }}>
+                                        {/* Product Photo Upload */}
+                                        <div 
+                                            onClick={() => document.getElementById(`p-img-${index}`)?.click()}
                                             style={{
-                                                border: selectedProducts.includes(product.id) ? '2px solid #22c55e' : '1px solid #e5e7eb',
-                                                borderRadius: '10px',
-                                                overflow: 'hidden',
+                                                width: '80px',
+                                                height: '80px',
+                                                borderRadius: '8px',
+                                                background: productPreviews[index] 
+                                                    ? `url(${productPreviews[index]}) center/cover` 
+                                                    : (product.image_path ? `url(/storage/${product.image_path}) center/cover` : '#f3f4f6'),
                                                 cursor: 'pointer',
-                                                background: selectedProducts.includes(product.id) ? '#f0fdf4' : '#fff',
-                                                position: 'relative',
-                                            }}
-                                        >
-                                            {selectedProducts.includes(product.id) && (
-                                                <div style={{
-                                                    position: 'absolute',
-                                                    top: '8px',
-                                                    right: '8px',
-                                                    background: '#22c55e',
-                                                    color: '#fff',
-                                                    borderRadius: '50%',
-                                                    width: '24px',
-                                                    height: '24px',
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    justifyContent: 'center',
-                                                    fontSize: '0.8rem',
-                                                    zIndex: 1,
-                                                }}>
-                                                    ✓
-                                                </div>
-                                            )}
-                                            <div style={{
-                                                height: '90px',
-                                                background: product.image_path ? `url(/storage/${product.image_path}) center/cover` : '#f3f4f6',
                                                 display: 'flex',
                                                 alignItems: 'center',
                                                 justifyContent: 'center',
-                                            }}>
-                                                {!product.image_path && '📦'}
-                                            </div>
-                                            <div style={{ padding: '10px' }}>
-                                                <div style={{ fontWeight: '500', fontSize: '0.8rem', marginBottom: '4px', lineHeight: '1.3' }}>
-                                                    {product.name}
-                                                </div>
-                                                <div style={{ color: '#22c55e', fontWeight: '600', fontSize: '0.75rem' }}>
-                                                    {formatPrice(product.price)}
-                                                </div>
+                                                border: '1px solid #e5e7eb',
+                                                flexShrink: 0,
+                                            }}
+                                        >
+                                            {!productPreviews[index] && !product.image_path && <span style={{ fontSize: '1.2rem' }}>📷</span>}
+                                            <input 
+                                                id={`p-img-${index}`}
+                                                type="file" 
+                                                accept="image/*" 
+                                                onChange={(e) => handleProductImageChange(index, e)}
+                                                style={{ display: 'none' }}
+                                            />
+                                        </div>
+
+                                        {/* Product Details Inputs */}
+                                        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                            <input 
+                                                type="text" 
+                                                placeholder="Nama Produk"
+                                                value={product.name || ''}
+                                                onChange={(e) => updateProduct(index, 'name', e.target.value)}
+                                                style={{ padding: '8px', borderRadius: '6px', border: '1px solid #e5e7eb', fontSize: '0.9rem', fontWeight: '600' }}
+                                            />
+                                            <div style={{ display: 'flex', gap: '8px' }}>
+                                                <input 
+                                                    type="number" 
+                                                    placeholder="Harga"
+                                                    value={product.price || 0}
+                                                    onChange={(e) => updateProduct(index, 'price', parseInt(e.target.value))}
+                                                    style={{ width: '120px', padding: '8px', borderRadius: '6px', border: '1px solid #e5e7eb', fontSize: '0.85rem' }}
+                                                />
+                                                <input 
+                                                    type="text" 
+                                                    placeholder="Keterangan singkat"
+                                                    value={product.description || ''}
+                                                    onChange={(e) => updateProduct(index, 'description', e.target.value)}
+                                                    style={{ flex: 1, padding: '8px', borderRadius: '6px', border: '1px solid #e5e7eb', fontSize: '0.85rem' }}
+                                                />
                                             </div>
                                         </div>
-                                    ))}
-                                </div>
-                            )}
+
+                                        {/* Remove Button */}
+                                        <button 
+                                            onClick={() => removeProduct(index)}
+                                            style={{ background: '#fee2e2', color: '#dc2626', border: 'none', borderRadius: '6px', padding: '8px', cursor: 'pointer' }}
+                                        >
+                                            🗑️
+                                        </button>
+                                    </div>
+                                ))}
+
+                                {landingProducts.length === 0 && (
+                                    <div style={{ textAlign: 'center', padding: '30px', background: '#f9fafb', borderRadius: '12px', border: '1px dashed #d1d5db' }}>
+                                        <p style={{ color: '#6b7280', fontSize: '0.9rem' }}>Belum ada produk terpilih. Tambahkan manual atau pilih dari toko di bawah.</p>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Store Products Gallery */}
+                            <label style={{ fontWeight: '600', display: 'block', marginBottom: '8px' }}>📦 Produk dari Toko Anda</label>
+                            <div style={{
+                                display: 'grid',
+                                gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))',
+                                gap: '12px',
+                                background: '#f9fafb',
+                                padding: '12px',
+                                borderRadius: '12px',
+                                maxHeight: '300px',
+                                overflow: 'auto',
+                            }}>
+                                {products.map(product => (
+                                    <div
+                                        key={product.id}
+                                        onClick={() => selectFromStore(product)}
+                                        style={{
+                                            background: '#fff',
+                                            borderRadius: '8px',
+                                            overflow: 'hidden',
+                                            cursor: 'pointer',
+                                            border: '1px solid #e5e7eb',
+                                            opacity: landingProducts.find(p => p.name === product.name) ? 0.5 : 1
+                                        }}
+                                    >
+                                        <div style={{ height: '80px', background: product.image_path ? `url(/storage/${product.image_path}) center/cover` : '#f3f4f6' }} />
+                                        <div style={{ padding: '8px' }}>
+                                            <div style={{ fontSize: '0.75rem', fontWeight: '600', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{product.name}</div>
+                                            <div style={{ fontSize: '0.7rem', color: '#22c55e' }}>{formatPrice(product.price)}</div>
+                                        </div>
+                                    </div>
+                                ))}
+                                {products.length === 0 && (
+                                    <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '20px', color: '#9ca3af', fontSize: '0.85rem' }}>
+                                        Tidak ada produk di toko.
+                                    </div>
+                                )}
+                            </div>
                         </div>
 
                         {/* Action Buttons */}

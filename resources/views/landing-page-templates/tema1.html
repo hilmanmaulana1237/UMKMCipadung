@@ -454,6 +454,21 @@
 
         /* --- MOBILE RESPONSIVE --- */
         @media (max-width: 768px) {
+            /* HERO PADDING FIX */
+            .food-plate { margin-top: 40px !important; }
+            .hero { padding-top: 180px !important; }
+
+            /* NAV FIX */
+            .logo {
+                white-space: nowrap !important;
+                overflow: hidden !important;
+                text-overflow: ellipsis !important;
+                max-width: 70% !important;
+            }
+            nav .btn, nav .nav-cta, nav a.btn, header .btn {
+                display: none !important;
+            }
+        
             .hero {
                 flex-direction: column;
                 text-align: center;
@@ -506,13 +521,19 @@
         <div class="container">
             <nav>
                 <div class="logo">CIMOL<span>ROYALE</span>.</div>
-                <ul class="nav-links">
+                <ul class="nav-links" id="navLinks">
                     <li><a href="#home">Home</a></li>
                     <li><a href="#features">The Craft</a></li>
                     <li><a href="#menu">Collection</a></li>
                     <li><a href="#reviews">Reviews</a></li>
                 </ul>
                 <a href="#order" class="btn">Pesan Sekarang</a>
+            
+                <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Menu">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
             </nav>
         </div>
     </header>
@@ -680,6 +701,26 @@
                 });
             });
         });
+    
+        // Mobile Menu Toggle
+        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+        const navLinks = document.getElementById('navLinks') || document.getElementById('navMenu');
+
+        if (mobileMenuBtn && navLinks) {
+            mobileMenuBtn.addEventListener('click', function () {
+                this.classList.toggle('active');
+                navLinks.classList.toggle('active');
+                document.body.style.overflow = navLinks.classList.contains('active') ? 'hidden' : '';
+            });
+
+            navLinks.querySelectorAll('a').forEach(link => {
+                link.addEventListener('click', function () {
+                    mobileMenuBtn.classList.remove('active');
+                    navLinks.classList.remove('active');
+                    document.body.style.overflow = '';
+                });
+            });
+        }
     </script>
 </body>
 

@@ -201,6 +201,21 @@
         }
 
         @media (max-width: 768px) {
+            /* HERO PADDING FIX */
+            .food-plate { margin-top: 40px !important; }
+            .hero { padding-top: 180px !important; }
+
+            /* NAV FIX */
+            .logo {
+                white-space: nowrap !important;
+                overflow: hidden !important;
+                text-overflow: ellipsis !important;
+                max-width: 70% !important;
+            }
+            nav .btn, nav .nav-cta, nav a.btn, header .btn {
+                display: none !important;
+            }
+        
             .header h1 {
                 font-size: 2rem;
             }

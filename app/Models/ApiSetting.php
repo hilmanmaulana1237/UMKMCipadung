@@ -145,9 +145,13 @@ class ApiSetting extends Model
 
         // Fallback to ENV if database not configured (General Chat Only)
         if (!$setting || !$setting->is_configured) {
+            $defaultModel = ($tier === 'primary') 
+                ? config('services.openrouter.primary_model', 'openai/gpt-4o-mini')
+                : config('services.openrouter.secondary_model', 'openai/gpt-oss-20b');
+
             return [
                 'api_key' => config('services.openrouter.api_key', ''),
-                'model' => config('services.openrouter.model', 'deepseek/deepseek-r1-0528:free'),
+                'model' => $defaultModel,
                 'base_url' => 'https://openrouter.ai/api/v1/chat/completions',
                 'provider' => 'openrouter',
             ];

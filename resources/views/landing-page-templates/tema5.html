@@ -260,6 +260,21 @@
 
         /* --- RESPONSIVE --- */
         @media (max-width: 768px) {
+            /* HERO PADDING FIX */
+            .food-plate { margin-top: 40px !important; }
+            .hero { padding-top: 180px !important; }
+
+            /* NAV FIX */
+            .logo {
+                white-space: nowrap !important;
+                overflow: hidden !important;
+                text-overflow: ellipsis !important;
+                max-width: 70% !important;
+            }
+            nav .btn, nav .nav-cta, nav a.btn, header .btn {
+                display: none !important;
+            }
+        
             .nav-links { display: none; }
             .hero { grid-template-columns: 1fr; text-align: center; padding-top: 100px; gap: 40px; }
             .hero-features { justify-content: center; }
@@ -276,7 +291,7 @@
     <nav>
         <div class="container nav-inner">
             <a href="#" class="logo">KLIN</a>
-            <div class="nav-links">
+            <div class="nav-links" id="navLinks">
                 <a href="#" class="active">Beranda</a>
                 <a href="#services">Layanan</a>
                 <a href="#process">Cara Kerja</a>
@@ -286,7 +301,13 @@
                 Booking Pickup
             </a>
         </div>
-    </nav>
+    
+                <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Menu">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+            </nav>
 
     <section class="container hero">
         <div class="hero-text">

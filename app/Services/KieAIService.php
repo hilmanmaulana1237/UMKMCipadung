@@ -265,4 +265,115 @@ class KieAIService
             return null;
         }
     }
+
+    /**
+     * Create an image editing task using Google Nano Banana Edit
+     */
+    public function createEditPhotoTask(string $prompt, array $imageUrls, string $aspectRatio = '9:16'): array
+    {
+        if (empty($this->apiKey)) {
+            return ['success' => false, 'error' => 'Kie AI API Key is not configured.'];
+        }
+
+        try {
+            $payload = [
+                'model' => 'google/nano-banana-edit',
+                'input' => [
+                    'prompt' => $prompt,
+                    'image_urls' => $imageUrls,
+                    'output_format' => 'png',
+                    'image_size' => $aspectRatio,
+                ]
+            ];
+
+            $response = Http::withHeaders([
+                'Authorization' => 'Bearer ' . $this->apiKey,
+                'Content-Type' => 'application/json',
+            ])->timeout(60)->post('https://api.kie.ai/api/v1/jobs/createTask', $payload);
+
+            if ($response->successful()) {
+                $data = $response->json();
+                if (isset($data['code']) && $data['code'] === 200) {
+                    return [
+                        'success' => true,
+                        'task_id' => $data['data']['taskId'],
+                    ];
+                }
+                return ['success' => false, 'error' => $data['msg'] ?? 'Unknown API error'];
+            }
+            return ['success' => false, 'error' => 'HTTP Error: ' . $response->status()];
+        } catch (\Exception $e) {
+            return ['success' => false, 'error' => $e->getMessage()];
+        }
+    }
+
+    /**
+     * Query task status using Jobs unified endpoint
+     */
+    public function queryJobStatus(string $taskId): array
+    {
+        try {
+            $response = Http::withHeaders([
+                'Authorization' => 'Bearer ' . $this->apiKey,
+            ])->timeout(30)->get('https://api.kie.ai/api/v1/jobs/recordInfo', [
+                'taskId' => $taskId,
+            ]);
+
+            if ($response->successful()) {
+                $data = $response->json();
+                if (isset($data['code']) && $data['code'] === 200) {
+                    $taskData = $data['data'] ?? [];
+                    
+                    $resultUrls = [];
+                    // Check directly for resultUrls first
+                    if (!empty($taskData['resultUrls'])) {
+                        if (is_string($taskData['resultUrls'])) {
+                            $decoded = json_decode($taskData['resultUrls'], true);
+                            $resultUrls = is_array($decoded) ? $decoded : [$taskData['resultUrls']];
+                        } else {
+                            $resultUrls = $taskData['resultUrls'];
+                        }
+                    } elseif (!empty($taskData['response']['resultUrls'])) {
+                        if (is_string($taskData['response']['resultUrls'])) {
+                            $decoded = json_decode($taskData['response']['resultUrls'], true);
+                            $resultUrls = is_array($decoded) ? $decoded : [$taskData['response']['resultUrls']];
+                        } else {
+                            $resultUrls = $taskData['response']['resultUrls'];
+                        }
+                    } elseif (!empty($taskData['resultJson'])) {
+                        // Check resultJson which is common for Google Nano
+                        if (is_string($taskData['resultJson'])) {
+                            $decoded = json_decode($taskData['resultJson'], true);
+                            if (isset($decoded['resultUrls'])) {
+                                $resultUrls = is_array($decoded['resultUrls']) ? $decoded['resultUrls'] : [$decoded['resultUrls']];
+                            }
+                        }
+                    }
+
+                    $state = $taskData['state'] ?? $taskData['status'] ?? 'unknown';
+                    if (!empty($resultUrls)) {
+                        $state = 'success';
+                    } else if (is_numeric($state)) {
+                        $state = match ((int)$state) {
+                            1, 4 => 'success',
+                            2, 3, 501, 5 => 'fail',
+                            0 => 'generating',
+                            default => 'generating',
+                        };
+                    }
+
+                    return [
+                        'success' => true,
+                        'state' => $state,
+                        'image_urls' => $resultUrls,
+                        'fail_msg' => $taskData['failMsg'] ?? $taskData['msg'] ?? null,
+                    ];
+                }
+                return ['success' => false, 'error' => $data['msg'] ?? 'Unknown error'];
+            }
+            return ['success' => false, 'error' => 'HTTP Error: ' . $response->status()];
+        } catch (\Exception $e) {
+            return ['success' => false, 'error' => $e->getMessage()];
+        }
+    }
 }

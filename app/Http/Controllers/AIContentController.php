@@ -157,21 +157,196 @@ class AIContentController extends Controller
     }
 
     /**
+     * Generate UGC Photo using Kie AI (Google Nano Banana Edit)
+     * This merges the user's avatar with the product photo.
+     */
+    public function generateUGCPhoto(Request $request)
+    {
+        try {
+            $validated = $request->validate([
+                'product_name' => 'required|string|max:255',
+                'photo' => 'required|image|max:10240',
+            ]);
+
+            $user = Auth::user();
+
+            // Check quota first
+            $videoCount = AIGeneratedContent::where('user_id', $user->id)
+                ->where('type', 'video_generation')
+                ->whereIn('status', ['completed', 'generating', 'queuing'])
+                ->count();
+
+            if ($videoCount >= self::MAX_VIDEOS_PER_UMKM) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Kuota video habis. Maksimal ' . self::MAX_VIDEOS_PER_UMKM . ' video per UMKM.',
+                ], 403);
+            }
+
+            // Require user to have an avatar for UGC
+            if (!$user->avatar_path) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Silakan atur Foto Profil Toko terlebih dahulu untuk digunakan sebagai model.',
+                ], 400);
+            }
+
+            // 1. Upload product photo and get public URL
+            $productPath = $request->file('photo')->store('ai-video-refs', 'public');
+            $productUrl = url('storage/' . $productPath);
+            $avatarUrl = url('storage/' . $user->avatar_path);
+
+            // Handle localhost testing
+            if (str_contains($productUrl, 'localhost') || str_contains($productUrl, '127.0.0.1') || str_contains($productUrl, '.test')) {
+                \Illuminate\Support\Facades\Log::warning('Localhost detected. Using placeholder images for UGC.');
+                $productUrl = 'https://tempfileb.aiquickdraw.com/kieai/market/1777125204910_whVX4yF6.jpg';
+                $avatarUrl = 'https://tempfileb.aiquickdraw.com/kieai/market/1777125324151_9y4lmMcR.png';
+            }
+
+            // 2. The prompt to merge the two
+            $prompt = "Gabungkan dua gambar berikut menjadi satu foto UGC yang natural dan realistis:\n\n" .
+                      "Gambar 1: subjek (orang biasa / pelaku UMKM)\n" .
+                      "Gambar 2: produk yang dijual\n\n" .
+                      "Hasil akhir harus terlihat seperti foto asli, di mana subjek sedang memegang dan merekomendasikan produk secara langsung.\n\n" .
+                      "Detail Utama:\n" .
+                      "Ekspresi subjek ramah, hangat, dan tersenyum natural\n" .
+                      "Subjek memegang produk dengan satu tangan secara realistis (tidak kaku atau aneh)\n" .
+                      "Produk terlihat jelas, fokus, dan menyatu dengan pencahayaan serta perspektif\n" .
+                      "Proporsi produk sesuai ukuran aslinya\n\n" .
+                      "Lingkungan & Pencahayaan:\n" .
+                      "Background sederhana (rumah, dapur, atau warung kecil) dengan nuansa UMKM Indonesia\n" .
+                      "Pencahayaan natural seperti siang hari dari jendela\n" .
+                      "Bukan lighting studio (sedikit imperfect namun tetap jelas)\n\n" .
+                      "Style Visual:\n" .
+                      "UGC autentik seperti foto jualan rumahan, testimoni, atau konten TikTok/WhatsApp\n" .
+                      "Tidak terlalu polished, tetap terlihat natural dan relatable\n" .
+                      "Resolusi tinggi, tajam, dan bersih\n\n" .
+                      "Tambahan (Opsional):\n" .
+                      "Boleh menambahkan elemen ringan seperti meja, etalase kecil, atau aktivitas santai (duduk atau berdiri)\n" .
+                      "Jangan mengubah wajah subjek secara signifikan\n" .
+                      "Pastikan hasil akhir menyatu dengan baik dan tidak terlihat seperti editan kasar";
+
+            // 3. Create nano edit task
+            $result = $this->kieAIService->createEditPhotoTask($prompt, [$avatarUrl, $productUrl], '9:16');
+
+            if (!$result['success']) {
+                \Illuminate\Support\Facades\Log::error('Kie AI UGC Photo Failed', ['error' => $result['error'] ?? 'Unknown']);
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Gagal memulai pembuatan foto UGC: ' . ($result['error'] ?? 'Unknown error'),
+                ], 500);
+            }
+
+            // 4. Save to database as video_generation step 1
+            $content = AIGeneratedContent::create([
+                'user_id' => $user->id,
+                'type' => 'ugc_photo',
+                'generated_result' => json_encode([
+                    'task_id' => $result['task_id'],
+                    'product_name' => $validated['product_name'],
+                    'product_path' => $productPath,
+                    'avatar_path' => $user->avatar_path,
+                ]),
+                'status' => 'generating',
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'task_id' => $result['task_id'],
+                'content_id' => $content->id,
+                'message' => 'Sedang menyatukan foto Anda dengan produk...',
+            ]);
+
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('UGC Photo Generation Error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'error' => 'Terjadi kesalahan sistem: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Check UGC Photo Status
+     */
+    public function checkUGCPhotoStatus(Request $request)
+    {
+        $validated = $request->validate([
+            'task_id' => 'required|string',
+            'content_id' => 'required|string',
+        ]);
+
+        $result = $this->kieAIService->queryJobStatus($validated['task_id']);
+
+        if (!$result['success']) {
+            return response()->json(['success' => false, 'error' => $result['error'] ?? 'Failed to check status'], 500);
+        }
+
+        $content = AIGeneratedContent::find($validated['content_id']);
+        if ($content && $content->user_id == Auth::id()) {
+            $existingData = json_decode($content->generated_result, true) ?? [];
+
+            if ($result['state'] === 'success' && !empty($result['image_urls'])) {
+                // Download image and save locally
+                $imageUrl = $result['image_urls'][0];
+                $localPath = null;
+                
+                try {
+                    $imgResponse = \Illuminate\Support\Facades\Http::timeout(60)->get($imageUrl);
+                    if ($imgResponse->successful()) {
+                        $filename = "generated-ugc/{$content->user_id}_" . time() . ".png";
+                        \Illuminate\Support\Facades\Storage::disk('public')->put($filename, $imgResponse->body());
+                        $localPath = $filename;
+                    }
+                } catch (\Exception $e) {
+                    \Illuminate\Support\Facades\Log::error("Failed to download UGC Photo: " . $e->getMessage());
+                }
+
+                $existingData['ugc_photo_url'] = $localPath ? asset('storage/' . $localPath) : $imageUrl;
+                $existingData['ugc_photo_path'] = $localPath;
+                
+                $content->update([
+                    'status' => 'completed',
+                    'generated_result' => json_encode($existingData),
+                ]);
+            } elseif ($result['state'] === 'fail') {
+                $existingData['error'] = $result['fail_msg'];
+                $content->update([
+                    'status' => 'failed',
+                    'generated_result' => json_encode($existingData),
+                ]);
+            } else {
+                $content->update(['status' => $result['state']]);
+            }
+        }
+
+        return response()->json([
+            'success' => true,
+            'state' => $result['state'],
+            'image_urls' => $result['image_urls'] ?? [],
+            'fail_msg' => $result['fail_msg'] ?? null,
+            'local_url' => $existingData['ugc_photo_url'] ?? null,
+        ]);
+    }
+
+    /**
      * Generate video using Kie AI API
      */
     public function generateVideo(Request $request)
     {
         try {
             $validated = $request->validate([
-                'mode' => 'required|in:store_photo,product_photo',
-                'store_name' => 'required|string|max:255',
-                'category' => 'required|string|max:100',
-                'description' => 'required|string|max:1000',
-                'location' => 'nullable|string|max:255',
-                'contact' => 'nullable|string|max:50',
-                'photo' => 'required|image|max:10240',
-                'duration' => 'nullable|in:10,15',
+                'product_name' => 'required|string|max:255',
+                'photo' => 'nullable|image|max:10240',
+                'ugc_photo_url' => 'nullable|string',
             ]);
+
+            if (empty($validated['photo']) && empty($validated['ugc_photo_url'])) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Foto produk atau foto UGC wajib disertakan.',
+                ], 400);
+            }
 
             $user = Auth::user();
 
@@ -188,32 +363,34 @@ class AIContentController extends Controller
                 ], 403);
             }
 
-            // 1. Upload photo and get public URL
-            $photoPath = $request->file('photo')->store('ai-video-refs', 'public');
-            $photoUrl = url('storage/' . $photoPath);
+            // 1. Get public URL of photo (either uploaded or from previous UGC step)
+            $photoPath = null;
+            $photoUrl = null;
 
-            // HANDLE LOCALHOST/DEV ENVIRONMENT
-            // Kie AI cannot access localhost URLs. Use provided placeholder for testing.
-            if (str_contains($photoUrl, 'localhost') || str_contains($photoUrl, '127.0.0.1') || str_contains($photoUrl, '.test')) {
-                \Illuminate\Support\Facades\Log::warning('Localhost detected. Using placeholder image.', ['original' => $photoUrl]);
-                $photoUrl = 'https://github.com/hilman1237050020/AplikasiPenjadwalan-UAS-PBO/blob/main/Dimsum1260-700.jpeg?raw=true';
+            if ($request->hasFile('photo')) {
+                $photoPath = $request->file('photo')->store('ai-video-refs', 'public');
+                $photoUrl = url('storage/' . $photoPath);
+                
+                // Handle localhost testing
+                if (str_contains($photoUrl, 'localhost') || str_contains($photoUrl, '127.0.0.1') || str_contains($photoUrl, '.test')) {
+                    \Illuminate\Support\Facades\Log::warning('Localhost detected. Using placeholder image.', ['original' => $photoUrl]);
+                    $photoUrl = 'https://github.com/hilman1237050020/AplikasiPenjadwalan-UAS-PBO/blob/main/Dimsum1260-700.jpeg?raw=true';
+                }
+            } else {
+                $photoUrl = $validated['ugc_photo_url'];
+                // For localhost testing, we might need a fallback if the UGC url is localhost
+                if (str_contains($photoUrl, 'localhost') || str_contains($photoUrl, '127.0.0.1') || str_contains($photoUrl, '.test')) {
+                    $photoUrl = 'https://tempfileb.aiquickdraw.com/kieai/market/1777125204910_whVX4yF6.jpg'; // just a fallback
+                }
             }
 
-            // 2. Construct base prompt
-            $rawPrompt = $this->promptService->constructVideoPrompt(
-                $validated['store_name'],
-                $validated['category'],
-                $validated['description'],
-                $validated['location'] ?? 'Indonesia',
-                $validated['contact'] ?? '-',
-                $validated['mode']
+            // 2. Construct base prompt (DO NOT ENHANCE WITH AI to avoid prompt hallucination and changing the actor)
+            $enhancedPrompt = $this->promptService->constructVideoPrompt(
+                $validated['product_name']
             );
 
-            // 3. Enhance prompt with AI
-            $enhancedPrompt = $this->promptService->enhancePromptWithAI($rawPrompt);
-
             // 4. Create video task in Kie AI
-            $duration = $validated['duration'] ?? '15';
+            $duration = '10'; // Fixed 10s or 8s based on new prompt max 8s
 
             \Illuminate\Support\Facades\Log::info('Starting Kie AI Video Generation', [
                 'user_id' => $user->id,
@@ -221,7 +398,7 @@ class AIContentController extends Controller
                 'prompt_length' => strlen($enhancedPrompt),
             ]);
 
-            $result = $this->kieAIService->createVideoTask($enhancedPrompt, $photoUrl, 'landscape', $duration);
+            $result = $this->kieAIService->createVideoTask($enhancedPrompt, $photoUrl, '9:16', $duration);
 
             if (!$result['success']) {
                 \Illuminate\Support\Facades\Log::error('Kie AI Generation Failed', [
@@ -241,8 +418,7 @@ class AIContentController extends Controller
                 'type' => 'video_generation',
                 'generated_result' => json_encode([
                     'task_id' => $result['task_id'],
-                    'mode' => $validated['mode'],
-                    'store_name' => $validated['store_name'],
+                    'product_name' => $validated['product_name'],
                     'photo_path' => $photoPath,
                     'prompt' => $enhancedPrompt,
                 ]),

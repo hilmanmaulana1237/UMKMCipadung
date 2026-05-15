@@ -321,6 +321,17 @@
 
         /* --- RESPONSIVE --- */
         @media (max-width: 768px) {
+            /* NAV FIX */
+            .logo {
+                white-space: nowrap !important;
+                overflow: hidden !important;
+                text-overflow: ellipsis !important;
+                max-width: 70% !important;
+            }
+            nav .btn, nav .nav-cta, nav a.btn, header .btn {
+                display: none !important;
+            }
+        
             .hero {
                 flex-direction: column;
                 text-align: center;
@@ -353,12 +364,18 @@
     <header class="container">
         <nav>
             <div class="logo">{{STORE_NAME}}</div>
-            <ul class="nav-menu">
+            <ul class="nav-menu" id="navLinks">
                 <li><a href="#beranda">Beranda</a></li>
                 <li><a href="#produk">Produk</a></li>
                 <li><a href="#tentang">Tentang</a></li>
             </ul>
-        </nav>
+        
+                <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Menu">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+            </nav>
     </header>
 
     <main class="container">
@@ -430,6 +447,26 @@
         }, { threshold: 0.1 });
 
         faders.forEach(fader => observer.observe(fader));
+    
+        // Mobile Menu Toggle
+        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+        const navLinks = document.getElementById('navLinks') || document.getElementById('navMenu');
+
+        if (mobileMenuBtn && navLinks) {
+            mobileMenuBtn.addEventListener('click', function () {
+                this.classList.toggle('active');
+                navLinks.classList.toggle('active');
+                document.body.style.overflow = navLinks.classList.contains('active') ? 'hidden' : '';
+            });
+
+            navLinks.querySelectorAll('a').forEach(link => {
+                link.addEventListener('click', function () {
+                    mobileMenuBtn.classList.remove('active');
+                    navLinks.classList.remove('active');
+                    document.body.style.overflow = '';
+                });
+            });
+        }
     </script>
 </body>
 

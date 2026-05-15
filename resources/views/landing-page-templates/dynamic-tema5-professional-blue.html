@@ -847,6 +847,21 @@
         }
 
         @media (max-width: 768px) {
+            /* HERO PADDING FIX */
+            .food-plate { margin-top: 40px !important; }
+            .hero { padding-top: 180px !important; }
+
+            /* NAV FIX */
+            .logo {
+                white-space: nowrap !important;
+                overflow: hidden !important;
+                text-overflow: ellipsis !important;
+                max-width: 70% !important;
+            }
+            nav .btn, nav .nav-cta, nav a.btn, header .btn {
+                display: none !important;
+            }
+        
 
             /* Navbar Mobile Tweaks */
             nav {
@@ -1279,8 +1294,10 @@
 
     <script>
         // Mobile Menu Toggle
+        
+        // Mobile Menu Toggle
         const mobileMenuBtn = document.getElementById('mobileMenuBtn');
-        const navLinks = document.getElementById('navLinks');
+        const navLinks = document.getElementById('navLinks') || document.getElementById('navMenu');
 
         if (mobileMenuBtn && navLinks) {
             mobileMenuBtn.addEventListener('click', function () {
@@ -1289,7 +1306,6 @@
                 document.body.style.overflow = navLinks.classList.contains('active') ? 'hidden' : '';
             });
 
-            // Close menu when clicking a link
             navLinks.querySelectorAll('a').forEach(link => {
                 link.addEventListener('click', function () {
                     mobileMenuBtn.classList.remove('active');
@@ -1299,23 +1315,7 @@
             });
         }
 
-        // Smooth scroll with navbar offset
-        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function (e) {
-                e.preventDefault();
-                const targetId = this.getAttribute('href');
-                const target = document.querySelector(targetId);
-                if (target) {
-                    const navHeight = document.querySelector('nav').offsetHeight;
-                    const targetPosition = target.getBoundingClientRect().top + window.pageYOffset - navHeight - 20;
-                    window.scrollTo({
-                        top: targetPosition,
-                        behavior: 'smooth'
-                    });
-                }
-            });
-        });
-    </script>
+        </script>
 
 </body>
 

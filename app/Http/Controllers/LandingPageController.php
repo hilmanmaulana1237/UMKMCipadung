@@ -36,7 +36,7 @@ class LandingPageController extends Controller
         // Get existing landing page if any
         $landingPage = UmkmLandingPage::where('umkm_store_id', $store->id)->first();
 
-        // Get store products for selection
+        // Fetch products from this store to allow selection
         $products = Product::where('umkm_store_id', $store->id)
             ->where('is_active', true)
             ->select('id', 'name', 'price', 'image_path', 'description')
@@ -68,7 +68,12 @@ class LandingPageController extends Controller
             'feature3_desc' => 'nullable|string|max:200',
             'hero_image' => 'nullable|image|max:5120',
             'products' => 'nullable|array|max:10',
-            'products.*' => 'exists:products,id',
+            'products.*.name' => 'required|string|max:100',
+            'products.*.price' => 'nullable|string|max:50',
+            'products.*.description' => 'nullable|string|max:200',
+            'products.*.image_path' => 'nullable|string', // Support for existing product images
+            'product_images' => 'nullable|array|max:10',
+            'product_images.*' => 'nullable|image|max:5120',
             'business_phone' => 'nullable|string|max:20',
             'business_address' => 'nullable|string',
             'business_hours' => 'nullable|string|max:50',
@@ -107,7 +112,44 @@ class LandingPageController extends Controller
         $landingPage->business_hours = $validated['business_hours'] ?? null;
         $landingPage->instagram = $validated['instagram'] ?? null;
         $landingPage->email = $validated['email'] ?? null;
-        $landingPage->products = $validated['products'] ?? [];
+        
+        $existingProducts = is_array($landingPage->products) ? $landingPage->products : [];
+        $preparedProducts = [];
+
+        foreach (($validated['products'] ?? []) as $index => $product) {
+            // Safe access to existing product data
+            $existingProduct = $existingProducts[$index] ?? null;
+            
+            // Check if we already have an image path from existing product or previous upload
+            $currentImagePath = $product['image_path'] ?? ($existingProduct['image_path'] ?? null);
+            
+            if ($request->hasFile("product_images.$index")) {
+                // If uploading a new image, delete the old one if it was a landing page upload
+                if ($currentImagePath && str_contains($currentImagePath, 'landing-pages/products')) {
+                    Storage::disk('public')->delete($currentImagePath);
+                }
+
+                $currentImagePath = $request->file("product_images.$index")->store('landing-pages/products', 'public');
+            }
+
+            $preparedProducts[] = [
+                'name' => $product['name'] ?? '',
+                'price' => $product['price'] ?? '',
+                'description' => $product['description'] ?? '',
+                'image_path' => $currentImagePath,
+            ];
+        }
+
+        // Cleanup old images that are no longer used after product removal
+        if (count($existingProducts) > count($preparedProducts)) {
+            foreach (array_slice($existingProducts, count($preparedProducts)) as $removedProduct) {
+                if (!empty($removedProduct['image_path']) && is_string($removedProduct['image_path']) && str_contains($removedProduct['image_path'], 'landing-pages/products')) {
+                    Storage::disk('public')->delete($removedProduct['image_path']);
+                }
+            }
+        }
+
+        $landingPage->products = $preparedProducts;
         $landingPage->is_published = $validated['is_published'] ?? false;
 
         // Handle hero image upload
@@ -138,11 +180,17 @@ class LandingPageController extends Controller
 
         $store = $landingPage->store;
 
-        // Get selected products with details
-        $productIds = $landingPage->products ?? [];
-        $products = Product::whereIn('id', $productIds)
-            ->select('id', 'name', 'price', 'image_path', 'description')
-            ->get();
+        // Get manual products from JSON array
+        $manualProducts = $landingPage->products ?? [];
+        $products = collect($manualProducts)->map(function ($p, $index) {
+            return (object) [
+                'id' => $index,
+                'name' => $p['name'] ?? '',
+                'price' => preg_replace('/[^0-9]/', '', $p['price'] ?? '0'),
+                'image_path' => $p['image_path'] ?? null,
+                'description' => $p['description'] ?? '',
+            ];
+        });
 
         // Map template selection to actual file names
         $templateMap = [
@@ -185,7 +233,7 @@ class LandingPageController extends Controller
         foreach ($products as $product) {
             $price = 'Rp ' . number_format($product->price, 0, ',', '.');
             $imgUrl = $product->image_path
-                ? asset('storage/' . $product->image_path)
+                ? (str_starts_with($product->image_path, 'http') ? $product->image_path : asset('storage/' . $product->image_path))
                 : 'https://via.placeholder.com/400x300?text=' . urlencode($product->name);
             $waLink = 'https://wa.me/' . $waNumber . '?text=' . urlencode("Halo, saya tertarik dengan produk: {$product->name}");
             $description = $product->description ?? 'Produk berkualitas dari toko kami.';
@@ -219,10 +267,16 @@ class LandingPageController extends Controller
             ->with('store')
             ->firstOrFail();
 
-        $productIds = $landingPage->products ?? [];
-        $products = Product::whereIn('id', $productIds)
-            ->select('id', 'name', 'price', 'image_path', 'description')
-            ->get();
+        $manualProducts = $landingPage->products ?? [];
+        $products = collect($manualProducts)->map(function ($p, $index) {
+            return (object) [
+                'id' => $index,
+                'name' => $p['name'] ?? '',
+                'price' => preg_replace('/[^0-9]/', '', $p['price'] ?? '0'),
+                'image_path' => $p['image_path'] ?? null,
+                'description' => $p['description'] ?? '',
+            ];
+        });
 
         // Use same template map as show() method
         $templateMap = [
@@ -275,6 +329,13 @@ class LandingPageController extends Controller
             Storage::disk('public')->delete($landingPage->hero_image_path);
         }
 
+        // Delete product images (only those uploaded specifically for landing page)
+        foreach (($landingPage->products ?? []) as $product) {
+            if (!empty($product['image_path']) && str_contains($product['image_path'], 'landing-pages/products')) {
+                Storage::disk('public')->delete($product['image_path']);
+            }
+        }
+
         $landingPage->delete();
 
         return response()->json(['success' => true, 'message' => 'Landing page berhasil dihapus.']);
@@ -317,7 +378,7 @@ class LandingPageController extends Controller
             'INSTAGRAM' => '@tokoanda',
             'INSTAGRAM_LINK' => 'https://instagram.com/tokoanda',
             'CATEGORY' => '🍽️ Kuliner',
-            'HERO_IMAGE' => '/storage/placeholder-hero.jpg',
+            'HERO_IMAGE' => 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800',
             'NAV_PRODUCTS' => 'Produk',
             'WHY_US' => 'Mengapa Kami',
             'FOOTER_YEAR' => date('Y'),
@@ -450,7 +511,8 @@ Pastikan konten sesuai dengan kategori: {$request->category}. Jika kategori kuli
             $heroUrl = asset('storage/' . $landingPage->hero_image_path);
             $html = str_replace('{{HERO_IMAGE}}', $heroUrl, $html);
         } else {
-            $html = str_replace('{{HERO_IMAGE}}', 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=800', $html);
+            // More neutral placeholder: a nice storefront image from Unsplash
+            $html = str_replace('{{HERO_IMAGE}}', 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1200&q=80', $html);
         }
 
         // WhatsApp link placeholder (use landing page phone if available)
@@ -481,7 +543,15 @@ Pastikan konten sesuai dengan kategori: {$request->category}. Jika kategori kuli
         $operatingHours = $landingPage->business_hours ?: $this->formatOperatingHours($store);
         $html = str_replace('{{OPERATING_HOURS}}', htmlspecialchars($operatingHours), $html);
 
-        // ... existing placeholders ...
+        // Email placeholder
+        $email = $landingPage->email ?: '';
+        $html = str_replace('{{EMAIL}}', htmlspecialchars($email ?: '-'), $html);
+        $html = str_replace('{{EMAIL_LINK}}', $email ? 'mailto:' . htmlspecialchars($email) : '#', $html);
+
+        // Instagram placeholder
+        $instagram = $landingPage->instagram ?: '';
+        $html = str_replace('{{INSTAGRAM}}', htmlspecialchars($instagram ?: '-'), $html);
+        $html = str_replace('{{INSTAGRAM_LINK}}', $instagram ? 'https://instagram.com/' . htmlspecialchars(ltrim($instagram, '@')) : '#', $html);
 
         // ===== DYNAMIC CATEGORY TEXT GENERATION =====
         $cat = strtolower($store->category ?? 'lainnya');
@@ -559,19 +629,9 @@ Pastikan konten sesuai dengan kategori: {$request->category}. Jika kategori kuli
 
         // 2. Replace ALL known template store names with actual store name
         $templateNames = [
-            'CIMOLROYALE.',
-            'CimolCloud.',
-            'MONOGRAM.',
-            'KRIPIKU.',
-            'KLIN',
-            'Cimol Royale',
-            'Cimol Cloud',
-            'Monogram',
-            'Kripiku',
-            'KlinWash',
-            'Cimol Cloud Official',
-            'CIMOL ROYALE',
-            'cimolcloud'
+            'CIMOLROYALE.', 'CimolCloud.', 'MONOGRAM.', 'KRIPIKU.', 'KLIN',
+            'Cimol Royale', 'Cimol Cloud', 'Monogram', 'Kripiku', 'KlinWash',
+            'Cimol Cloud Official', 'CIMOL ROYALE', 'cimolcloud'
         ];
         foreach ($templateNames as $name) {
             $html = str_ireplace($name, $store->name, $html);
@@ -580,22 +640,16 @@ Pastikan konten sesuai dengan kategori: {$request->category}. Jika kategori kuli
         // 3. Replace hero taglines with user's tagline
         if ($landingPage->tagline) {
             $taglinePatterns = [
-                // Tema 1 - Luxury Dark
                 'Taste the <br><span>Golden Crunch</span>',
                 'Taste the Golden Crunch',
-                // Tema 2 - Cute Pastel
                 'Kenyal, Gurih, <br><span>Bikin Nagih.</span>',
                 'Kenyal, Gurih, Bikin Nagih.',
-                // Tema 3 - Minimalist
                 'Elegance in <br>Every Stitch.',
                 'Elegance in Every Stitch.',
-                // Tema 4 - Traditional
                 'Renyahnya Asli, <br><span style="color: var(--accent);">Bikin Gak Berhenti.</span>',
                 'Renyahnya Asli, Bikin Gak Berhenti.',
-                // Tema 5 - Professional
                 'Baju Bersih,<br><span>Hidup Lebih Santai.</span>',
                 'Baju Bersih, Hidup Lebih Santai.',
-                // Additional variations
                 'Kriya Berkualitas, Sentuhan Kreatif Bandung',
             ];
             foreach ($taglinePatterns as $pattern) {
@@ -620,7 +674,6 @@ Pastikan konten sesuai dengan kategori: {$request->category}. Jika kategori kuli
         // 5. Replace WhatsApp links
         $waNumber = preg_replace('/[^0-9]/', '', $landingPage->business_phone ?? $store->contact_number ?? $store->phone ?? '');
         if ($waNumber) {
-            // Make sure format is correct (add 62 if not present)
             if (!str_starts_with($waNumber, '62')) {
                 $waNumber = '62' . ltrim($waNumber, '0');
             }
@@ -628,25 +681,6 @@ Pastikan konten sesuai dengan kategori: {$request->category}. Jika kategori kuli
             $html = str_replace('{{WA_LINK}}', 'https://wa.me/' . $waNumber, $html);
         } else {
             $html = str_replace('{{WA_LINK}}', '#', $html);
-        }
-
-        // Replace Instagram Link
-        if (!empty($landingPage->instagram)) {
-            $igLink = str_starts_with($landingPage->instagram, 'http') ? $landingPage->instagram : 'https://instagram.com/' . ltrim($landingPage->instagram, '@');
-            $html = str_replace('{{INSTAGRAM_LINK}}', $igLink, $html);
-            $html = str_replace('{{INSTAGRAM}}', $landingPage->instagram, $html);
-        } else {
-            $html = str_replace('{{INSTAGRAM_LINK}}', '#', $html);
-            $html = str_replace('{{INSTAGRAM}}', 'Instagram', $html);
-        }
-
-        // Replace Email Link
-        if (!empty($landingPage->email)) {
-            $html = str_replace('{{EMAIL_LINK}}', 'mailto:' . $landingPage->email, $html);
-            $html = str_replace('{{EMAIL}}', $landingPage->email, $html);
-        } else {
-            $html = str_replace('{{EMAIL_LINK}}', '#', $html);
-            $html = str_replace('{{EMAIL}}', 'Email', $html);
         }
 
         // 6. Replace address
@@ -672,68 +706,10 @@ Pastikan konten sesuai dengan kategori: {$request->category}. Jika kategori kuli
             );
         }
 
-        // Replace 'Booking Pickup' button text if it exists (Tema 5)
-        $html = str_replace('Booking Pickup', 'Hubungi Kami', $html);
-
         // Replace visible phone number text (Tema 5)
         $html = str_replace('0812-3456-7890', $store->contact_number ?? $store->phone ?? '-', $html);
 
-        // Replace operating hours
-        if ($store->open_time && $store->close_time) {
-            $open = \Carbon\Carbon::parse($store->open_time)->format('H.i');
-            $close = \Carbon\Carbon::parse($store->close_time)->format('H.i');
-            $hours = "{$open} - {$close}";
-            $html = str_replace('07.00 - 20.00', $hours, $html);
-        }
-
-        // Replace specific laundry description if present
-        $laundryDesc = 'Jasa laundry premium dengan teknologi pencucian modern. Kami jemput pakaian kotor Anda, dan kembalikan dalam keadaan wangi & rapi.';
-        if ($landingPage->description) {
-            $html = str_replace($laundryDesc, $landingPage->description, $html);
-        }
-
-        // 8. Replace Feature Content (AI Generated)
-        if ($landingPage->feature1_title) {
-            // Patterns for Feature 1 (Title & Desc)
-            $f1TitlePatterns = ['Gratis Jemput', 'Bahan Premium', 'Desain Elegan', 'Rasa Otentik'];
-            foreach ($f1TitlePatterns as $p)
-                $html = str_replace($p, $landingPage->feature1_title, $html);
-
-            $f1DescPatterns = ['Layanan penjemputan gratis.', 'Kualitas terbaik.', 'Dibuat oleh ahli.', 'Resep turun temurun.'];
-            foreach ($f1DescPatterns as $p)
-                $html = str_replace($p, $landingPage->feature1_desc, $html);
-        }
-
-        if ($landingPage->feature2_title) {
-            // Patterns for Feature 2
-            $f2TitlePatterns = ['Deterjen Premium', 'Jahitan Rapi', 'Tekstur Renyah', 'Wangi Tahan Lama'];
-            foreach ($f2TitlePatterns as $p)
-                $html = str_replace($p, $landingPage->feature2_title, $html);
-
-            $f2DescPatterns = ['Menggunakan bahan pembersih terbaik.', 'Detail yang presisi.', 'Tanpa pengawet.', 'Harum sepanjang hari.'];
-            foreach ($f2DescPatterns as $p)
-                $html = str_replace($p, $landingPage->feature2_desc, $html);
-        }
-
-        if ($landingPage->feature3_title) {
-            // Patterns for Feature 3
-            $f3TitlePatterns = ['1 Hari Selesai', 'Garansi Kepuasan', 'Pengiriman Aman', 'Harga Terjangkau'];
-            foreach ($f3TitlePatterns as $p)
-                $html = str_replace($p, $landingPage->feature3_title, $html);
-
-            $f3DescPatterns = ['Proses pengerjaan cepat.', 'Jika tidak puas, uang kembali.', 'Packing aman sampai tujuan.', 'Ramah di kantong.'];
-            foreach ($f3DescPatterns as $p)
-                $html = str_replace($p, $landingPage->feature3_desc, $html);
-        }
-
-        // Special replacement for Tema 5 features (Checklist style)
-        if ($landingPage->template === 'tema5') {
-            $html = str_replace('Gratis Jemput', $landingPage->feature1_title ?? 'Keunggulan 1', $html);
-            $html = str_replace('Deterjen Premium', $landingPage->feature2_title ?? 'Keunggulan 2', $html);
-            $html = str_replace('1 Hari Selesai', $landingPage->feature3_title ?? 'Keunggulan 3', $html);
-        }
-
-        // 9. Generate and inject product cards if products selected
+        // 8. Generate and inject product cards if products selected
         if (!empty($products) && $products->count() > 0) {
             $productHtml = $this->generateProductCards($products, $landingPage->template, $waNumber);
 
@@ -746,11 +722,90 @@ Pastikan konten sesuai dengan kategori: {$request->category}. Jika kategori kuli
                 $html = $this->replaceProductSection($html, $productHtml, $landingPage->template);
             }
         } else {
-            // No products selected, show empty message
             $html = str_replace('{{PRODUCTS}}', '<p style="text-align: center; color: #999; padding: 40px 0;">Belum ada produk yang dipilih.</p>', $html);
         }
 
-        return $html;
+        return $this->injectUniversalResponsiveStyles($html);
+    }
+
+    /**
+     * Add universal mobile fallbacks so every template remains usable on small screens.
+     */
+    private function injectUniversalResponsiveStyles($html)
+    {
+        $mobileCss = '<style id="lp-mobile-fallback">
+            @media (max-width: 768px) {
+                html, body { overflow-x: hidden !important; width: 100% !important; margin: 0 !important; padding: 0 !important; }
+                img, video, iframe { max-width: 100% !important; height: auto !important; }
+                .container { width: 100% !important; max-width: 100% !important; padding-left: 20px !important; padding-right: 20px !important; box-sizing: border-box !important; }
+                
+                /* Hero Section Responsive */
+                .hero, .hero-wrapper .hero { 
+                    grid-template-columns: 1fr !important; 
+                    display: flex !important; 
+                    flex-direction: column !important; 
+                    gap: 30px !important; 
+                    padding: 60px 20px !important;
+                    text-align: center !important;
+                    min-height: auto !important;
+                }
+                .hero-content, .hero-text { 
+                    max-width: 100% !important; 
+                    width: 100% !important; 
+                    margin: 0 auto !important; 
+                    display: flex !important;
+                    flex-direction: column !important;
+                    align-items: center !important;
+                }
+                .hero h1 { font-size: clamp(2rem, 10vw, 2.8rem) !important; line-height: 1.1 !important; margin-bottom: 20px !important; }
+                .hero p { font-size: 1.1rem !important; max-width: 100% !important; margin-bottom: 30px !important; }
+                .hero-image, .hero-img, .hero-img-wrapper, .hero-image-container { 
+                    max-width: 100% !important; 
+                    width: 100% !important; 
+                    margin: 0 auto !important; 
+                    order: -1 !important; /* Image first on mobile usually looks better */
+                }
+                
+                /* Grids Responsive */
+                .menu-grid, .card-grid, .product-grid, .service-grid, .features-grid, .stats-grid, .gallery-grid { 
+                    grid-template-columns: 1fr !important; 
+                    gap: 20px !important;
+                }
+                
+                /* Buttons Responsive */
+                .cta-buttons, .hero-actions, .btn-group { 
+                    display: flex !important; 
+                    flex-direction: column !important; 
+                    gap: 12px !important; 
+                    width: 100% !important;
+                }
+                .btn, .btn-order, .action-link { 
+                    width: 100% !important; 
+                    padding: 15px 25px !important;
+                    font-size: 1.1rem !important;
+                    text-align: center !important; 
+                    display: block !important;
+                    box-sizing: border-box !important;
+                }
+                
+                /* Navigation Responsive */
+                nav, .navbar { padding: 15px 20px !important; }
+                .nav-links, .menu { display: none !important; } /* Hide complex menus on simple mobile view */
+                
+                /* Section Padding */
+                section { padding: 50px 20px !important; }
+            }
+        </style>';
+
+        if (str_contains($html, 'id="lp-mobile-fallback"')) {
+            return $html;
+        }
+
+        if (str_contains($html, '</head>')) {
+            return str_replace('</head>', $mobileCss . '</head>', $html);
+        }
+
+        return $mobileCss . $html;
     }
 
     /**
@@ -763,7 +818,9 @@ Pastikan konten sesuai dengan kategori: {$request->category}. Jika kategori kuli
 
         foreach ($products as $product) {
             $price = 'Rp ' . number_format($product->price, 0, ',', '.');
-            $imgUrl = $product->image_path ? asset('storage/' . $product->image_path) : 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=400&q=80';
+            $imgUrl = $product->image_path
+                ? asset('storage/' . $product->image_path)
+                : 'https://via.placeholder.com/400x300?text=' . urlencode($product->name ?: 'Produk');
             $waLink = 'https://wa.me/' . $waNumber . '?text=' . urlencode("Halo, saya tertarik dengan produk: {$product->name}");
             $description = $product->description ?? 'Produk berkualitas dari toko kami.';
             $safeName = htmlspecialchars($product->name);
@@ -784,23 +841,17 @@ Pastikan konten sesuai dengan kategori: {$request->category}. Jika kategori kuli
                     </div>
                 </div>";
             } elseif ($template === 'tema2') {
-                // Cute Pastel Style — matches menu-card + img-container + card-info CSS
-                $badge = $index === 0 ? '<span class="badge">Best Seller</span>' : ($index === 1 ? '<span class="badge new">New</span>' : '');
+                // Cute Pastel Style — matches product-card + p-img + p-info CSS
                 $cards .= "
-                <div class=\"menu-card fade-up\">
-                    <div class=\"img-container\">
-                        {$badge}
+                <div class=\"product-card fade-up\">
+                    <div class=\"p-img\">
                         <img src=\"{$imgUrl}\" alt=\"{$safeName}\">
                     </div>
-                    <div class=\"card-info\">
-                        <div>
-                            <h3>{$safeName}</h3>
-                            <p>{$safeDesc}</p>
-                        </div>
-                        <div class=\"card-footer\">
-                            <span class=\"price\">{$price}</span>
-                            <a href=\"{$waLink}\" class=\"btn-order\" target=\"_blank\">Pesan Sekarang</a>
-                        </div>
+                    <div class=\"p-info\">
+                        <h3>{$safeName}</h3>
+                        <span class=\"p-price\">{$price}</span>
+                        <p class=\"p-desc\">{$safeDesc}</p>
+                        <a href=\"{$waLink}\" class=\"btn\" target=\"_blank\">Pesan Sekarang</a>
                     </div>
                 </div>";
             } elseif ($template === 'tema3') {

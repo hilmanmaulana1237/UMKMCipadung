@@ -10,7 +10,7 @@ interface AppLayoutProps {
 
 export default function AppLayout({
     children,
-    activeTab = 'home',
+    activeTab = 'dashboard',
     showBottomNav = true,
 }: AppLayoutProps) {
     const { auth } = usePage().props as {
@@ -18,7 +18,6 @@ export default function AppLayout({
             user?: {
                 id: number;
                 name: string;
-                role: 'buyer' | 'umkm' | 'courier' | 'affiliator';
             };
         };
     };

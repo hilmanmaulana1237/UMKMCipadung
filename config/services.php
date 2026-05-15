@@ -37,7 +37,8 @@ return [
 
     'openrouter' => [
         'api_key' => env('OPENROUTER_API_KEY', ''),
-        'model' => env('OPENROUTER_MODEL', 'deepseek/deepseek-r1-0528:free'),
+        'primary_model' => env('OPENROUTER_PRIMARY_MODEL', 'openai/gpt-4o-mini'),
+        'secondary_model' => env('OPENROUTER_SECONDARY_MODEL', 'openai/gpt-oss-20b'),
     ],
 
     'kie_ai' => [

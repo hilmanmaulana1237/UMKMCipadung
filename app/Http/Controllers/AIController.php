@@ -22,20 +22,24 @@ class AIController extends Controller
     public function generateDescription(Request $request): JsonResponse
     {
         $request->validate([
-            'name' => 'required|string|max:255',
-            'category' => 'required|string|in:kuliner,kriya,jasa',
+            'name' => 'nullable|string|max:255',
+            'category' => 'required|string',
             'price' => 'nullable|numeric|min:0',
+            'mode' => 'nullable|in:normal,short',
         ]);
 
-        $description = $this->aiService->generateProductDescription(
+        $productData = $this->aiService->generateProductDescription(
             $request->name,
             $request->category,
-            $request->price
+            $request->price,
+            $request->input('mode', 'normal')
         );
 
         return response()->json([
             'success' => true,
-            'description' => $description,
+            'name' => $productData['name'],
+            'price' => $productData['price'],
+            'description' => $productData['description'],
         ]);
     }
 

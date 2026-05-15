@@ -66,212 +66,53 @@ TOTAL DURATION: 8 Seconds MAX.'";
     }
 
     /**
-     * Construct UGC TikTok-style video prompt.
-     * MAX 8 seconds total, MAX 6 seconds dialogue.
+     * Construct simplified UGC TikTok-style video prompt as requested by user.
      */
-    public function constructVideoPrompt(
-        string $storeName,
-        string $category,
-        string $description,
-        string $location,
-        string $contact,
-        string $mode = 'store_photo'
-    ): string {
-        $categoryLabel = $this->getCategoryLabel($category);
-
-        if ($mode === 'product_photo') {
-            return $this->constructProductUGCPrompt($storeName, $categoryLabel, $description, $location, $contact);
-        }
-
-        return $this->constructStoreUGCPrompt($storeName, $categoryLabel, $description, $location, $contact);
-    }
-
-    /**
-     * UGC prompt for STORE PHOTO mode.
-     * MAX 8 seconds video, MAX 6 seconds dialogue.
-     */
-    private function constructStoreUGCPrompt(
-        string $storeName,
-        string $categoryLabel,
-        string $description,
-        string $location,
-        string $contact
-    ): string {
+    public function constructVideoPrompt(string $productName): string
+    {
         $prompt = <<<EOT
-Create a realistic UGC (User Generated Content) TikTok-style review video.
-Use the uploaded store photo as the EXACT visual reference for the store/location.
-The store must look IDENTICAL to the uploaded photo.
+PROMPT VIDEO UGC (REALISTIS, ≤ 8 DETIK)
 
-CONTEXT (for AI understanding only — use this to make the content relevant):
-- Store name: "$storeName"
-- Category: $categoryLabel
-- Description from owner: "$description"
-- Location: $location
+Gunakan gambar gabungan (subjek + produk) sebagai frame utama.
+Buat video UGC realistis dengan durasi maksimal 8 detik.
 
-════════════════════════════════════════════════════════════════════
-VIDEO STYLE: AUTHENTIC TIKTOK UGC — NOT A COMMERCIAL
-TOTAL DURATION: 8 SECONDS MAXIMUM
-TOTAL DIALOGUE: 6 SECONDS MAXIMUM
-════════════════════════════════════════════════════════════════════
+Konsep:
+Seorang pelaku UMKM / individu biasa merekomendasikan produk ($productName) secara natural, seperti video TikTok atau WhatsApp Story.
 
-Camera: Handheld smartphone camera, front-facing selfie angle, slightly shaky,
-natural lighting, authentic vibe. Like someone recording with their phone.
+Detail Adegan:
+- Subjek menampilkan produk secara natural (dipegang, dipakai, atau diperagakan sesuai jenis produk)
+- Gerakan produk tetap halus agar detail produk terlihat jelas ke kamera
+- Ekspresi ramah, tulus, dan meyakinkan
+- Gerakan kecil yang natural (angguk, senyum, atau sedikit mendekat ke kamera)
+- Kamera handheld (sedikit goyang halus seperti rekaman HP)
+- Background sederhana (rumah, dapur, atau warung kecil)
 
-Character: A young Indonesian woman (20-25 years old), casual outfit (t-shirt or blouse),
-natural makeup, hijab or natural hair, relatable and friendly looking.
-She is NOT a model — she looks like a real TikTok content creator.
+Pencahayaan:
+- Natural, seperti siang hari dari jendela
+- Bukan lighting studio (sedikit imperfect tapi tetap jelas)
 
-────────────────────
-Scene 1 — Opening Hook + Store Showcase (Second 0-5):
-The girl is standing near the store (matching the uploaded photo exactly).
-She holds her phone in selfie mode, the store is visible behind her.
-She looks excited and talks directly to camera with natural hand gestures.
+Dialog (maks 6 detik, bahasa Indonesia santai):
+“Produknya bagus banget, aku udah pakai sendiri. Kalian wajib coba!”
 
-She says (BAHASA INDONESIA, MAX 4 seconds): "Guys, nemu $categoryLabel keren nih di $location!"
+Timing:
+0–2 detik: subjek melihat kamera + senyum
+2–6 detik: menyampaikan dialog sambil memperlihatkan penggunaan/fitur produk
+6–8 detik: fokus produk + ekspresi positif (tanpa dialog)
 
-Quick cut: camera flips showing the store interior/exterior (MUST match uploaded photo).
-Handheld walking shot, slightly shaky, exploring the store briefly.
+Audio:
+- Suara asli (natural, tidak terlalu jernih seperti studio)
+- Tambahkan sedikit ambient lingkungan sekitar (opsional)
 
-TikTok-style subtitle text appears: bold white text with black outline at bottom of screen.
+Style:
+- UGC, autentik, tidak terlihat seperti iklan formal
+Output:
+- Resolusi tinggi
+- Fokus utama pada wajah subjek dan produk
 
-────────────────────
-Scene 2 — Recommendation + Closing (Second 5-8):
-Back to selfie angle. She holds up a product or points at the store behind her.
-Genuine smile, speaking directly to camera.
-
-She says (BAHASA INDONESIA, MAX 2 seconds): "Recommended banget, cobain deh!"
-
-Soft text overlay fades in:
-📍 $storeName
-$location
-
-────────────────────
-AUDIO:
-- Subtle trendy background music throughout (lo-fi, aesthetic, TikTok-trending style)
-- Girl's voice is natural, casual — NOT announcer voice
-- Music gets slightly louder in final 2 seconds
-
-TOTAL DURATION: 8 SECONDS MAXIMUM. DO NOT EXCEED.
-TOTAL DIALOGUE: 6 SECONDS MAXIMUM.
-
-════════════════════════════════════════════════════════════════════
-CRITICAL RULES:
-1. Must look like REAL TikTok UGC content, NOT a polished commercial
-2. Store MUST look identical to uploaded photo — same signage, layout, colors
-3. ALL dialogue in BAHASA INDONESIA
-4. Handheld smartphone camera feel throughout
-5. Modern TikTok-style bold subtitles on screen
-6. Character must be a relatable young Indonesian woman
-7. VIDEO MUST NOT EXCEED 8 SECONDS TOTAL
-8. DIALOGUE MUST NOT EXCEED 6 SECONDS TOTAL
-════════════════════════════════════════════════════════════════════
-
-NEGATIVE PROMPT:
-cinematic camera, tripod shot, studio lighting, static camera, professional model,
-western/caucasian person, anime, cartoon, unrealistic, corporate commercial feel,
-stiff poses, robotic movement, bad quality, blurry, English dialogue,
-redesigned store (must match photo), fancy studio setting, long video, slow pacing
-EOT;
-
-        return $prompt;
-    }
-
-    /**
-     * UGC prompt for PRODUCT PHOTO mode.
-     * MAX 8 seconds video, MAX 6 seconds dialogue.
-     */
-    private function constructProductUGCPrompt(
-        string $storeName,
-        string $categoryLabel,
-        string $description,
-        string $location,
-        string $contact
-    ): string {
-        $prompt = <<<EOT
-Create a realistic UGC (User Generated Content) TikTok-style product review video.
-Use the uploaded product photo as the EXACT product reference.
-The product MUST look 100% IDENTICAL to the uploaded image — same shape, color, label, packaging, and all details.
-DO NOT redesign or reinterpret the product.
-
-CONTEXT (for AI understanding — use this info to create relevant dialogue):
-- Store: "$storeName"
-- Product category: $categoryLabel
-- Product description: "$description"
-
-Analyze the uploaded product image and identify the product type (e.g., skincare, food, drink, fashion, craft, etc.).
-Generate dialogue that naturally describes the product's key benefit.
-
-════════════════════════════════════════════════════════════════════
-VIDEO STYLE: AUTHENTIC TIKTOK PRODUCT REVIEW — HONEST, ORGANIC, NOT AN AD
-TOTAL DURATION: 8 SECONDS MAXIMUM
-TOTAL DIALOGUE: 6 SECONDS MAXIMUM
-════════════════════════════════════════════════════════════════════
-
-Camera: Handheld smartphone camera, slightly shaky, natural morning/afternoon light
-from a window. Authentic bedroom/living room setting. Like a real TikTok review.
-
-Character: A young Indonesian woman (20-25 years old), wearing casual comfortable clothes
-(oversized t-shirt, hoodie), natural look, sits on bed or cozy chair.
-She looks like a REAL person doing a genuine review, NOT a model or actress.
-
-────────────────────
-Scene 1 — Hook & Product Reveal (Second 0-4):
-Cozy bedroom/living room with natural window light.
-The girl is sitting casually, holding the product (MUST match uploaded image exactly).
-She looks at camera with excited expression, holding the product up to show it.
-Selfie angle, handheld, slightly shaky.
-
-She says (BAHASA INDONESIA, MAX 3 seconds): "Guys, review $categoryLabel dari $storeName ya!"
-
-Close-up shot: she turns the product around, showing details, label, texture.
-Natural lighting highlighting the product.
-
-TikTok-style bold subtitle text at bottom of screen.
-
-────────────────────
-Scene 2 — Verdict + Closing (Second 4-8):
-Back to medium shot. She's holding the product naturally.
-Genuine smile, relaxed body language, speaking like talking to a best friend.
-
-She says (BAHASA INDONESIA, MAX 3 seconds): "Worth it banget sih, wajib coba!"
-
-Quick aesthetic shot of the product styled nicely on a table with soft background.
-Trendy background music gets slightly louder.
-
-Soft text overlay:
-🛒 $storeName
-📍 $location
-
-────────────────────
-AUDIO:
-- Subtle trendy background music throughout (lo-fi beats, aesthetic, TikTok-trending)
-- Her voice is natural, casual, enthusiastic but not over-the-top
-- Feels like genuine honest review, NOT scripted commercial
-- Music volume increases in final 2 seconds
-
-TOTAL DURATION: 8 SECONDS MAXIMUM. DO NOT EXCEED.
-TOTAL DIALOGUE: 6 SECONDS MAXIMUM.
-
-════════════════════════════════════════════════════════════════════
-CRITICAL RULES:
-1. Product MUST look 100% identical to the uploaded photo — same shape, color, label, details
-2. DO NOT redesign or reinterpret the product in any way
-3. Must look like REAL TikTok UGC — organic feeling, NOT commercial
-4. ALL dialogue in BAHASA INDONESIA — conversational, not formal
-5. Handheld smartphone camera feel, natural lighting
-6. Modern TikTok-style bold white subtitles with black outline
-7. Character is a relatable young Indonesian woman (20-25)
-8. Keep branding on product consistent with uploaded image
-9. VIDEO MUST NOT EXCEED 8 SECONDS TOTAL
-10. DIALOGUE MUST NOT EXCEED 6 SECONDS TOTAL
-════════════════════════════════════════════════════════════════════
-
-NEGATIVE PROMPT:
-cinematic professional camera, tripod, studio lighting, static shot,
-professional model, western person, anime, cartoon, blurry, low quality,
-English dialogue, redesigned product, different product than uploaded,
-corporate commercial feel, stiff acting, formal speech, announcer voice,
-product without original branding, fancy studio backdrop, long video, slow pacing
+CRITICAL VISUAL CONSTRAINTS FOR AI:
+1. STRICTLY PRESERVE the exact appearance of the product from the reference image.
+2. DO NOT alter, morph, or redesign the product's shape, color, label, text, or branding. It must remain 100% identical to the first frame.
+3. Only animate the person's subtle movements and facial expressions. Keep the product consistent and free from AI artifacts or distortion throughout the video.
 EOT;
 
         return $prompt;

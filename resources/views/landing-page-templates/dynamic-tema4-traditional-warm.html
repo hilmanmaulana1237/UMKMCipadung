@@ -339,6 +339,21 @@
 
         /* --- RESPONSIVE --- */
         @media (max-width: 768px) {
+            /* HERO PADDING FIX */
+            .food-plate { margin-top: 40px !important; }
+            .hero { padding-top: 180px !important; }
+
+            /* NAV FIX */
+            .logo {
+                white-space: nowrap !important;
+                overflow: hidden !important;
+                text-overflow: ellipsis !important;
+                max-width: 70% !important;
+            }
+            nav .btn, nav .nav-cta, nav a.btn, header .btn {
+                display: none !important;
+            }
+        
             .mobile-menu-btn {
                 display: block;
             }
@@ -574,26 +589,28 @@
 
     <script>
         // Mobile Menu Toggle
+        
+        // Mobile Menu Toggle
         const mobileMenuBtn = document.getElementById('mobileMenuBtn');
-        const navMenu = document.getElementById('navMenu');
+        const navLinks = document.getElementById('navLinks') || document.getElementById('navMenu');
 
-        if (mobileMenuBtn && navMenu) {
+        if (mobileMenuBtn && navLinks) {
             mobileMenuBtn.addEventListener('click', function () {
                 this.classList.toggle('active');
-                navMenu.classList.toggle('active');
-                document.body.style.overflow = navMenu.classList.contains('active') ? 'hidden' : '';
+                navLinks.classList.toggle('active');
+                document.body.style.overflow = navLinks.classList.contains('active') ? 'hidden' : '';
             });
 
-            // Close menu when clicking a link
-            navMenu.querySelectorAll('a').forEach(link => {
+            navLinks.querySelectorAll('a').forEach(link => {
                 link.addEventListener('click', function () {
                     mobileMenuBtn.classList.remove('active');
-                    navMenu.classList.remove('active');
+                    navLinks.classList.remove('active');
                     document.body.style.overflow = '';
                 });
             });
         }
-    </script>
+
+        </script>
 
 </body>
 

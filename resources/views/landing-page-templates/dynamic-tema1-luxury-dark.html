@@ -444,6 +444,31 @@
         /* --- MOBILE RESPONSIVE --- */
         @media (max-width: 768px) {
 
+            /* HERO PADDING FIX */
+            .food-plate {
+                margin-top: 60px !important;
+            }
+
+            .hero {
+                padding-top: 180px !important;
+            }
+
+            /* NAV FIX */
+            .logo {
+                white-space: nowrap !important;
+                overflow: hidden !important;
+                text-overflow: ellipsis !important;
+                max-width: 70% !important;
+            }
+
+            nav .btn,
+            nav .nav-cta,
+            nav a.btn,
+            header .btn {
+                display: none !important;
+            }
+
+
             /* Mobile Menu */
             .mobile-menu-btn {
                 display: block;
@@ -805,8 +830,10 @@
         revealElements.forEach(el => observer.observe(el));
 
         // 3. Mobile Menu Toggle
+        
+        // Mobile Menu Toggle
         const mobileMenuBtn = document.getElementById('mobileMenuBtn');
-        const navLinks = document.getElementById('navLinks');
+        const navLinks = document.getElementById('navLinks') || document.getElementById('navMenu');
 
         if (mobileMenuBtn && navLinks) {
             mobileMenuBtn.addEventListener('click', function () {
@@ -815,7 +842,6 @@
                 document.body.style.overflow = navLinks.classList.contains('active') ? 'hidden' : '';
             });
 
-            // Close menu when clicking a link
             navLinks.querySelectorAll('a').forEach(link => {
                 link.addEventListener('click', function () {
                     mobileMenuBtn.classList.remove('active');
