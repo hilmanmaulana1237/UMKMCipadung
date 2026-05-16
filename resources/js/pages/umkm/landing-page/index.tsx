@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Head, router } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import AppLayout from '@/layouts/app-layout';
 import axios from 'axios';
 
@@ -10,6 +10,10 @@ interface Product {
     image_path: string | null;
     description: string | null;
 }
+
+type LandingProduct = Partial<Product> & {
+    isManual?: boolean;
+};
 
 interface Template {
     name: string;
@@ -96,7 +100,7 @@ export default function LandingPageBuilder({ store, landingPage, products, templ
     const [tagline, setTagline] = useState(landingPage?.tagline || '');
     const [description, setDescription] = useState(landingPage?.description || '');
     // Products state now stores the full objects to be saved
-    const [landingProducts, setLandingProducts] = useState<Partial<Product>[]>(
+    const [landingProducts, setLandingProducts] = useState<LandingProduct[]>(
         landingPage?.products ? (landingPage.products as any).map((p: any, i: number) => ({
             ...p,
             id: -(i + 1), // Temporary IDs for manual products
@@ -105,6 +109,10 @@ export default function LandingPageBuilder({ store, landingPage, products, templ
     );
     const [productImages, setProductImages] = useState<Record<number, File>>({});
     const [productPreviews, setProductPreviews] = useState<Record<number, string>>({});
+    const [heroImage, setHeroImage] = useState<File | null>(null);
+    const [heroPreview, setHeroPreview] = useState<string | null>(
+        landingPage?.hero_image_path ? `/storage/${landingPage.hero_image_path}` : null
+    );
 
     const [isPublished, setIsPublished] = useState(landingPage?.is_published || false);
     const [saving, setSaving] = useState(false);
@@ -276,7 +284,7 @@ export default function LandingPageBuilder({ store, landingPage, products, templ
 
     const copyLink = () => {
         if (landingPage?.public_url) {
-            navigator.clipboard.writeText(window.location.origin + '/lp/' + landingPage.slug);
+            navigator.clipboard.writeText(window.location.origin + '/toko/' + landingPage.slug);
             setCopySuccess(true);
             setTimeout(() => setCopySuccess(false), 2000);
         }
@@ -295,7 +303,7 @@ export default function LandingPageBuilder({ store, landingPage, products, templ
     };
 
     const getPreviewUrl = (templateId: string) => {
-        return `/landing-page-templates/${templateId}`;
+        return `/umkm/landing-page/preview-template/${templateId}`;
     };
 
     const templateIds = Object.keys(templateInfo);
@@ -627,12 +635,30 @@ export default function LandingPageBuilder({ store, landingPage, products, templ
                                     </span>
                                     {landingPage.is_published && (
                                         <div style={{ fontSize: '0.8rem', color: '#374151', marginTop: '4px' }}>
-                                            Link: {window.location.origin}/lp/{landingPage.slug}
+                                            Link: {window.location.origin}/toko/{landingPage.slug}
                                         </div>
                                     )}
                                 </div>
                                 {landingPage.is_published && (
-                                    <button
+                                    <>
+                                        <Link
+                                            href="/portal-umkm"
+                                            style={{
+                                                background: '#fff',
+                                                color: '#15803d',
+                                                padding: '8px 16px',
+                                                borderRadius: '8px',
+                                                border: '1px solid #bbf7d0',
+                                                cursor: 'pointer',
+                                                fontSize: '0.85rem',
+                                                textDecoration: 'none',
+                                                fontWeight: 600,
+                                                marginRight: '8px',
+                                            }}
+                                        >
+                                            Portal UMKM
+                                        </Link>
+                                        <button
                                         onClick={copyLink}
                                         style={{
                                             background: copySuccess ? '#22c55e' : '#3b82f6',
@@ -645,7 +671,8 @@ export default function LandingPageBuilder({ store, landingPage, products, templ
                                         }}
                                     >
                                         {copySuccess ? '✓ Link Disalin!' : '📋 Salin Link'}
-                                    </button>
+                                        </button>
+                                    </>
                                 )}
                             </div>
                         )}

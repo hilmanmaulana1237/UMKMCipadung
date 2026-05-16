@@ -21,6 +21,11 @@ class UmkmLandingPage extends Model
         'feature2_desc',
         'feature3_title',
         'feature3_desc',
+        'business_phone',
+        'business_address',
+        'business_hours',
+        'instagram',
+        'email',
         'products',
         'is_published',
     ];
@@ -29,6 +34,8 @@ class UmkmLandingPage extends Model
         'products' => 'array',
         'is_published' => 'boolean',
     ];
+
+    protected $appends = ['public_url', 'hero_image_url'];
 
     /**
      * Relationship: Landing page belongs to a store

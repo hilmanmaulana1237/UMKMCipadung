@@ -570,6 +570,15 @@ function LandingPagePanel({ store, landingPage, products, templates }: {
                                         </button>
                                     </div>
                                 )}
+                                {landingPage.is_published && (
+                                    <Link
+                                        href="/portal-umkm"
+                                        className="flex items-center justify-between rounded-lg border border-green-200 bg-white px-3 py-2 text-xs font-semibold text-green-700 hover:bg-green-50"
+                                    >
+                                        <span>Website ini sudah tampil di Portal Website UMKM</span>
+                                        <ExternalLink className="h-3.5 w-3.5" />
+                                    </Link>
+                                )}
                             </div>
                         </div>
                     )}

@@ -31,6 +31,8 @@ Route::get('/', function () {
 })->name('home');
 
 // Public Landing Page (canonical + backward-compatible alias)
+Route::get('portal-umkm', [\App\Http\Controllers\LandingPageController::class, 'portal'])->name('landing-page.portal');
+Route::get('website-umkm', [\App\Http\Controllers\LandingPageController::class, 'portal'])->name('landing-page.portal-alias');
 Route::get('toko/{slug}', [\App\Http\Controllers\LandingPageController::class, 'show'])->name('landing-page.show');
 Route::get('l/{slug}', [\App\Http\Controllers\LandingPageController::class, 'show'])->name('landing-page.show-short');
 

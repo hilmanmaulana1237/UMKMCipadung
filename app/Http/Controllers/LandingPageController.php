@@ -169,6 +169,91 @@ class LandingPageController extends Controller
     }
 
     /**
+     * Show a public portal of published UMKM websites.
+     */
+    public function portal(Request $request)
+    {
+        $search = trim((string) $request->get('search', ''));
+        $category = $request->get('category');
+        $sort = $request->get('sort', 'latest');
+
+        $allowedCategories = ['kuliner', 'kriya', 'jasa', 'fashion', 'kerajinan', 'pertanian', 'lainnya'];
+        $allowedSorts = ['latest', 'oldest', 'name'];
+
+        if (!in_array($category, $allowedCategories, true)) {
+            $category = null;
+        }
+
+        if (!in_array($sort, $allowedSorts, true)) {
+            $sort = 'latest';
+        }
+
+        $baseQuery = UmkmLandingPage::query()
+            ->where('is_published', true)
+            ->whereHas('store');
+
+        $publishedPages = (clone $baseQuery)->with('store')->get();
+
+        $categoryOptions = $publishedPages
+            ->groupBy(fn ($page) => $page->store?->category ?: 'lainnya')
+            ->map(fn ($items, $key) => [
+                'id' => $key,
+                'name' => $this->portalCategoryLabel($key),
+                'count' => $items->count(),
+            ])
+            ->sortBy('name')
+            ->values();
+
+        $query = (clone $baseQuery)->with('store');
+
+        if ($search !== '') {
+            $query->where(function ($q) use ($search) {
+                $q->where('tagline', 'like', "%{$search}%")
+                    ->orWhere('description', 'like', "%{$search}%")
+                    ->orWhereHas('store', function ($storeQuery) use ($search) {
+                        $storeQuery->where('name', 'like', "%{$search}%")
+                            ->orWhere('description', 'like', "%{$search}%")
+                            ->orWhere('address_pickup', 'like', "%{$search}%");
+                    });
+            });
+        }
+
+        if ($category) {
+            $query->whereHas('store', fn ($storeQuery) => $storeQuery->where('category', $category));
+        }
+
+        match ($sort) {
+            'oldest' => $query->oldest('updated_at'),
+            'name' => $query->orderBy(
+                UmkmStore::select('name')
+                    ->whereColumn('umkm_stores.id', 'umkm_landing_pages.umkm_store_id')
+            ),
+            default => $query->latest('updated_at'),
+        };
+
+        $websites = $query
+            ->paginate(12)
+            ->withQueryString()
+            ->through(fn (UmkmLandingPage $landingPage) => $this->formatPortalWebsite($landingPage));
+
+        return Inertia::render('portal-umkm/index', [
+            'websites' => $websites,
+            'categories' => $categoryOptions,
+            'filters' => [
+                'search' => $search,
+                'category' => $category,
+                'sort' => $sort,
+            ],
+            'stats' => [
+                'published_count' => $publishedPages->count(),
+                'open_count' => $publishedPages->filter(fn ($page) => $page->store?->isOpen())->count(),
+                'product_count' => $publishedPages->sum(fn ($page) => count($page->products ?? [])),
+                'store_count' => $publishedPages->pluck('umkm_store_id')->unique()->count(),
+            ],
+        ]);
+    }
+
+    /**
      * Show public landing page
      */
     public function show($slug)
@@ -231,7 +316,7 @@ class LandingPageController extends Controller
 
         $html = '';
         foreach ($products as $product) {
-            $price = 'Rp ' . number_format($product->price, 0, ',', '.');
+            $price = $this->formatProductPrice($product->price);
             $imgUrl = $product->image_path
                 ? (str_starts_with($product->image_path, 'http') ? $product->image_path : asset('storage/' . $product->image_path))
                 : 'https://via.placeholder.com/400x300?text=' . urlencode($product->name);
@@ -817,7 +902,7 @@ Pastikan konten sesuai dengan kategori: {$request->category}. Jika kategori kuli
         $index = 0;
 
         foreach ($products as $product) {
-            $price = 'Rp ' . number_format($product->price, 0, ',', '.');
+            $price = $this->formatProductPrice($product->price);
             $imgUrl = $product->image_path
                 ? asset('storage/' . $product->image_path)
                 : 'https://via.placeholder.com/400x300?text=' . urlencode($product->name ?: 'Produk');
@@ -917,6 +1002,31 @@ Pastikan konten sesuai dengan kategori: {$request->category}. Jika kategori kuli
         return $cards;
     }
 
+    private function formatProductPrice($price): string
+    {
+        if (is_int($price) || is_float($price)) {
+            return 'Rp ' . number_format($price, 0, ',', '.');
+        }
+
+        $rawPrice = trim((string) $price);
+
+        if ($rawPrice === '') {
+            return 'Rp 0';
+        }
+
+        if (is_numeric($rawPrice)) {
+            return 'Rp ' . number_format((float) $rawPrice, 0, ',', '.');
+        }
+
+        $number = preg_replace('/[^0-9]/', '', $rawPrice);
+
+        if ($number === '') {
+            return 'Rp 0';
+        }
+
+        return 'Rp ' . number_format((int) $number, 0, ',', '.');
+    }
+
     /**
      * Replace product section in template with generated cards
      */
@@ -951,6 +1061,124 @@ Pastikan konten sesuai dengan kategori: {$request->category}. Jika kategori kuli
 
         // If no replacement was made, return original
         return $newHtml ?: $html;
+    }
+
+    private function formatPortalWebsite(UmkmLandingPage $landingPage): array
+    {
+        $store = $landingPage->store;
+        $products = collect($landingPage->products ?? [])
+            ->filter(fn ($product) => is_array($product) && !empty($product['name']))
+            ->values();
+
+        $featuredProducts = $products
+            ->take(3)
+            ->map(fn ($product) => [
+                'name' => $product['name'] ?? '',
+                'price' => $this->formatPortalPrice($product['price'] ?? null),
+                'description' => $product['description'] ?? null,
+                'image_url' => $this->storageUrl($product['image_path'] ?? null),
+            ])
+            ->values();
+
+        $address = $landingPage->business_address
+            ?: ($store?->address_pickup ?: ($store?->address ?: null));
+
+        return [
+            'id' => $landingPage->id,
+            'slug' => $landingPage->slug,
+            'public_url' => route('landing-page.show', ['slug' => $landingPage->slug]),
+            'name' => $store?->name ?? 'Toko UMKM',
+            'category' => $store?->category ?: 'lainnya',
+            'category_label' => $this->portalCategoryLabel($store?->category),
+            'tagline' => $landingPage->tagline,
+            'description' => $landingPage->description ?: $store?->description,
+            'preview_image_url' => $this->portalPreviewImageUrl($landingPage, $store, $products),
+            'address' => $address,
+            'phone' => $landingPage->business_phone ?: $store?->contact_number,
+            'business_hours' => $landingPage->business_hours,
+            'is_open' => $store?->isOpen() ?? false,
+            'open_time' => $this->formatPortalTime($store?->open_time),
+            'close_time' => $this->formatPortalTime($store?->close_time),
+            'product_count' => $products->count(),
+            'featured_products' => $featuredProducts,
+            'template' => $landingPage->template,
+            'template_name' => UmkmLandingPage::getTemplates()[$landingPage->template]['name'] ?? 'Website UMKM',
+            'updated_at' => $landingPage->updated_at?->toIso8601String(),
+            'updated_label' => $landingPage->updated_at?->diffForHumans(),
+        ];
+    }
+
+    private function portalPreviewImageUrl(UmkmLandingPage $landingPage, ?UmkmStore $store, $products): ?string
+    {
+        if ($landingPage->hero_image_path) {
+            return $this->storageUrl($landingPage->hero_image_path);
+        }
+
+        if ($store?->store_photo_path) {
+            return $this->storageUrl($store->store_photo_path);
+        }
+
+        if ($store?->banner_path) {
+            return $this->storageUrl($store->banner_path);
+        }
+
+        $firstProduct = $products->first(fn ($product) => !empty($product['image_path']));
+
+        if ($firstProduct) {
+            return $this->storageUrl($firstProduct['image_path']);
+        }
+
+        return $this->storageUrl($store?->profile_photo_path);
+    }
+
+    private function storageUrl(?string $path): ?string
+    {
+        if (!$path) {
+            return null;
+        }
+
+        if (Str::startsWith($path, ['http://', 'https://', '/'])) {
+            return $path;
+        }
+
+        return asset('storage/' . $path);
+    }
+
+    private function formatPortalPrice($price): ?string
+    {
+        $number = preg_replace('/[^0-9]/', '', (string) $price);
+
+        if ($number === '') {
+            return null;
+        }
+
+        return 'Rp ' . number_format((int) $number, 0, ',', '.');
+    }
+
+    private function formatPortalTime($time): ?string
+    {
+        if (!$time) {
+            return null;
+        }
+
+        try {
+            return is_string($time) ? substr($time, 0, 5) : $time->format('H:i');
+        } catch (\Throwable $e) {
+            return null;
+        }
+    }
+
+    private function portalCategoryLabel(?string $category): string
+    {
+        return [
+            'kuliner' => 'Kuliner',
+            'kriya' => 'Kriya',
+            'jasa' => 'Jasa',
+            'fashion' => 'Fashion',
+            'kerajinan' => 'Kerajinan',
+            'pertanian' => 'Pertanian',
+            'lainnya' => 'Lainnya',
+        ][$category ?: 'lainnya'] ?? 'Lainnya';
     }
 
     /**
