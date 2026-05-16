@@ -262,9 +262,6 @@ export default function PortalUmkmIndex({ websites, categories, filters, stats }
                             </div>
                         </Link>
                         <nav className="flex items-center gap-2">
-                            <Link href="/marketplace" className="hidden rounded-xl px-4 py-2 text-sm font-semibold text-muted-foreground hover:bg-accent hover:text-accent-foreground sm:block">
-                                Marketplace
-                            </Link>
                             <Link
                                 href={auth?.user ? dashboardUrl : '/login'}
                                 className="rounded-xl bg-gradient-to-r from-blue-500 to-indigo-600 px-4 py-2 text-sm font-bold text-white shadow-lg shadow-blue-500/20 hover:shadow-blue-500/30"
