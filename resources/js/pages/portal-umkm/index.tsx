@@ -23,7 +23,6 @@ interface PortalProduct {
 
 interface PortalWebsite {
     id: number;
-    store_id: number | null;
     slug: string;
     public_url: string;
     name: string;
