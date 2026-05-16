@@ -30,13 +30,6 @@ Route::get('/', function () {
     ]);
 })->name('home');
 
-// Public Marketplace
-Route::get('marketplace', [\App\Http\Controllers\MarketplaceController::class, 'index'])->name('marketplace.index');
-Route::get('marketplace/search', [\App\Http\Controllers\MarketplaceController::class, 'search'])->name('marketplace.search');
-Route::get('marketplace/product/{product}', [\App\Http\Controllers\MarketplaceController::class, 'show'])->name('marketplace.product');
-Route::get('marketplace/store/{store}', [\App\Http\Controllers\MarketplaceController::class, 'store'])->name('marketplace.store');
-Route::get('marketplace/ai-assistant', [\App\Http\Controllers\ShoppingAssistantController::class, 'aiAssistant'])->name('marketplace.ai-assistant');
-Route::post('marketplace/ai-assistant/chat', [\App\Http\Controllers\ShoppingAssistantController::class, 'chat'])->name('marketplace.ai-assistant.chat');
 
 // Public Landing Page (canonical + backward-compatible alias)
 Route::get('portal-umkm', [\App\Http\Controllers\LandingPageController::class, 'portal'])->name('landing-page.portal');
