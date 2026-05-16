@@ -69,8 +69,8 @@ class MarketplaceController extends Controller
                         'total_ratings' => $store->total_ratings,
                         'is_open' => $store->isOpen(),
                         'is_open_today' => $store->is_open_today,
-                        'open_time' => $store->open_time?->format('H:i'),
-                        'close_time' => $store->close_time?->format('H:i'),
+                        'open_time' => $this->formatStoreTime($store->open_time),
+                        'close_time' => $this->formatStoreTime($store->close_time),
                         'distance_km' => $distance,
                         'orders_count' => $store->orders()->where('status', 'completed')->count(),
                     ];
@@ -119,8 +119,8 @@ class MarketplaceController extends Controller
                         'total_ratings' => $store->total_ratings,
                         'is_open' => $store->isOpen(),
                         'is_open_today' => $store->is_open_today,
-                        'open_time' => $store->open_time?->format('H:i'),
-                        'close_time' => $store->close_time?->format('H:i'),
+                        'open_time' => $this->formatStoreTime($store->open_time),
+                        'close_time' => $this->formatStoreTime($store->close_time),
                         'distance_km' => $distance,
                         'orders_count' => $store->orders()->where('status', 'completed')->count(),
                     ];
@@ -267,5 +267,22 @@ class MarketplaceController extends Controller
         $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
 
         return round($earthRadius * $c, 1);
+    }
+
+    private function formatStoreTime($time): ?string
+    {
+        if (!$time) {
+            return null;
+        }
+
+        if (is_string($time)) {
+            return substr($time, 0, 5);
+        }
+
+        try {
+            return $time->format('H:i');
+        } catch (\Throwable $e) {
+            return null;
+        }
     }
 }

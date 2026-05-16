@@ -24,6 +24,7 @@ interface PortalProduct {
 
 interface PortalWebsite {
     id: number;
+    store_id: number | null;
     slug: string;
     public_url: string;
     name: string;
@@ -216,7 +217,7 @@ function WebsiteCard({ website }: { website: PortalWebsite }) {
                         <ArrowUpRight className="h-4 w-4" />
                     </a>
                     <Link
-                        href={`/marketplace?search=${encodeURIComponent(website.name)}`}
+                        href={website.store_id ? `/marketplace/store/${website.store_id}` : `/marketplace?search=${encodeURIComponent(website.name)}`}
                         className="flex items-center justify-center rounded-xl border border-border px-4 py-3 text-sm font-semibold text-slate-700 transition-colors hover:border-primary/50 hover:text-primary"
                     >
                         <ExternalLink className="h-4 w-4" />

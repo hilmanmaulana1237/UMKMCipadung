@@ -1085,6 +1085,7 @@ Pastikan konten sesuai dengan kategori: {$request->category}. Jika kategori kuli
 
         return [
             'id' => $landingPage->id,
+            'store_id' => $store?->id,
             'slug' => $landingPage->slug,
             'public_url' => route('landing-page.show', ['slug' => $landingPage->slug]),
             'name' => $store?->name ?? 'Toko UMKM',
