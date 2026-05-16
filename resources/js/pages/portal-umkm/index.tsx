@@ -3,7 +3,6 @@ import {
     ArrowUpRight,
     CheckCircle2,
     Clock3,
-    ExternalLink,
     Globe2,
     LayoutGrid,
     MapPin,
@@ -206,7 +205,7 @@ function WebsiteCard({ website }: { website: PortalWebsite }) {
                     </div>
                 )}
 
-                <div className="flex gap-2">
+                <div className="flex">
                     <a
                         href={website.public_url}
                         target="_blank"
@@ -216,12 +215,6 @@ function WebsiteCard({ website }: { website: PortalWebsite }) {
                         Buka Website
                         <ArrowUpRight className="h-4 w-4" />
                     </a>
-                    <Link
-                        href={website.store_id ? `/marketplace/store/${website.store_id}` : `/marketplace?search=${encodeURIComponent(website.name)}`}
-                        className="flex items-center justify-center rounded-xl border border-border px-4 py-3 text-sm font-semibold text-slate-700 transition-colors hover:border-primary/50 hover:text-primary"
-                    >
-                        <ExternalLink className="h-4 w-4" />
-                    </Link>
                 </div>
             </div>
         </article>
