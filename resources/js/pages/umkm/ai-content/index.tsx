@@ -2110,7 +2110,7 @@ export default function AIContentIndex({ store, videoQuota, posterQuota, content
                             Silakan upload foto terlebih dahulu.
                         </p>
                         <Link
-                            href="/profile"
+                            href="/umkm/setup-toko"
                             className="block w-full py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-bold text-sm hover:opacity-90 transition-opacity"
                         >
                             <Camera className="w-4 h-4 inline mr-2" />
