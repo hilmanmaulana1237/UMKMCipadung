@@ -1,5 +1,5 @@
-import { Head, Link, usePage } from '@inertiajs/react';
-import { Sparkles, Video, Image, MessageCircle, ArrowRight, Zap, Bot, Wand2, ChevronRight, Star, Quote } from 'lucide-react';
+import { Link, usePage } from '@inertiajs/react';
+import { Sparkles, Video, Image, ArrowRight, Zap, Bot, Wand2, Star, Store } from 'lucide-react';
 import CachedImage from '@/components/cached-image';
 import SeoHead from '@/components/SeoHead';
 import { type SharedData } from '@/types';
@@ -44,6 +44,14 @@ export default function Welcome({
             glow: 'shadow-amber-500/20',
             bg: 'bg-amber-500/10',
         },
+        {
+            icon: Store,
+            title: 'Katalog UMKM Digital',
+            description: 'Tampilkan produk UMKM desa dalam katalog online modern yang mudah diakses oleh masyarakat dan pelanggan.',
+            color: 'from-cyan-500 to-blue-600',
+            glow: 'shadow-cyan-500/20',
+            bg: 'bg-cyan-500/10',
+        },
     ];
 
     const steps = [
@@ -82,12 +90,11 @@ export default function Welcome({
         { src: '/mitra-lomba/Logo-uinsgd_official-209x300.webp', name: 'UIN SGD Bandung' },
         { src: '/mitra-lomba/logo_if.webp', name: 'Teknik Informatika UIN SGD' },
         { src: '/mitra-lomba/cipadung.webp', name: 'Kelurahan Cipadung' },
+        { src: '/mitra-lomba/Himatif.png', name: 'HIMATIF' },
     ];
 
     const supporters = [
-        { src: '/mitra-lomba/sobatkampus.webp', name: 'Sobat Kampus' },
         { src: '/mitra-lomba/logo Informatika Sakti.webp', name: 'IF Sakti Production' },
-        { src: '/mitra-lomba/Himatif.png', name: 'HIMATIF' },
     ];
 
     const schema = {
@@ -127,20 +134,21 @@ export default function Welcome({
                 .animate-slide-up-d2 { animation: slide-up 0.6s ease-out 0.2s forwards; opacity: 0; }
                 .animate-slide-up-d3 { animation: slide-up 0.6s ease-out 0.3s forwards; opacity: 0; }
                 .glass-card {
-                    background: rgba(255, 255, 255, 0.03);
-                    border: 1px solid rgba(255, 255, 255, 0.06);
-                    backdrop-filter: blur(12px);
+                    background: rgba(255, 255, 255, 0.92);
+                    border: 1px solid rgba(226, 232, 240, 0.95);
+                    box-shadow: 0 14px 32px rgba(15, 23, 42, 0.06);
                 }
                 .glass-card:hover {
-                    background: rgba(255, 255, 255, 0.06);
-                    border-color: rgba(99, 102, 241, 0.2);
+                    background: #ffffff;
+                    border-color: rgba(59, 130, 246, 0.35);
+                    box-shadow: 0 18px 44px rgba(37, 99, 235, 0.12);
                 }
             `}</style>
 
-            <div className="min-h-screen bg-slate-950 text-white" style={{ fontFamily: "'Inter', 'Outfit', system-ui, sans-serif" }}>
+            <div className="min-h-screen bg-slate-50 text-slate-950" style={{ fontFamily: "'Inter', 'Outfit', system-ui, sans-serif" }}>
 
                 {/* ─── NAVIGATION ─── */}
-                <nav className="sticky top-0 z-50 bg-slate-950/80 backdrop-blur-2xl border-b border-white/5">
+                <nav className="sticky top-0 z-50 border-b border-slate-200 bg-white/95 shadow-sm backdrop-blur-2xl">
                     <div className="max-w-6xl mx-auto px-5 sm:px-8">
                         <div className="flex justify-between items-center h-16">
                             <Link href="/" className="flex items-center gap-2.5">
@@ -148,7 +156,7 @@ export default function Welcome({
                                     <Sparkles className="w-5 h-5 text-white" />
                                 </div>
                                 <span className="font-bold text-lg tracking-tight">
-                                    MudaPreneur<span className="text-blue-400">.AI</span>
+                                    MudaPreneur<span className="text-blue-600">.AI</span>
                                 </span>
                             </Link>
                             <div className="flex items-center gap-3">
@@ -161,7 +169,7 @@ export default function Welcome({
                                     </Link>
                                 ) : (
                                     <>
-                                        <Link href="/login" className="px-4 py-2 text-slate-400 hover:text-white font-medium text-sm transition-colors">
+                                        <Link href="/login" className="px-4 py-2 text-slate-600 hover:text-slate-950 font-medium text-sm transition-colors">
                                             Masuk
                                         </Link>
                                         {canRegister && (
@@ -180,24 +188,21 @@ export default function Welcome({
                 </nav>
 
                 {/* ─── HERO ─── */}
-                <section className="relative overflow-hidden pt-16 pb-24 lg:pt-28 lg:pb-36">
-                    {/* Background orbs */}
-                    <div className="absolute top-10 left-1/4 w-[500px] h-[500px] bg-blue-600/15 rounded-full blur-[120px] animate-glow" />
-                    <div className="absolute bottom-10 right-1/4 w-[400px] h-[400px] bg-indigo-600/15 rounded-full blur-[120px] animate-glow" style={{ animationDelay: '2s' }} />
-                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] bg-gradient-to-r from-blue-600/5 to-cyan-600/5 rounded-full blur-[140px]" />
+                <section className="relative overflow-hidden bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700 py-16 lg:py-24">
+                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.18),transparent_32%),radial-gradient(circle_at_bottom_right,rgba(56,189,248,0.24),transparent_34%)]" />
 
                     <div className="relative max-w-5xl mx-auto px-5 sm:px-8">
                         <div className="text-center">
                             {/* Badge */}
-                            <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-500/10 border border-blue-500/20 text-blue-300 rounded-full text-sm font-medium mb-8 animate-slide-up">
+                            <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/15 border border-white/20 text-white rounded-full text-sm font-semibold mb-8 shadow-lg shadow-blue-900/10 animate-slide-up">
                                 <Sparkles className="w-4 h-4" />
-                                Innovillage 2025 — Powered by AI
+                                Platform Digital UMKM Desa
                             </div>
 
                             {/* Heading */}
-                            <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-extrabold leading-[1.1] mb-6 animate-slide-up-d1">
-                                Buat Konten{' '}
-                                <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-400 to-cyan-400">
+                            <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-extrabold leading-[1.1] text-white mb-6 animate-slide-up-d1">
+                                Digitalisasi Produk dan{' '}
+                                <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-cyan-100 to-blue-100">
                                     Promosi AI
                                 </span>
                                 <br className="hidden sm:block" />
@@ -205,25 +210,25 @@ export default function Welcome({
                             </h1>
 
                             {/* Subheading */}
-                            <p className="text-base sm:text-lg lg:text-xl text-slate-400 mb-10 max-w-2xl mx-auto leading-relaxed animate-slide-up-d2">
-                                Generate video promosi, poster menarik, dan copywriting yang menjual — semuanya otomatis dengan kekuatan Artificial Intelligence.
+                            <p className="text-base sm:text-lg lg:text-xl text-blue-50/90 mb-10 max-w-3xl mx-auto leading-relaxed animate-slide-up-d2">
+                                Kelola katalog produk UMKM, promosikan usaha secara digital, dan manfaatkan teknologi AI untuk membuat konten pemasaran lebih cepat, menarik, dan profesional.
                             </p>
 
                             {/* CTA Buttons */}
                             <div className="flex flex-col sm:flex-row gap-4 justify-center animate-slide-up-d3">
                                 <Link
                                     href={auth.user ? "/umkm/dashboard" : "/register"}
-                                    className="inline-flex items-center justify-center gap-2.5 px-8 py-4 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-2xl font-bold text-base sm:text-lg hover:shadow-2xl hover:shadow-blue-500/30 transition-all duration-300 hover:-translate-y-0.5"
+                                    className="inline-flex items-center justify-center gap-2.5 px-8 py-4 bg-white text-blue-700 rounded-2xl font-bold text-base sm:text-lg shadow-2xl shadow-blue-900/20 transition-all duration-300 hover:-translate-y-0.5 hover:bg-blue-50"
                                 >
                                     <Zap className="w-5 h-5" />
-                                    Mulai Buat Konten AI
+                                    Mulai Digitalisasi UMKM
                                 </Link>
                                 <Link
-                                    href={auth.user ? "/umkm/ai-mentor" : "/register"}
-                                    className="inline-flex items-center justify-center gap-2.5 px-8 py-4 bg-white/5 border border-white/10 text-white rounded-2xl font-bold text-base sm:text-lg hover:bg-white/10 transition-all duration-300 backdrop-blur-sm"
+                                    href="/portal-umkm"
+                                    className="inline-flex items-center justify-center gap-2.5 px-8 py-4 bg-white/10 border border-white/25 text-white rounded-2xl font-bold text-base sm:text-lg hover:bg-white/20 transition-all duration-300 backdrop-blur-sm"
                                 >
-                                    <Bot className="w-5 h-5" />
-                                    Chat AI Mentor
+                                    <Store className="w-5 h-5" />
+                                    Temukan Produk UMKM
                                 </Link>
                             </div>
 
@@ -235,8 +240,8 @@ export default function Welcome({
                                     { value: '24/7', label: 'Tersedia' },
                                 ].map((stat, i) => (
                                     <div key={i} className="text-center">
-                                        <p className="text-2xl sm:text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-b from-white to-slate-400">{stat.value}</p>
-                                        <p className="text-xs sm:text-sm text-slate-500 mt-1 font-medium">{stat.label}</p>
+                                        <p className="text-2xl sm:text-3xl font-bold text-white">{stat.value}</p>
+                                        <p className="text-xs sm:text-sm text-blue-50/75 mt-1 font-medium">{stat.label}</p>
                                     </div>
                                 ))}
                             </div>
@@ -248,15 +253,15 @@ export default function Welcome({
                 <section className="py-20 lg:py-28 relative">
                     <div className="max-w-6xl mx-auto px-5 sm:px-8">
                         <div className="text-center mb-14">
-                            <p className="text-sm font-semibold text-blue-400 uppercase tracking-widest mb-3">Fitur Unggulan</p>
+                            <p className="text-sm font-semibold text-blue-600 uppercase tracking-widest mb-3">Fitur Unggulan</p>
                             <h2 className="text-3xl sm:text-4xl font-bold mb-4">
                                 Fitur AI yang Powerful
                             </h2>
-                            <p className="text-base sm:text-lg text-slate-400 max-w-xl mx-auto">
+                            <p className="text-base sm:text-lg text-slate-600 max-w-xl mx-auto">
                                 Semua tools AI yang Anda butuhkan untuk membuat konten promosi profesional
                             </p>
                         </div>
-                        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                        <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-5">
                             {features.map((feature, index) => (
                                 <div
                                     key={index}
@@ -266,7 +271,7 @@ export default function Welcome({
                                         <feature.icon className="w-6 h-6 text-white" />
                                     </div>
                                     <h3 className="text-lg font-bold mb-2">{feature.title}</h3>
-                                    <p className="text-slate-400 text-sm leading-relaxed">{feature.description}</p>
+                                    <p className="text-slate-600 text-sm leading-relaxed">{feature.description}</p>
                                 </div>
                             ))}
                         </div>
@@ -275,14 +280,14 @@ export default function Welcome({
 
                 {/* ─── HOW IT WORKS ─── */}
                 <section className="py-20 lg:py-28 relative">
-                    <div className="absolute inset-0 bg-gradient-to-b from-blue-950/20 via-transparent to-transparent" />
+                    <div className="absolute inset-0 bg-gradient-to-b from-blue-50 via-white to-transparent" />
                     <div className="relative max-w-6xl mx-auto px-5 sm:px-8">
                         <div className="text-center mb-14">
-                            <p className="text-sm font-semibold text-blue-400 uppercase tracking-widest mb-3">Langkah Mudah</p>
+                            <p className="text-sm font-semibold text-blue-600 uppercase tracking-widest mb-3">Langkah Mudah</p>
                             <h2 className="text-3xl sm:text-4xl font-bold mb-4">
                                 Cara Kerjanya
                             </h2>
-                            <p className="text-base sm:text-lg text-slate-400">
+                            <p className="text-base sm:text-lg text-slate-600">
                                 Mudah dan cepat dalam 4 langkah
                             </p>
                         </div>
@@ -294,7 +299,7 @@ export default function Welcome({
                                         <div className="hidden lg:block absolute top-10 left-[60%] w-[80%] h-px bg-gradient-to-r from-blue-500/30 to-transparent" />
                                     )}
                                     <div className="relative inline-flex flex-col items-center">
-                                        <div className="w-20 h-20 bg-gradient-to-br from-slate-800 to-slate-900 border border-white/10 rounded-2xl flex items-center justify-center mb-5 group-hover:border-blue-500/30 transition-colors duration-300 shadow-xl">
+                                        <div className="w-20 h-20 bg-white border border-slate-200 rounded-2xl flex items-center justify-center mb-5 group-hover:border-blue-500/40 transition-colors duration-300 shadow-lg shadow-blue-100/60">
                                             <span className="text-3xl">{step.emoji}</span>
                                         </div>
                                         <span className="absolute -top-2 -right-2 w-7 h-7 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center text-[11px] font-bold shadow-lg shadow-blue-500/25">
@@ -302,7 +307,7 @@ export default function Welcome({
                                         </span>
                                     </div>
                                     <h3 className="text-lg font-bold mb-1.5">{step.title}</h3>
-                                    <p className="text-slate-400 text-sm">{step.description}</p>
+                                    <p className="text-slate-600 text-sm">{step.description}</p>
                                 </div>
                             ))}
                         </div>
@@ -313,11 +318,11 @@ export default function Welcome({
                 <section className="py-20 lg:py-28">
                     <div className="max-w-6xl mx-auto px-5 sm:px-8">
                         <div className="text-center mb-14">
-                            <p className="text-sm font-semibold text-blue-400 uppercase tracking-widest mb-3">Testimoni</p>
+                            <p className="text-sm font-semibold text-blue-600 uppercase tracking-widest mb-3">Testimoni</p>
                             <h2 className="text-3xl sm:text-4xl font-bold mb-4">
                                 Apa Kata Mereka?
                             </h2>
-                            <p className="text-base sm:text-lg text-slate-400">
+                            <p className="text-base sm:text-lg text-slate-600">
                                 Testimoni dari penjual UMKM yang sudah menggunakan MudaPreneur AI
                             </p>
                         </div>
@@ -334,12 +339,12 @@ export default function Welcome({
                                         ))}
                                     </div>
                                     {/* Quote */}
-                                    <p className="text-slate-300 mb-6 text-sm leading-relaxed flex-1">
+                                    <p className="text-slate-700 mb-6 text-sm leading-relaxed flex-1">
                                         "{t.quote}"
                                     </p>
                                     {/* Author */}
-                                    <div className="flex items-center gap-3 pt-4 border-t border-white/5">
-                                        <div className="w-10 h-10 bg-gradient-to-br from-blue-500/20 to-indigo-500/20 rounded-full flex items-center justify-center text-xl border border-white/10">
+                                    <div className="flex items-center gap-3 pt-4 border-t border-slate-100">
+                                        <div className="w-10 h-10 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-full flex items-center justify-center text-xl border border-blue-100">
                                             {t.avatar}
                                         </div>
                                         <div>
@@ -354,14 +359,13 @@ export default function Welcome({
                 </section>
 
                 {/* ─── CTA ─── */}
-                <section className="py-20 lg:py-28 relative overflow-hidden">
+                <section className="py-20 lg:py-28 relative overflow-hidden bg-gradient-to-br from-blue-50 via-white to-indigo-50">
                     <div className="absolute inset-0 bg-gradient-to-br from-blue-600/10 via-indigo-600/5 to-transparent" />
-                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-blue-600/10 rounded-full blur-[140px]" />
                     <div className="relative max-w-3xl mx-auto px-5 sm:px-8 text-center">
                         <h2 className="text-3xl sm:text-4xl font-bold mb-5">
                             Siap Membuat Konten AI untuk Bisnis Anda?
                         </h2>
-                        <p className="text-base sm:text-lg text-slate-400 mb-10 max-w-xl mx-auto leading-relaxed">
+                        <p className="text-base sm:text-lg text-slate-600 mb-10 max-w-xl mx-auto leading-relaxed">
                             Daftar gratis sekarang dan mulai generate video promosi, poster menarik, dan konsultasi bisnis dengan AI.
                         </p>
                         <Link
@@ -376,11 +380,11 @@ export default function Welcome({
                 </section>
 
                 {/* ─── MITRA & PENYELENGGARA ─── */}
-                <section className="py-16 lg:py-20 border-t border-white/5">
+                <section className="py-16 lg:py-20 border-t border-slate-200 bg-white">
                     <div className="max-w-6xl mx-auto px-5 sm:px-8">
                         {/* Header */}
                         <div className="text-center mb-12">
-                            <p className="text-sm font-semibold text-blue-400 uppercase tracking-widest mb-3">Innovillage 2025</p>
+                            <p className="text-sm font-semibold text-blue-600 uppercase tracking-widest mb-3">Our Partners</p>
                             <h2 className="text-2xl sm:text-3xl font-bold mb-3">
                                 Mitra & Penyelenggara
                             </h2>
@@ -390,13 +394,13 @@ export default function Welcome({
                         </div>
 
                         {/* Partners Grid */}
-                        <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-7 gap-4 sm:gap-5 mb-14 max-w-4xl mx-auto">
+                        <div className="flex flex-wrap justify-center gap-4 sm:gap-5 mb-14 max-w-5xl mx-auto">
                             {partners.map((partner, i) => (
-                                <div key={i} className="flex flex-col items-center group">
-                                    <div className="w-full aspect-square max-w-[100px] bg-white/[0.04] rounded-2xl border border-white/[0.08] p-3.5 flex items-center justify-center group-hover:border-blue-500/30 group-hover:bg-white/[0.08] transition-all duration-300 mx-auto">
+                                <div key={i} className="w-28 sm:w-32 flex flex-col items-center group">
+                                    <div className="w-24 h-24 sm:w-28 sm:h-28 bg-white rounded-2xl border border-slate-200 p-3.5 flex items-center justify-center shadow-sm shadow-slate-200/70 group-hover:border-blue-500/40 group-hover:shadow-blue-100 transition-all duration-300 mx-auto">
                                         <CachedImage src={partner.src} alt={partner.name} className="max-w-full max-h-full object-contain" />
                                     </div>
-                                    <p className="text-[11px] text-slate-500 mt-2 font-medium text-center leading-tight">{partner.name}</p>
+                                    <p className="text-[11px] text-slate-600 mt-2 font-medium text-center leading-tight">{partner.name}</p>
                                 </div>
                             ))}
                         </div>
@@ -409,7 +413,7 @@ export default function Welcome({
                             <div className="flex items-center justify-center gap-6 sm:gap-10">
                                 {supporters.map((supporter, i) => (
                                     <div key={i} className="flex flex-col items-center group">
-                                        <div className="w-20 h-20 sm:w-24 sm:h-24 bg-white/[0.04] rounded-2xl border border-white/[0.08] p-3 flex items-center justify-center group-hover:border-blue-500/30 group-hover:bg-white/[0.08] transition-all duration-300">
+                                        <div className="w-20 h-20 sm:w-24 sm:h-24 bg-white rounded-2xl border border-slate-200 p-3 flex items-center justify-center shadow-sm shadow-slate-200/70 group-hover:border-blue-500/40 group-hover:shadow-blue-100 transition-all duration-300">
                                             <CachedImage src={supporter.src} alt={supporter.name} className="max-w-full max-h-full object-contain" />
                                         </div>
                                         <p className="text-[11px] text-slate-500 mt-2 font-medium">{supporter.name}</p>
@@ -421,7 +425,7 @@ export default function Welcome({
                 </section>
 
                 {/* ─── FOOTER ─── */}
-                <footer className="py-10 border-t border-white/5">
+                <footer className="py-10 border-t border-slate-200 bg-white">
                     <div className="max-w-6xl mx-auto px-5 sm:px-8">
                         <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
                             <Link href="/" className="flex items-center gap-2.5">
@@ -429,7 +433,7 @@ export default function Welcome({
                                     <Sparkles className="w-4 h-4 text-white" />
                                 </div>
                                 <span className="font-bold text-sm tracking-tight">
-                                    MudaPreneur<span className="text-blue-400">.AI</span>
+                                    MudaPreneur<span className="text-blue-600">.AI</span>
                                 </span>
                             </Link>
                             <div className="text-center sm:text-right">
