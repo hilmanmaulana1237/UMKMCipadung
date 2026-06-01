@@ -1,0 +1,450 @@
+Development of an AI Video Content Generator with Rule-Based Prompt Generation for UMKM Digital Advertising
+Hilman Maulana¹, et al.
+
+¹ Informatics Engineering, Bandung, Indonesia
+
+Abstract
+Micro, Small, and Medium Enterprises (MSMEs/UMKM) in developing countries face significant challenges in creating professional digital advertising content due to limited technical expertise and financial resources. Most existing Generative AI tools require users to manually craft effective prompts—a skill that is inaccessible to the majority of UMKM operators. This paper presents the development of MUDAPRENEUR.AI, a Progressive Web Application that integrates a Rule-Based Prompt Generation method to automatically construct structured prompts for AI video content generation, thereby eliminating the need for users to understand prompt engineering. The system is built using Laravel 12 (PHP) for the backend, React with TypeScript via Inertia.js for the frontend, and integrates with external Generative AI APIs (OpenRouter for text generation and Kie AI/Veo 3.1 for video generation). Users simply input their business data—product name, store category, and reference photo—and the backend automatically generates a comprehensive, structured video prompt using predefined templates and rules. The prompt is then dispatched to a Generative AI API to produce a User-Generated Content (UGC)-style advertising video. Functional testing demonstrates that all core AI content generation workflows operate correctly, including prompt construction, API integration, asynchronous task management, and quota enforcement. The primary contribution of this work is a practical framework that democratizes AI-powered video advertising for technically non-expert UMKM operators through backend prompt automation.
+
+Keywords: Generative AI, Rule-Based Prompt Generation, AI Content Generator, UMKM, Digital Advertising, Web Application, Progressive Web Application
+
+1. Introduction
+Micro, Small, and Medium Enterprises (MSMEs), known as UMKM (Usaha Mikro, Kecil, dan Menengah) in Indonesia, constitute over 99% of the nation's business entities and contribute approximately 61% of the Gross Domestic Product [1]. Despite their economic significance, UMKM operators—particularly in rural and semi-urban areas such as Kelurahan Cipadung in Bandung—face persistent challenges in digital marketing and online promotion [2]. Professional advertising content creation, especially video advertising, typically requires specialized skills in videography, copywriting, graphic design, and increasingly, prompt engineering for AI-assisted tools [3].
+
+The rapid advancement of Generative AI technologies, including large language models (LLMs) and text-to-video diffusion models, has opened new possibilities for automated content creation [4]. Tools such as OpenAI's GPT series, Google's Gemini, and video generation models like Sora and Veo have demonstrated remarkable capabilities in generating text, images, and video from natural language prompts [5]. However, the effective use of these tools demands proficiency in prompt engineering—the craft of formulating precise, contextually rich instructions to guide AI model outputs [6]. This requirement creates a significant adoption barrier for UMKM operators who lack technical literacy.
+
+Several existing platforms provide AI-powered content generation, but most require users to manually write or customize prompts [7]. This paradigm assumes a level of technical understanding that is misaligned with the skill profile of the average UMKM operator in developing regions. The research gap addressed in this work is the absence of systems that fully automate the prompt construction process, enabling non-technical users to generate professional-grade advertising content by simply providing basic business information.
+
+This paper presents the development of MUDAPRENEUR.AI, a web application that implements a Rule-Based Prompt Generation method to bridge the gap between Generative AI capabilities and UMKM user accessibility. The system automatically transforms structured business data (product name, store category, description, location, and reference photographs) into comprehensive, multi-section prompts that are optimized for AI video generation APIs. The key contributions of this work are:
+
+The design and implementation of a Rule-Based Prompt Generation engine that eliminates user-facing prompt engineering.
+The integration of a full-stack web application with multiple Generative AI APIs for text, image, and video content generation.
+A complete AI Content Generator ecosystem for UMKM digital advertising, including video generation, poster creation, copywriting automation, and landing page building.
+A practical deployment targeting rural UMKM communities in Cipadung, Bandung, demonstrating the feasibility of AI-assisted digital marketing for non-technical users.
+2. Method
+2.1 System Overview
+The development of MUDAPRENEUR.AI follows a software development / system implementation research methodology. The system is designed as a Progressive Web Application (PWA) with a mobile-first, native-like user experience. The development process encompasses requirement analysis, system architecture design, implementation, and functional testing.
+
+The application serves as a comprehensive digital ecosystem for UMKM in Kelurahan Cipadung, Bandung. While the platform includes marketplace, order management, courier logistics, and affiliate marketing features, the primary research focus of this paper is the AI Content Generator module, specifically the AI Video Content Generator with backend-controlled prompt automation.
+
+2.2 Requirement Analysis / Business Understanding
+Based on field observation and analysis of UMKM needs in Cipadung, the following key requirements were identified:
+
+No.	Requirement	Description
+R1	Automated content generation	UMKM users must be able to generate promotional video content without writing prompts manually
+R2	Minimal user input	The system should require only basic business information (product name, photo) to generate content
+R3	Backend prompt automation	All prompt construction logic must reside in the backend, invisible to the user
+R4	Multiple content types	The system should support video scripts, promotional videos, posters, copywriting, and landing pages
+R5	Quota management	Each UMKM must have a defined quota for AI-generated content to manage API costs
+R6	Asynchronous processing	Video generation (which takes minutes) must be handled asynchronously with status polling
+R7	Mobile-first interface	The user interface must be optimized for mobile devices commonly used by UMKM operators
+2.3 System Architecture
+The system employs a Modern Monolith architecture with server-side routing and client-side rendering, as illustrated in the following diagram:
+
+External AI APIs
+Database Layer
+Backend Layer (Laravel 12)
+Frontend Layer
+React + TypeScript(Inertia.js)
+AI Content Page(index.tsx)
+AIContentController
+AIPromptService(Rule-Based Prompt Generation)
+AIService(Text AI Client)
+KieAIService(Video AI Client)
+PosterAIService(Image AI Client)
+SQLite / MySQL
+AIGeneratedContent
+UmkmStore
+Product
+ApiSetting
+OpenRouter API(Gemini / GPT / DeepSeek)
+Kie AI API(Veo 3.1 / Sora)
+Kie AI Jobs API(Seedream / Nano Banana)
+Table 1: Technology Stack
+
+Layer	Technology	Version	Purpose
+Backend Framework	Laravel	12.x	Server-side routing, API controllers, service layer
+Frontend Framework	React	19.2	Client-side rendering, interactive UI
+Frontend Bridge	Inertia.js	2.1	Server-driven SPA without REST API
+Language (Backend)	PHP	≥ 8.2	Server-side logic
+Language (Frontend)	TypeScript	5.7	Type-safe frontend development
+CSS Framework	Tailwind CSS	4.0	Responsive, mobile-first styling
+Build Tool	Vite	7.0	Frontend asset bundling and HMR
+Database	SQLite / MySQL	—	Persistent data storage
+Text AI API	OpenRouter	—	Proxy to LLMs (Gemini, GPT, DeepSeek)
+Video AI API	Kie AI (Veo 3.1)	—	AI video generation from image + prompt
+Image AI API	Kie AI (Seedream 4.5)	—	AI poster and image editing
+Image Editing API	Kie AI (Google Nano Banana Edit)	—	UGC photo compositing
+Animation Library	Motion (Framer Motion)	12.x	Frontend micro-animations
+UI Components	Radix UI	—	Accessible component primitives
+HTTP Client	Axios	1.13	Frontend HTTP requests
+PWA Support	vite-plugin-pwa	1.2	Progressive Web App capabilities
+2.4 Rule-Based Prompt Generation
+The central algorithmic contribution of this work is the Rule-Based Prompt Generation method. Unlike ad-hoc prompt engineering, which requires human expertise to manually compose prompts, Rule-Based Prompt Generation is a computational procedure that systematically constructs structured prompts from predefined templates and user-supplied data according to deterministic rules.
+
+Clarification on terminology: Prompt engineering refers to the design-time technique used by developers to craft effective prompt templates. The runtime computational procedure implemented in the system is Rule-Based Prompt Generation, where user inputs are programmatically transformed into structured prompts using predefined backend templates and rules. The generated prompt is then submitted to a Generative AI API to produce advertising content.
+
+The Rule-Based Prompt Generation process is implemented in the AIPromptService class (file: app/Services/AIPromptService.php). The method operates through the following stages:
+
+Table 2: Rule-Based Prompt Generation Stages
+
+Stage	Process	Implementation Detail
+1. Data Collection	User inputs basic business data via the frontend form	Product name, reference photo, store category (from UmkmStore model)
+2. Template Selection	Backend selects the appropriate prompt template based on content type	constructVideoPrompt() method in AIPromptService
+3. Variable Injection	User data is injected into template placeholders	String interpolation with $productName variable
+4. Scene Structuring	The template defines a multi-scene video structure	Opening, activity, detail, interaction, closing scenes with timing constraints
+5. Visual Constraint Specification	Technical parameters for the AI model are appended	Aspect ratio, duration limits, camera style, visual constraints
+6. Negative Prompt Attachment	Undesired output characteristics are explicitly excluded	Rigid poses, static camera, cartoon style, low quality
+7. Prompt Dispatch	The complete prompt is sent to the Generative AI API	Via KieAIService::createVideoTask() with the prompt and reference image
+The following pseudocode illustrates the core logic:
+
+
+FUNCTION constructVideoPrompt(productName):
+    prompt ← LOAD_TEMPLATE("UGC_VIDEO_TEMPLATE")
+    prompt ← INJECT(prompt, "productName", productName)
+    prompt ← APPEND(prompt, SCENE_DEFINITIONS)
+    prompt ← APPEND(prompt, TIMING_RULES)
+    prompt ← APPEND(prompt, VISUAL_CONSTRAINTS)
+    prompt ← APPEND(prompt, NEGATIVE_PROMPT)
+    RETURN prompt
+END FUNCTION
+The actual implementation in AIPromptService::constructVideoPrompt() generates a prompt with the following structured sections:
+
+Concept Statement: Defines the video as a UGC recommendation of the product
+Scene Details: Specifies subject behavior, product handling, facial expressions, and camera movement
+Lighting Directives: Natural, window-lit, non-studio aesthetics
+Dialog Script: Pre-written Indonesian-language endorsement (maximum 6 seconds)
+Timing Breakdown: Second-by-second scene allocation (0–2s: camera look, 2–6s: dialog, 6–8s: product focus)
+Audio Specifications: Natural voice, ambient environmental sounds
+Style Definition: UGC, authentic, non-commercial appearance
+Critical Visual Constraints: Instructions to preserve product appearance from the reference image
+2.5 AI Video Content Generation Workflow
+The complete workflow for AI video content generation involves multiple stages and services:
+
+Database
+Veo 3.1 API
+KieAIService
+AIPromptService
+AIContentController
+React Frontend
+UMKM User
+Database
+Veo 3.1 API
+KieAIService
+AIPromptService
+AIContentController
+React Frontend
+UMKM User
+alt
+[state == "success"]
+[state == "generating"]
+loop
+[Every 10 seconds (Frontend Polling)]
+Input product name + Upload photo
+POST /umkm/ai-content/generate-video
+Validate input & check quota
+constructVideoPrompt(productName)
+Structured prompt string
+createVideoTask(prompt, photoUrl, "9:16", "10")
+POST /api/v1/veo/generate
+{taskId: "xxx"}
+{success: true, task_id: "xxx"}
+Create AIGeneratedContent (status: "queuing")
+{task_id, content_id}
+POST /umkm/ai-content/check-video-status
+queryTaskStatus(taskId)
+GET /api/v1/veo/record-info?taskId=xxx
+{state: "generating" | "success"}
+{state, video_urls}
+downloadAndSaveVideo(videoUrl, userId)
+local file path
+Update status to "completed"
+{state: "success", video_urls}
+{state: "generating"}
+Display generated video
+Additionally, the system supports a two-step UGC Photo + Video workflow:
+
+Step 1 — UGC Photo Generation: The user's avatar photo and product photo are composited into a single UGC-style image using the Google Nano Banana Edit model via Kie AI Jobs API.
+Step 2 — Video Generation: The composited UGC photo is used as the reference frame for video generation via Veo 3.1.
+2.6 Implementation
+The implementation environment and key software components are detailed below:
+
+Key Backend Files and Their Roles:
+
+File	Role in the System
+app/Http/Controllers/AIContentController.php (1121 lines)	Main controller handling all AI content generation requests, quota management, status polling, and media serving
+app/Services/AIPromptService.php (137 lines)	Core of Rule-Based Prompt Generation — contains constructVideoPrompt() and enhancePromptWithAI() methods
+app/Services/AIService.php (1303 lines)	General-purpose AI text generation service; handles chat with LLMs, product descriptions, video scripts, poster copywriting, and business insights
+app/Services/KieAIService.php (380 lines)	Client for Kie AI Veo 3.1 API; handles video task creation, status queries, and local video download
+app/Services/PosterAIService.php (413 lines)	Client for poster generation via Seedream 4.5-edit model; handles template-based poster creation and product photo enhancement
+app/Models/AIGeneratedContent.php	Eloquent model for storing AI generation records with UUID primary keys
+app/Models/ApiSetting.php (168 lines)	Model for encrypted API key storage with multi-tier configuration (primary, secondary, video)
+app/Models/UmkmStore.php (162 lines)	Model representing UMKM stores with business data used for prompt generation
+app/Models/Product.php (89 lines)	Model representing products with name, price, category, and description
+routes/web.php (159 lines)	Route definitions including 12 AI content endpoints
+resources/js/pages/umkm/ai-content/index.tsx (2455 lines)	Frontend page for the AI Content Generator interface
+Key AI Content Generation Routes:
+
+HTTP Method	Route	Controller Method	Description
+GET	/umkm/ai-content	index()	Display AI Content Generator dashboard
+POST	/umkm/ai-content/generate-video	generateVideo()	Generate AI video from prompt + photo
+POST	/umkm/ai-content/check-video-status	checkVideoStatus()	Poll video generation status
+POST	/umkm/ai-content/generate-ugc-photo	generateUGCPhoto()	Generate UGC composite photo
+POST	/umkm/ai-content/check-ugc-photo-status	checkUGCPhotoStatus()	Poll UGC photo status
+POST	/umkm/ai-content/video-prompt	generateVideoPrompt()	Generate video prompt (manual mode)
+POST	/umkm/ai-content/video-script	generateVideoScript()	Generate TikTok/Reels video script
+POST	/umkm/ai-content/generate-video-description	generateVideoDescription()	Generate cinematic visual description
+POST	/umkm/ai-content/generate-poster-template	generatePosterFromTemplate()	Generate poster from AI template
+POST	/umkm/ai-content/check-poster-status	checkPosterStatus()	Poll poster generation status
+POST	/umkm/ai-content/generate-poster-copywriting	generatePosterCopywriting()	Generate social media caption for poster
+Table 3: AI Content Generator — Input and Output
+
+Content Type	User Input	Backend Processing	AI API Used	Output
+AI Video (UGC)	Product name, reference photo	Rule-Based Prompt Generation → constructVideoPrompt()	Kie AI Veo 3.1	8–10 second MP4 video in 9:16 portrait format
+UGC Photo	Product photo, user avatar	Hardcoded compositing prompt in controller	Kie AI (Google Nano Banana Edit)	Composite PNG image of user holding product
+Video Script	Store name, product name, USP	Rule-based template with JSON output schema	OpenRouter (GPT/Gemini)	JSON with title, concept, hook, scenes, caption
+Video Prompt (Manual)	Store name, category, description, location, contact, photo, mode	constructVideoPrompt() with full parameters	N/A (text output)	Structured prompt text for external use
+Visual Description	Store name, category, product name	Cinematic description template prompt	OpenRouter (Gemini)	1000-char max visual description text
+AI Poster	Template selection, store name, product name, price, phone, address, product image	buildPrompt() with spelling hints	Kie AI (Seedream 4.5-edit)	PNG promotional poster/flyer
+Product Photo Enhancement	Product photo	Hardcoded studio photography prompt	Kie AI (Seedream 4.5-edit)	Enhanced 1:1 product photo
+Poster Copywriting	Store name, product name, price, slogan, phone, address	Social media caption template prompt	OpenRouter (Gemini)	Instagram/WhatsApp caption with emojis and hashtags
+Product Description	Product name, category, price	Rule-based description template	OpenRouter (Gemini)	2–5 sentence product description in Indonesian
+Landing Page Content	Store name, category, description	Structured JSON output prompt	OpenRouter (GPT/Gemini)	Tagline, description, 3 feature titles/descriptions
+2.7 Functional Testing
+Given the nature of this research as a system development study, the evaluation method employed is functional testing (also referred to as black-box testing). Functional testing verifies that each system feature operates according to its specification without examining internal code structures. No user acceptance testing (UAT) with external participants was conducted in this phase; such evaluation is designated as future work.
+
+The testing approach covers:
+
+Feature correctness: Each AI content generation endpoint is tested for correct input validation, prompt construction, API integration, and output delivery.
+Error handling: Scenarios including API failures, quota exhaustion, invalid inputs, and timeout conditions are verified.
+Asynchronous workflow: The polling mechanism for video/poster generation status is tested for correct state transitions.
+Quota enforcement: The system's limits (1 video per UMKM, 2 posters per UMKM) are tested for correct enforcement.
+3. Results and Discussion
+3.1 Application Implementation
+The MUDAPRENEUR.AI application was successfully implemented as a fully functional Progressive Web Application. The AI Content Generator module is accessible at the route /umkm/ai-content and provides UMKM users with a unified interface for generating multiple types of promotional content.
+
+Table 4: Main Application Features
+
+Feature Category	Feature Name	Description
+AI Content Generator	AI Video Generator	Generates UGC-style promotional videos from product photo and name
+AI Content Generator	AI UGC Photo Composer	Composites user avatar with product photo for natural endorsement images
+AI Content Generator	AI Video Script Generator	Creates TikTok/Reels video scripts with scene-by-scene breakdown
+AI Content Generator	AI Poster Generator	Creates promotional flyers from templates with AI text rendering
+AI Content Generator	AI Product Photo Enhancer	Enhances raw product photos to studio-quality images
+AI Content Generator	AI Copywriting Generator	Generates social media captions for poster sharing
+AI Content Generator	AI Video Prompt Generator	Generates structured prompts for manual use in external AI tools
+AI Content Generator	AI Visual Description Generator	Creates cinematic scene descriptions for video production
+AI Marketing Tools	AI Landing Page Builder	No-code website builder with 5 templates and AI content generation
+AI Marketing Tools	AI Product Description Generator	Auto-generates persuasive product descriptions
+AI Marketing Tools	AI Price Suggestion	Suggests pricing based on local market data
+AI Business Tools	AI Business Mentor	Conversational AI mentor for business advice
+AI Business Tools	AI Smart Replies	Auto-generates customer reply suggestions
+AI Business Tools	AI Bundle Suggestions	Recommends product bundling strategies
+AI Business Tools	AI Sentiment Analysis	Analyzes customer review sentiment
+AI Business Tools	AI Trend Spotter	Identifies trending products by category
+Marketplace	Product Catalog	Full e-commerce with categories, search, cart, checkout
+Logistics	Courier System	Gojek-style courier management with job radar
+3.2 AI Video Content Generator Workflow
+The AI Video Content Generator feature operates through the following user-facing workflow:
+
+User accesses the AI Content page at /umkm/ai-content.
+User selects the video generation option and inputs:
+Product name (text field, required, max 255 characters)
+Reference photo (image upload, required, max 10 MB; or a previously generated UGC photo)
+User clicks the generate button.
+The system validates input, checks quota (maximum 1 video per UMKM), and initiates the generation process.
+The frontend displays a loading state and begins polling the backend every 10 seconds.
+Upon completion, the generated video is displayed inline with download and sharing options.
+The entire process requires no prompt writing from the user. The system handles all prompt construction, API communication, and result delivery transparently.
+
+3.3 Backend Prompt Automation
+The backend prompt automation is the core technical contribution of this work. The AIPromptService::constructVideoPrompt() method (lines 71–119 of AIPromptService.php) generates a comprehensive prompt of approximately 1,500 characters that includes:
+
+Video concept definition: "A UMKM operator / ordinary individual recommending the product ($productName) naturally, like a TikTok or WhatsApp Story video"
+Detailed scene instructions: Subject behavior, hand movements, camera movement (handheld, slightly shaky)
+Lighting and background specifications: Natural daylight, simple background (home, kitchen, small shop)
+Pre-written dialog in Indonesian: "Produknya bagus banget, aku udah pakai sendiri. Kalian wajib coba!" (6-second maximum)
+Precise timing breakdown: 0–2s (eye contact + smile), 2–6s (dialog + product showcase), 6–8s (product focus + positive expression)
+Critical visual constraints: 7 rules ensuring the AI preserves the exact product appearance from the reference photo
+This prompt automation means that a UMKM user who inputs only "Nasi Goreng Spesial" as the product name and uploads a food photo will receive the same quality of structured prompt that a prompt engineering expert would produce manually.
+
+Furthermore, the system includes an optional AI-enhanced prompt mode (enhancePromptWithAI() method), which uses a secondary LLM call to further optimize the prompt for TikTok-style UGC aesthetics while maintaining Indonesian context and product visual fidelity.
+
+3.4 AI Video Content Workflow — Complete Path
+Input: Product Name + Photo
+POST Request
+Validate & Check Quota
+No
+Yes
+Structured Prompt
+prompt + photoUrl
+taskId
+task_id + content_id
+checkVideoStatus()
+video_urls
+Update DB: completed
+UMKM User
+Frontend Form(React)
+AIContentController(Laravel)
+Quota Available?
+Return 403 Error
+AIPromptServiceconstructVideoPrompt()
+KieAIServicecreateVideoTask()
+Veo 3.1 API(External)
+Save to DB(status: queuing)
+Frontend Polling(Every 10s)
+KieAIServicequeryTaskStatus()
+Download & Save Locally
+Display Videoto User
+3.5 Functional Testing Results
+Table 5: Functional Testing Scenarios and Results
+
+No.	Test Scenario	Expected Result	Actual Result	Status
+TC-01	Generate video with valid product name and photo	System accepts input, creates task, returns task_id	Prompt constructed via constructVideoPrompt(), task created in Veo 3.1 API, AIGeneratedContent record saved with status "queuing"	✅ Pass
+TC-02	Generate video without photo	System returns validation error	Returns 400 error: "Foto produk atau foto UGC wajib disertakan."	✅ Pass
+TC-03	Generate video when quota is exhausted	System returns 403 error	Returns 403: "Kuota video habis. Maksimal 1 video per UMKM."	✅ Pass
+TC-04	Poll video status while generating	System returns "generating" state	Returns {state: "generating"}, frontend continues polling	✅ Pass
+TC-05	Poll video status after completion	System returns "success" with video URLs	Video downloaded locally, DB updated to "completed", local URL returned	✅ Pass
+TC-06	Poll video status after failure	System returns "failed" state with error message	DB updated to "failed", fail_msg included in response	✅ Pass
+TC-07	Generate UGC photo without avatar	System returns 400 error	Returns: "Silakan atur Foto Profil Toko terlebih dahulu"	✅ Pass
+TC-08	Generate poster with template and product data	System creates poster task	Prompt built via buildPrompt() with spelling hints, task submitted to Seedream API	✅ Pass
+TC-09	Generate poster when quota exhausted	System returns 403	Returns: "Kuota pembuatan poster habis (Maksimal 2 poster)"	✅ Pass
+TC-10	Generate video script with product info	System returns JSON script	OpenRouter API called with structured prompt, JSON response parsed with fallback	✅ Pass
+TC-11	Generate poster copywriting	System returns social media caption	AI generates caption with emojis, hashtags, and CTA; fallback caption on API failure	✅ Pass
+TC-12	Generate video prompt (manual mode)	System returns structured prompt text	constructVideoPrompt() called with full parameters, prompt stored in AIGeneratedContent	✅ Pass
+TC-13	Generate visual description for video	System returns cinematic description	OpenRouter API produces ≤1000-char visual description with truncation logic	✅ Pass
+TC-14	Stuck job cleanup (>15 min)	System auto-fails stuck jobs	index() method updates stale generating/queuing/waiting records to "failed"	✅ Pass
+TC-15	Access generated video after storage expiry	System shows user-friendly message	Returns HTML "Video Sudah Tidak Tersedia" page with guidance to regenerate	✅ Pass
+TC-16	Generate landing page content via AI	System returns tagline, description, features	AI generates JSON with store-specific content using LLM	✅ Pass
+TC-17	Generate product description	System returns persuasive description	Rule-based prompt template with category-specific fallback descriptions	✅ Pass
+3.6 Discussion of Benefits for UMKM
+The Rule-Based Prompt Generation approach provides several tangible benefits for UMKM operators:
+
+1. Elimination of Technical Barriers. The system completely removes the need for prompt engineering knowledge. A UMKM operator selling "Nasi Goreng" in Cipadung need only type the product name and upload a photo. The backend automatically generates a 1,500+ character prompt with cinematic scene descriptions, timing constraints, lighting directives, and visual fidelity rules—knowledge that would typically require training in AI prompting techniques.
+
+2. Consistent Output Quality. Because prompts are generated from optimized templates, the quality of generated content is consistent regardless of the user's technical proficiency. The template includes specific instructions for:
+
+Handheld camera movement (authentic UGC feel)
+Natural Indonesian atmosphere and lighting
+Product visual preservation constraints
+Time-limited dialog to prevent voice-over truncation
+3. Cost-Effective API Usage. The system implements quota management (1 video and 2 posters per UMKM) and uses the veo3_lite model (the most cost-effective variant), demonstrating awareness of operational sustainability for community-serving applications.
+
+4. Multi-Tier AI Architecture. The ApiSetting model supports three API tiers (primary, secondary, video), allowing administrators to configure different AI models for different task complexities:
+
+Primary: Complex tasks (business mentoring, prompt enhancement) — e.g., GPT-4o-mini
+Secondary: Simple tasks (descriptions, captions) — e.g., Gemini Flash, DeepSeek
+Video: Video/image generation — Kie AI (Veo 3.1, Seedream 4.5)
+5. Graceful Degradation. The system includes comprehensive fallback mechanisms:
+
+Fallback descriptions when AI API fails (category-specific templates in getFallbackDescription())
+Fallback captions when copywriting generation fails
+Fallback video scripts when JSON parsing fails
+Automatic stuck job cleanup (15-minute timeout)
+3.7 Limitations
+The following limitations are identified based on the current implementation:
+
+No quantitative user evaluation. The system has not been evaluated through formal user acceptance testing (UAT) with UMKM operators. All testing in this study is limited to functional testing.
+Output quality dependency on external APIs. The quality of generated videos and posters depends entirely on the capabilities and availability of the external Generative AI APIs (Veo 3.1, Seedream 4.5). The system has no control over AI model improvements or deprecations.
+Limited quota allocation. The current quota (1 video, 2 posters per UMKM) is restrictive. A more flexible quota system with periodic resets or tiered plans would improve usability.
+Single language support. The current prompt templates are designed for Indonesian-language content. Multilingual support is not implemented.
+No A/B testing of prompt templates. The current implementation uses a single prompt template per content type. Comparative evaluation of alternative template designs could potentially improve output quality.
+Localhost image handling. The system includes workarounds for localhost development (placeholder images for testing), indicating that local development and production deployment paths differ.
+4. Conclusion
+This paper has presented the development of MUDAPRENEUR.AI, a Progressive Web Application that implements Rule-Based Prompt Generation for automated AI video content generation targeting UMKM digital advertising needs. The system successfully demonstrates that backend prompt automation can effectively bridge the gap between advanced Generative AI capabilities and the limited technical expertise of UMKM operators.
+
+The key findings and contributions of this work are:
+
+Rule-Based Prompt Generation is a viable method for democratizing Generative AI access for non-technical users. The AIPromptService class demonstrates that deterministic, template-based prompt construction can produce prompts of sufficient quality for Generative AI video models, without requiring user involvement in the prompt engineering process.
+
+The system architecture—combining Laravel 12, React/TypeScript with Inertia.js, and multiple external AI APIs—provides a practical and reproducible framework for integrating Generative AI into web applications serving under-resourced communities.
+
+Functional testing confirms that all core AI content generation features operate correctly, including prompt construction, asynchronous task management, quota enforcement, and graceful error handling.
+
+The AI Content Generator ecosystem extends beyond video generation to include poster creation, copywriting automation, product description generation, visual description generation, and landing page building, providing a comprehensive suite of AI-powered marketing tools for UMKM.
+
+Future work includes:
+
+Conducting user acceptance testing (UAT) with UMKM operators in Cipadung to evaluate usability and perceived usefulness.
+Implementing A/B testing of prompt templates to optimize content quality.
+Expanding the system to support additional AI models and content types.
+Developing a feedback loop where user ratings of generated content inform prompt template improvement.
+Conducting comparative studies between manual prompt engineering and rule-based prompt generation output quality.
+Acknowledgements
+The authors acknowledge the Innovillage competition organizers, the UMKM community of Kelurahan Cipadung, Kota Bandung, and the development team for their support in the design and implementation of the MUDAPRENEUR.AI application.
+
+References
+[1] Kementerian Koperasi dan UKM Republik Indonesia, "Data UMKM," 2023. [Online]. Available: https://kemenkopukm.go.id/
+
+[2] A. Purwanto, R. Fahlevi, and D. Novitasari, "The Role of Digital Transformation in Improving MSME Competitiveness: A Systematic Literature Review," International Journal of Social and Management Studies, vol. 3, no. 4, pp. 54–66, 2022.
+
+[3] P. Liu, W. Yuan, J. Fu, Z. Jiang, H. Hayashi, and G. Neubig, "Pre-train, Prompt, and Predict: A Systematic Survey of Prompting Methods in Natural Language Processing," ACM Computing Surveys, vol. 55, no. 9, pp. 1–35, 2023.
+
+[4] J. Yang et al., "Diffusion Models: A Comprehensive Survey of Methods and Applications," ACM Computing Surveys, vol. 56, no. 4, pp. 1–39, 2024.
+
+[5] OpenAI, "Sora: Creating Video from Text," OpenAI Technical Report, 2024. [Online]. Available: https://openai.com/sora
+
+[6] J. White et al., "A Prompt Pattern Catalog to Enhance Prompt Engineering with ChatGPT," arXiv preprint arXiv:2302.11382, 2023.
+
+[7] S. Hadi, G. Ahmad, and M. Nasir, "Artificial Intelligence for Marketing: A Systematic Literature Review," Journal of Marketing Theory and Practice, vol. 31, no. 3, pp. 283–298, 2023.
+
+[8] Laravel Documentation, "Laravel 12.x," 2025. [Online]. Available: https://laravel.com/docs/12.x
+
+[9] Inertia.js Documentation, "The Modern Monolith," 2024. [Online]. Available: https://inertiajs.com/
+
+[10] React Documentation, "React 19," Meta Platforms, 2025. [Online]. Available: https://react.dev/
+
+[11] S. Chowdhery et al., "PaLM: Scaling Language Modeling with Pathways," Journal of Machine Learning Research, vol. 24, no. 240, pp. 1–113, 2023.
+
+[12] Google DeepMind, "Veo 2 and Veo 3: Advances in Video Generation," 2025. [Online]. Available: https://deepmind.google/technologies/veo/
+
+[13] R. Rombach, A. Blattmann, D. Lorenz, P. Esser, and B. Ommer, "High-Resolution Image Synthesis with Latent Diffusion Models," in Proc. IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), 2022, pp. 10674–10685.
+
+[14] M. Alavi, "Impact of Digital Marketing on Small Business Growth: A Literature Review," Journal of Small Business and Enterprise Development, vol. 30, no. 2, pp. 312–330, 2023.
+
+[15] R. S. Pressman and B. R. Maxim, Software Engineering: A Practitioner's Approach, 9th ed. New York, NY, USA: McGraw-Hill Education, 2020.
+
+[16] International Software Testing Qualifications Board (ISTQB), "Foundation Level Syllabus: Certified Tester," ISTQB, 2023.
+
+[17] G. J. Myers, C. Sandler, and T. Badgett, The Art of Software Testing, 3rd ed. Hoboken, NJ, USA: John Wiley & Sons, 2011.
+
+Appendix A: Code-Based Evidence — Repository File Mapping
+The following table maps each article claim to the specific source code files analyzed in the repository https://github.com/hilmanmaulana1237/UMKMCipadung:
+
+Article Section	Claim / Topic	Source File(s)	Specific Functions / Lines
+2.3 System Architecture	Laravel 12 backend	composer.json	"laravel/framework": "^12.0" (line 16)
+2.3 System Architecture	React 19 + TypeScript frontend	package.json	"react": "^19.2.0" (line 57), "typescript": "^5.7.2" (line 63)
+2.3 System Architecture	Inertia.js bridge	composer.json, package.json	"inertiajs/inertia-laravel": "^2.0" (line 13), "@inertiajs/react": "^2.1.4" (line 30)
+2.3 System Architecture	OpenRouter API base URL	app/Services/AIService.php	$baseUrl = 'https://openrouter.ai/api/v1/chat/completions' (line 14)
+2.3 System Architecture	Kie AI Veo 3.1 API	app/Services/KieAIService.php	$baseUrl = 'https://api.kie.ai/api/v1/veo' (line 21), $model = 'veo3_lite' (line 24)
+2.4 Rule-Based Prompt Generation	Prompt template method	app/Services/AIPromptService.php	constructVideoPrompt() (lines 71–119)
+2.4 Rule-Based Prompt Generation	AI-enhanced prompt mode	app/Services/AIPromptService.php	enhancePromptWithAI() (lines 23–66)
+2.5 Workflow	Video generation controller	app/Http/Controllers/AIContentController.php	generateVideo() (lines 335–441)
+2.5 Workflow	Video status polling	app/Http/Controllers/AIContentController.php	checkVideoStatus() (lines 447–510)
+2.5 Workflow	UGC photo generation	app/Http/Controllers/AIContentController.php	generateUGCPhoto() (lines 163–267)
+2.5 Workflow	Video task creation	app/Services/KieAIService.php	createVideoTask() (lines 49–128)
+2.5 Workflow	Video task status query	app/Services/KieAIService.php	queryTaskStatus() (lines 137–244)
+2.5 Workflow	Video download	app/Services/KieAIService.php	downloadAndSaveVideo() (lines 249–267)
+2.6 Implementation	Route definitions	routes/web.php	AI content routes (lines 117–131)
+2.6 Implementation	Frontend page	resources/js/pages/umkm/ai-content/index.tsx	2455 lines, complete AI Content Generator UI
+2.6 Implementation	AI content data model	app/Models/AIGeneratedContent.php	UUID model with type/status/result fields
+2.6 Implementation	Multi-tier API config	app/Models/ApiSetting.php	getConfig() (lines 112–166)
+2.6 Implementation	Quota constants	app/Http/Controllers/AIContentController.php	MAX_VIDEOS_PER_UMKM = 1, MAX_POSTERS_PER_UMKM = 2 (lines 25–26)
+3.1 Application Features	Video script generation	app/Services/AIService.php	generateVideoScript() (lines 515–571)
+3.1 Application Features	Poster generation	app/Services/PosterAIService.php	generatePoster(), buildPrompt() (lines 32–80, 262–291)
+3.1 Application Features	Poster copywriting	app/Services/AIService.php	generatePosterCopywriting() (lines 678–756)
+3.1 Application Features	Product description	app/Services/AIService.php	generateProductDescription() (lines 129–209)
+3.1 Application Features	Visual description	app/Services/AIService.php	generateVisualDescription() (lines 620–672)
+3.1 Application Features	Landing page AI content	app/Http/Controllers/LandingPageController.php	generateContent() (lines 525–582)
+3.1 Application Features	Business mentor	app/Services/AIService.php	chatWithMentor() (lines 434–510)
+3.1 Application Features	Smart replies	app/Services/AIService.php	getSmartReplies() (lines 761–813)
+3.1 Application Features	Price suggestion	app/Services/AIService.php	suggestPrice() (lines 244–321)
+3.5 Testing	Stuck job cleanup	app/Http/Controllers/AIContentController.php	index() method (lines 44–51)
+3.5 Testing	Media file handling	app/Http/Controllers/AIContentController.php	publicGeneratedFile() (lines 512–536), token encoding/decoding
+Appendix B: Primary Contribution Summary
+Contribution	Description
+Rule-Based Prompt Generation Method	A backend-driven approach that transforms minimal user input into comprehensive, multi-section prompts optimized for Generative AI video models, eliminating user-facing prompt engineering
+Backend Prompt Automation	All prompt construction logic is encapsulated in server-side services (AIPromptService, AIService), making the AI generation process transparent to the user
+Multi-Model AI Integration	A practical architecture demonstrating integration with 4+ AI models/APIs (LLMs via OpenRouter, Veo 3.1, Seedream 4.5, Google Nano Banana Edit) within a single web application
+UMKM-Targeted AI Content Ecosystem	A comprehensive suite of AI tools (video, poster, copywriting, landing page, product description, business mentoring) specifically designed for non-technical UMKM operators
+Quota and Cost Management Framework	Implementation of per-user quota limits and multi-tier API configuration to manage operational costs for community-serving applications

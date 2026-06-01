@@ -385,8 +385,12 @@ class AIContentController extends Controller
             }
 
             // 2. Construct base prompt (DO NOT ENHANCE WITH AI to avoid prompt hallucination and changing the actor)
+            $store = $user->umkmStore;
+            $category = $store ? ($store->category ?? 'lainnya') : 'lainnya';
+
             $enhancedPrompt = $this->promptService->constructVideoPrompt(
-                $validated['product_name']
+                $validated['product_name'],
+                $category
             );
 
             // 4. Create video task in Kie AI
