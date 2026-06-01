@@ -68,72 +68,8 @@ TOTAL DURATION: 8 Seconds MAX.'";
     /**
      * Construct simplified UGC TikTok-style video prompt as requested by user.
      */
-    public function constructVideoPrompt(string $productName, string $category = 'lainnya'): string
+    public function constructVideoPrompt(string $productName): string
     {
-        $productLower = strtolower($productName);
-        $categoryLower = strtolower($category);
-
-        // Detect product type for natural actions and dialogues
-        if (
-            str_contains($productLower, 'buku') || 
-            str_contains($productLower, 'novel') || 
-            str_contains($productLower, 'komik') || 
-            str_contains($productLower, 'kitab') || 
-            str_contains($productLower, 'majalah') || 
-            str_contains($productLower, 'kamus') || 
-            str_contains($productLower, 'bacaan') ||
-            $categoryLower === 'buku'
-        ) {
-            $actionDescription = "Subjek menampilkan produk secara natural (dipegang, dibaca sekilas halamannya, atau diperlihatkan sampul/halaman bukunya)";
-            $dialogText = "“Bukunya bagus banget, aku udah baca sendiri. Kalian wajib coba.”";
-            $usageDescription = "memperlihatkan isi atau halaman produk";
-        } elseif (
-            str_contains($productLower, 'makanan') || 
-            str_contains($productLower, 'minuman') || 
-            str_contains($productLower, 'kue') || 
-            str_contains($productLower, 'roti') || 
-            str_contains($productLower, 'kopi') || 
-            str_contains($productLower, 'teh') || 
-            str_contains($productLower, 'keripik') || 
-            str_contains($productLower, 'baso') || 
-            str_contains($productLower, 'bakso') || 
-            str_contains($productLower, 'sambal') || 
-            str_contains($productLower, 'cemilan') || 
-            str_contains($productLower, 'dimsum') || 
-            str_contains($productLower, 'jajanan') ||
-            $categoryLower === 'kuliner'
-        ) {
-            $actionDescription = "Subjek menampilkan produk secara natural (dipegang, dicicipi, diminum, atau diperlihatkan tekstur makanannya)";
-            $dialogText = "“Ini enak banget, aku udah cobain sendiri. Kalian wajib coba.”";
-            $usageDescription = "mencicipi atau memperlihatkan kenikmatan produk";
-        } elseif (
-            str_contains($productLower, 'baju') || 
-            str_contains($productLower, 'celana') || 
-            str_contains($productLower, 'hijab') || 
-            str_contains($productLower, 'kerudung') || 
-            str_contains($productLower, 'kaos') || 
-            str_contains($productLower, 'jaket') || 
-            str_contains($productLower, 'sepatu') || 
-            str_contains($productLower, 'sandal') || 
-            str_contains($productLower, 'tas') || 
-            str_contains($productLower, 'pakaian') || 
-            str_contains($productLower, 'gamis') ||
-            $categoryLower === 'fashion'
-        ) {
-            $actionDescription = "Subjek menampilkan produk secara natural (dipakai, dicoba, atau diperagakan secara langsung)";
-            $dialogText = "“Produknya bagus banget, aku udah pakai sendiri. Kalian wajib coba.”";
-            $usageDescription = "penggunaan atau penampilan produk saat dipakai";
-        } elseif ($categoryLower === 'jasa') {
-            $actionDescription = "Subjek menampilkan layanan secara natural (menunjukkan interaksi pelayanan atau hasil dari layanan tersebut)";
-            $dialogText = "“Layanannya mantap banget, aku udah ngerasain sendiri. Kalian wajib coba.”";
-            $usageDescription = "proses atau hasil dari layanan tersebut";
-        } else {
-            // Default universal dialogue for crafts/others
-            $actionDescription = "Subjek menampilkan produk secara natural (dipegang, digunakan, atau diperlihatkan detail produknya secara jelas)";
-            $dialogText = "“Ini beneran bagus banget, aku suka banget sama produknya. Kalian wajib coba.”";
-            $usageDescription = "detail, keunikan, atau fitur produk";
-        }
-
         $prompt = <<<EOT
 PROMPT VIDEO UGC (REALISTIS, ≤ 8 DETIK)
 
@@ -144,7 +80,7 @@ Konsep:
 Seorang pelaku UMKM / individu biasa merekomendasikan produk ($productName) secara natural, seperti video TikTok atau WhatsApp Story.
 
 Detail Adegan:
-- $actionDescription
+- Subjek menampilkan produk secara natural (dipegang, dipakai, atau diperagakan sesuai jenis produk)
 - Gerakan produk tetap halus agar detail produk terlihat jelas ke kamera
 - Ekspresi ramah, tulus, dan meyakinkan
 - Gerakan kecil yang natural (angguk, senyum, atau sedikit mendekat ke kamera)
@@ -156,11 +92,11 @@ Pencahayaan:
 - Bukan lighting studio (sedikit imperfect tapi tetap jelas)
 
 Dialog (maks 6 detik, bahasa Indonesia santai):
-$dialogText
+“Ini beneran bagus banget, aku suka banget sama produknya. Kalian wajib coba!”
 
 Timing:
 0–2 detik: subjek melihat kamera + senyum
-2–6 detik: menyampaikan dialog sambil memperlihatkan $usageDescription
+2–6 detik: menyampaikan dialog sambil memperlihatkan penggunaan/fitur produk
 6–8 detik: fokus produk + ekspresi positif (tanpa dialog)
 
 Audio:

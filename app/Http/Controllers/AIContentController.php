@@ -205,26 +205,26 @@ class AIContentController extends Controller
 
             // 2. The prompt to merge the two
             $prompt = "Gabungkan dua gambar berikut menjadi satu foto UGC yang natural dan realistis:\n\n" .
-                      "Gambar 1: subjek (orang biasa / pelaku UMKM)\n" .
-                      "Gambar 2: produk yang dijual\n\n" .
-                      "Hasil akhir harus terlihat seperti foto asli, di mana subjek sedang memegang dan merekomendasikan produk secara langsung.\n\n" .
-                      "Detail Utama:\n" .
-                      "Ekspresi subjek ramah, hangat, dan tersenyum natural\n" .
-                      "Subjek memegang produk dengan satu tangan secara realistis (tidak kaku atau aneh)\n" .
-                      "Produk terlihat jelas, fokus, dan menyatu dengan pencahayaan serta perspektif\n" .
-                      "Proporsi produk sesuai ukuran aslinya\n\n" .
-                      "Lingkungan & Pencahayaan:\n" .
-                      "Background sederhana (rumah, dapur, atau warung kecil) dengan nuansa UMKM Indonesia\n" .
-                      "Pencahayaan natural seperti siang hari dari jendela\n" .
-                      "Bukan lighting studio (sedikit imperfect namun tetap jelas)\n\n" .
-                      "Style Visual:\n" .
-                      "UGC autentik seperti foto jualan rumahan, testimoni, atau konten TikTok/WhatsApp\n" .
-                      "Tidak terlalu polished, tetap terlihat natural dan relatable\n" .
-                      "Resolusi tinggi, tajam, dan bersih\n\n" .
-                      "Tambahan (Opsional):\n" .
-                      "Boleh menambahkan elemen ringan seperti meja, etalase kecil, atau aktivitas santai (duduk atau berdiri)\n" .
-                      "Jangan mengubah wajah subjek secara signifikan\n" .
-                      "Pastikan hasil akhir menyatu dengan baik dan tidak terlihat seperti editan kasar";
+                "Gambar 1: subjek (orang biasa / pelaku UMKM)\n" .
+                "Gambar 2: produk yang dijual\n\n" .
+                "Hasil akhir harus terlihat seperti foto asli, di mana subjek sedang memegang dan merekomendasikan produk secara langsung.\n\n" .
+                "Detail Utama:\n" .
+                "Ekspresi subjek ramah, hangat, dan tersenyum natural\n" .
+                "Subjek memegang produk dengan satu tangan secara realistis (tidak kaku atau aneh)\n" .
+                "Produk terlihat jelas, fokus, dan menyatu dengan pencahayaan serta perspektif\n" .
+                "Proporsi produk sesuai ukuran aslinya\n\n" .
+                "Lingkungan & Pencahayaan:\n" .
+                "Background sederhana (rumah, dapur, atau warung kecil) dengan nuansa UMKM Indonesia\n" .
+                "Pencahayaan natural seperti siang hari dari jendela\n" .
+                "Bukan lighting studio (sedikit imperfect namun tetap jelas)\n\n" .
+                "Style Visual:\n" .
+                "UGC autentik seperti foto jualan rumahan, testimoni, atau konten TikTok/WhatsApp\n" .
+                "Tidak terlalu polished, tetap terlihat natural dan relatable\n" .
+                "Resolusi tinggi, tajam, dan bersih\n\n" .
+                "Tambahan (Opsional):\n" .
+                "Boleh menambahkan elemen ringan seperti meja, etalase kecil, atau aktivitas santai (duduk atau berdiri)\n" .
+                "Jangan mengubah wajah subjek secara signifikan\n" .
+                "Pastikan hasil akhir menyatu dengan baik dan tidak terlihat seperti editan kasar";
 
             // 3. Create nano edit task
             $result = $this->kieAIService->createEditPhotoTask($prompt, [$avatarUrl, $productUrl], '9:16');
@@ -290,7 +290,7 @@ class AIContentController extends Controller
                 // Download image and save locally
                 $imageUrl = $result['image_urls'][0];
                 $localPath = null;
-                
+
                 try {
                     $imgResponse = \Illuminate\Support\Facades\Http::timeout(60)->get($imageUrl);
                     if ($imgResponse->successful()) {
@@ -304,7 +304,7 @@ class AIContentController extends Controller
 
                 $existingData['ugc_photo_url'] = $localPath ? asset('storage/' . $localPath) : $imageUrl;
                 $existingData['ugc_photo_path'] = $localPath;
-                
+
                 $content->update([
                     'status' => 'completed',
                     'generated_result' => json_encode($existingData),
@@ -370,7 +370,7 @@ class AIContentController extends Controller
             if ($request->hasFile('photo')) {
                 $photoPath = $request->file('photo')->store('ai-video-refs', 'public');
                 $photoUrl = url('storage/' . $photoPath);
-                
+
                 // Handle localhost testing
                 if (str_contains($photoUrl, 'localhost') || str_contains($photoUrl, '127.0.0.1') || str_contains($photoUrl, '.test')) {
                     \Illuminate\Support\Facades\Log::warning('Localhost detected. Using placeholder image.', ['original' => $photoUrl]);
